@@ -38,6 +38,7 @@ type App struct {
 	mu                   sync.RWMutex
 	syncLock             sync.Mutex
 	localMu              sync.Mutex
+	visibilityMu         sync.Mutex
 	syncing              bool
 	status               string
 	server               *http.Server
@@ -196,13 +197,13 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
 		a.mu.RLock()
 		defer a.mu.RUnlock()
-		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "syncing": a.syncing, "status": a.status, "commit": a.snapshot.Commit, "synced_at": a.snapshot.SyncedAt, "configured": a.config.Configured})
+		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "syncing": a.syncing, "status": a.status, "commit": a.snapshot.Commit, "synced_at": a.snapshot.SyncedAt, "configured": a.config.Configured, "report_visibility": a.reportVisibility()})
 	})
 	mux.HandleFunc("/api/state", func(w http.ResponseWriter, r *http.Request) {
 		a.mu.RLock()
 		defer a.mu.RUnlock()
 		_, te := os.Stat(filepath.Join(a.dir, "token.bin"))
-		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "config": a.config, "data_dir": a.dir, "has_token": te == nil, "snapshot": a.snapshot, "syncing": a.syncing, "status": a.status})
+		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "config": a.config, "data_dir": a.dir, "has_token": te == nil, "snapshot": a.snapshot, "syncing": a.syncing, "status": a.status, "report_visibility": a.reportVisibility()})
 	})
 	mux.HandleFunc("/api/sync", func(w http.ResponseWriter, r *http.Request) {
 		if !post(w, r) {
@@ -258,6 +259,7 @@ func (a *App) routes() http.Handler {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Write(b)
 	})
+	mux.HandleFunc("/api/report-visibility", a.changeReportVisibility)
 	a.localRoutes(mux)
 	a.ragRoutes(mux)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

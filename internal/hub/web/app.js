@@ -13,9 +13,46 @@ function renderTagCloud(){let count=(xs)=>{let m=new Map();xs.forEach(x=>m.set(x
  let tags=count(catalog().reports.flatMap(r=>r.tags)),cos=count(catalog().reports.flatMap(realCompanies)).slice(0,14);
  $('#tag-cloud').innerHTML=`<div class="cloud-title">분류</div><div class="chips">${tags.map(([t,n])=>chip(t,'','tag').replace('</span>',`<b>${n}</b></span>`)).join('')}</div><div class="cloud-title">기업</div><div class="chips">${cos.map(([t,n])=>chip(t,'teal','company').replace('</span>',`<b>${n}</b></span>`)).join('')}</div>`;bindChips($('#tag-cloud'))}
 const sources=ss=>(ss||[]).map(s=>{let u=safeURL(s.url);return u?`<a class="source-link" href="${esc(u)}" target="_blank" rel="noopener noreferrer">↗ ${esc(s.title||u)}</a>`:''}).join('');
-async function api(path,body){let opts=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-AV-Request':'1'},body:JSON.stringify(body)};let r=await fetch(path,opts);if(!r.ok)throw Error(await r.text());return r.json()}
+async function api(path,body,options={}){let opts=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-AV-Request':'1'},body:JSON.stringify(body)};let r=await fetch(path,{...opts,signal:options.signal});if(!r.ok)throw Error(await r.text());return r.json()}
 function toast(s){$('#toast').textContent=s;$('#toast').hidden=false;setTimeout(()=>$('#toast').hidden=true,5000)}
-function catalog(){return state.snapshot.catalog}
+// Catalog visibility policy also applies to older snapshots received by sync.
+// Keep the title rule aligned with data/companies.json and import-history.py.
+let catalogViews=new WeakMap(),hiddenReports=new Set(),visibilityError='',visibilityBusy=false,refreshRequest=0;
+function applyReportVisibility(v={}){
+ const ids=v.hidden_reports||[],error=v.error||'';
+ if(JSON.stringify([...hiddenReports])===JSON.stringify(ids)&&visibilityError===error)return false;
+ hiddenReports=new Set(ids);visibilityError=error;catalogViews=new WeakMap();return true;
+}
+function renderVisibilityControls(){
+ $('#hidden-count').textContent=visibilityError||`내 화면에서 숨긴 리포트 ${hiddenReports.size}개`;
+ $('#restore-reports').disabled=visibilityBusy||(!hiddenReports.size&&!visibilityError);
+ $('#restore-reports').onclick=()=>changeReportVisibility('restore-all');
+ const hide=$('#hide-report');if(hide)hide.disabled=visibilityBusy||!!visibilityError;
+}
+async function changeReportVisibility(action,reportID){
+ if(visibilityBusy)return;
+ visibilityBusy=true;++refreshRequest;renderVisibilityControls();
+ try{
+  const v=await api('/api/report-visibility',{action,report_id:reportID});
+  applyReportVisibility(v);updateCatalogView();
+  toast(action==='hide'?'내 화면에서 숨겼습니다. 왼쪽에서 전체 복원할 수 있습니다.':'숨긴 리포트를 모두 복원했습니다. 검색 조건은 유지됩니다.');
+ }catch(e){toast(e.message)}finally{visibilityBusy=false;renderVisibilityControls()}
+}
+function visibleCatalog(source){
+ if(catalogViews.has(source))return catalogViews.get(source);
+ const compact=s=>String(s??'').replace(/\s+/g,'');
+ const reports=source.reports.filter(r=>!hiddenReports.has(r.id)&&compact(r.title)!=='주요신규업데이트없음')
+  .map(r=>({...r,tags:(r.tags||[]).filter(t=>compact(t)!=='과거발송본')}));
+ const ids=new Set(reports.map(r=>r.id));
+ const view={...source,reports,
+  events:source.events.filter(e=>ids.has(e.report_id)),
+  relations:source.relations.filter(r=>ids.has(r.report_id)),
+  related:source.related.filter(r=>ids.has(r.from)&&ids.has(r.to))};
+ catalogViews.set(source,view);
+ return view;
+}
+function catalog(){return visibleCatalog(state.snapshot.catalog)}
+// End catalog visibility policy
 const terms=()=>$('#query').value.trim().split(/\s+/).filter(Boolean);
 // Wrap query terms in <mark> by walking text nodes, so markup and attributes are never touched.
 function highlight(root){let ts=terms();if(!ts.length||!root)return;let re=new RegExp(ts.map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'gi');let walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),nodes=[];while(walker.nextNode())if(re.test(walker.currentNode.data)){nodes.push(walker.currentNode)}
@@ -47,7 +84,7 @@ function render(){if(!state)return;let rs=filtered(),ids=new Set(rs.map(r=>r.id)
  if(tab==='graph')renderGraph(ids);else if(tab==='map')renderMap(rs);else if(tab==='local')renderLocal();else if(tab==='rag')renderRag();else highlight($('#results'));
  if(tab!=='map'&&mapSim)mapSim.stop();
  bindChips($('#results'));
- $$('[data-report]').forEach(b=>b.onclick=()=>{selected=b.dataset.report;selectedRelation='';render()});renderDetail();
+ $$('[data-report]').forEach(b=>b.onclick=()=>{selected=b.dataset.report;selectedRelation='';render()});renderDetail();renderVisibilityControls();
 }
 // Entities on a circle, edges as curved arrows; hovering or selecting a node/edge dims the rest.
 function renderGraph(ids){const label=id=>catalog().entities.find(n=>n.id===id)?.label||id;
@@ -119,7 +156,8 @@ function renderDetail(){if(tab==='local')return renderLocalDetail();if(tab==='ra
  let rel=catalog().relations.find(x=>x.id===selectedRelation);let related=catalog().related.filter(x=>x.from===r.id||x.to===r.id).map(x=>({r:catalog().reports.find(z=>z.id===(x.from===r.id?x.to:x.from)),reason:x.reason})).filter(x=>x.r);
  let same=catalog().reports.filter(x=>x.id!==r.id&&!related.some(t=>t.r.id===x.id)&&x.companies.some(c=>r.companies.includes(c))).slice(0,4);
  // Body first and fully expanded; linked issues follow as title-only cards (reason shown on hover).
- $('#detail').innerHTML=(rel?`<div class="eyebrow">선택한 관계 · ${esc(rel.status)}</div><h2>${esc(rel.label)}</h2><div class="summary">${esc(rel.evidence)}</div>${sources(rel.sources)}<hr>`:'')+`<span class="report-date">${esc(r.date)}</span><h2>${esc(r.title)}</h2><div class="chips">${r.companies.map(s=>chip(s,'teal')).join('')}</div><div class="downloads">${r.attachments.map((a,i)=>`<a href="/api/download?id=${encodeURIComponent(r.id)}&index=${i}">${esc(a.name.endsWith('.md')?'MD 다운로드':a.name.endsWith('.pptx')?'PPTX 다운로드':a.name)}</a>`).join('')}</div><article class="markdown">${markdown(r.body_markdown)}</article><hr><h3>연결된 이슈</h3>${related.length?related.map(x=>`<button class="related-card" data-related="${esc(x.r.id)}" title="${esc(x.reason)}"><span class="report-date">${esc(x.r.date)}</span> ${esc(x.r.title)}</button>`).join(''):'<p class="small-note">게시자가 확인한 후속 연결이 아직 없습니다.</p>'}${same.length?'<h3>같은 기업이 등장한 리포트</h3>'+same.map(x=>`<button class="related-card" data-related="${esc(x.id)}" title="기업 태그가 같은 자료입니다. 같은 사건을 뜻하지 않습니다."><span class="report-date">${esc(x.date)}</span> ${esc(x.title)}</button>`).join(''):''}<h3>원문 출처</h3>${sources(r.sources)}`;
+ $('#detail').innerHTML=(rel?`<div class="eyebrow">선택한 관계 · ${esc(rel.status)}</div><h2>${esc(rel.label)}</h2><div class="summary">${esc(rel.evidence)}</div>${sources(rel.sources)}<hr>`:'')+`<div class="report-actions"><span class="report-date">${esc(r.date)}</span><button type="button" class="text-button" id="hide-report" title="이 PC의 내 화면에서만 숨깁니다. 원본은 보관되며 전체 복원할 수 있습니다." ${visibilityBusy||visibilityError?'disabled':''}>내 화면에서 숨기기</button></div><h2>${esc(r.title)}</h2><div class="chips">${r.companies.map(s=>chip(s,'teal')).join('')}</div><div class="downloads">${r.attachments.map((a,i)=>`<a href="/api/download?id=${encodeURIComponent(r.id)}&index=${i}">${esc(a.name.endsWith('.md')?'MD 다운로드':a.name.endsWith('.pptx')?'PPTX 다운로드':a.name)}</a>`).join('')}</div><article class="markdown">${markdown(r.body_markdown)}</article><hr><h3>연결된 이슈</h3>${related.length?related.map(x=>`<button class="related-card" data-related="${esc(x.r.id)}" title="${esc(x.reason)}"><span class="report-date">${esc(x.r.date)}</span> ${esc(x.r.title)}</button>`).join(''):'<p class="small-note">게시자가 확인한 후속 연결이 아직 없습니다.</p>'}${same.length?'<h3>같은 기업이 등장한 리포트</h3>'+same.map(x=>`<button class="related-card" data-related="${esc(x.id)}" title="기업 태그가 같은 자료입니다. 같은 사건을 뜻하지 않습니다."><span class="report-date">${esc(x.date)}</span> ${esc(x.title)}</button>`).join(''):''}<h3>원문 출처</h3>${sources(r.sources)}`;
+ $('#hide-report').onclick=()=>changeReportVisibility('hide',r.id);
  highlight($('#detail'));renderReportLocal(r);
  $$('[data-related]').forEach(b=>b.onclick=()=>{selected=b.dataset.related;selectedRelation='';render()});
 }
@@ -129,8 +167,26 @@ function mountForm(target){let host=$(target);host.replaceChildren($('#settings-
  f.querySelector('.check-env').onclick=()=>{if(f.reportValidity())run('/api/check')};f.onsubmit=e=>{e.preventDefault();run('/api/install')};f.querySelector('.launch').onclick=async()=>{try{await api('/api/launch',{});f.querySelector('.checks').textContent='리포트가 열렸습니다. 이 설정 창은 닫아도 됩니다.'}catch(e){toast(e.message)}};
 }
 function showStatus(s){$('#sync-status').textContent=s.syncing?'최신 자료 확인 중…':s.status;$('#sync').disabled=s.syncing||s.setup;$('#published').textContent='마지막 확인: '+(s.synced_at?new Date(s.synced_at).toLocaleString('ko-KR'):'포함된 자료')}
-// Poll the small /api/status; pull the full catalog via /api/state only when the commit changes.
-async function refresh(force=false){let old=state?.snapshot.commit;if(!force&&state){let s=await api('/api/status');showStatus(s);if(s.commit===old)return}state=await api('/api/state');showStatus({...state,synced_at:state.snapshot.synced_at});if(force||old!==state.snapshot.commit){for(let [id,values,label] of [['company',catalog().reports.flatMap(r=>r.companies),'전체 기업'],['category',catalog().reports.flatMap(r=>r.tags),'전체 분류']]){let el=$('#'+id),value=el.value;el.innerHTML=`<option value="">${label}</option>`+[...new Set(values)].sort().map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');el.value=value}if(!selected)selected=catalog().reports[0]?.id||'';render()}}
+function updateCatalogView(){
+ for(let [id,values,label] of [['company',catalog().reports.flatMap(r=>r.companies),'전체 기업'],['category',catalog().reports.flatMap(r=>r.tags),'전체 분류']]){
+  let el=$('#'+id),value=el.value;el.innerHTML=`<option value="">${label}</option>`+[...new Set(values)].sort().map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');el.value=values.includes(value)?value:'';
+ }
+ if(!catalog().reports.some(r=>r.id===selected)){selected=filtered()[0]?.id||'';selectedRelation=''}
+ render();
+}
+// The status poll also picks up preferences changed in another window. Ignore
+// responses started before a hide/restore so they cannot undo the saved choice.
+async function refresh(force=false){
+ if(visibilityBusy)return;
+ const request=++refreshRequest,old=state?.snapshot.commit;
+ if(!force&&state){
+  const s=await api('/api/status');if(request!==refreshRequest||visibilityBusy)return;
+  showStatus(s);const changed=applyReportVisibility(s.report_visibility);
+  if(s.commit===old){if(changed)updateCatalogView();return}
+ }
+ const next=await api('/api/state');if(request!==refreshRequest||visibilityBusy)return;
+ state=next;applyReportVisibility(state.report_visibility);showStatus({...state,synced_at:state.snapshot.synced_at});updateCatalogView();
+}
 // Tab is mirrored in the URL hash (#timeline, #graph, #map) so a view can be bookmarked or reloaded.
 function setTab(t){let b=$(`[data-tab="${t}"]`);if(!b)return;tab=t;$$('[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));history.replaceState(null,'',t==='search'?location.pathname:'#'+t);render()}
 $$('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
@@ -178,14 +234,14 @@ function renderLocal(){$('#result-count').textContent=`PDF ${local.files.length}
  ${local.sources.map((s,i)=>`<div class="mail-row"><span class="source-name">📬 <b>${esc(s.name)}</b>${s.path?`<small>${esc(s.path)}</small>`:''}</span><button class="text-button" data-src-remove="${i}">제거</button></div>`).join('')||'<p class="small-note">지정된 메일 자료가 없습니다.</p>'}
  <div class="link-form"><button id="load-stores">Outlook 메일함 불러오기</button></div>
  ${outlookStores?outlookStores.map((s,i)=>has(s)?'':`<div class="mail-row"><span class="source-name">${esc(s.name)}${s.path?`<small>${esc(s.path)}</small>`:''}</span><button class="text-button" data-store-add="${i}">추가</button></div>`).join('')||'<p class="small-note">추가할 메일함이 없습니다.</p>':''}
- <form id="pst-form" class="link-form"><input name="path" placeholder="PST·OST 파일 전체 경로 (예: D:\\메일\\보관.pst)" aria-label="PST·OST 파일 경로"><button class="primary">경로 추가</button></form>
+  ${outlookPathHtml()}
  <h3 class="local-h">연결된 메일</h3>${local.mails.map(m=>mailRow(m,`<button class="text-button" data-goto-report="${esc(m.report)}">${esc(reportOf(m.report)?.title||m.report)}</button>`)).join('')||'<p class="small-note">리포트를 열면 관련 메일을 제안합니다. 그중 연결한 메일이 여기에 모입니다.</p>'}`;
  const dz=$('#dropzone');dz.onclick=()=>$('#local-input').click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();dz.click()}};
  $$('[data-local]').forEach(b=>b.onclick=()=>{localSel=b.dataset.local;$$('[data-local]').forEach(x=>x.classList.toggle('selected',x===b));renderLocalDetail()});
  $$('[data-src-remove]').forEach(b=>b.onclick=()=>localDo('/api/outlook/source',{source:local.sources[+b.dataset.srcRemove],remove:true},'메일 자료 지정을 해제했습니다.'));
  $$('[data-store-add]').forEach(b=>b.onclick=()=>localDo('/api/outlook/source',{source:outlookStores[+b.dataset.storeAdd]},'메일함을 추가했습니다.'));
  $('#load-stores').onclick=async e=>{e.target.disabled=true;e.target.textContent='Outlook 확인 중…';try{outlookStores=(await api('/api/outlook/stores',{})).stores||[]}catch(x){toast(x.message)}render()};
- $('#pst-form').onsubmit=e=>{e.preventDefault();let p=e.target.elements.path.value.trim().replace(/^"|"$/g,'');if(p)localDo('/api/outlook/source',{source:{path:p}},'Outlook 파일을 추가했습니다.')};
+ bindOutlookPathForm();
 }
 function renderLocalDetail(){let f=local.files.find(x=>x.id===localSel);if(!f){$('#detail').innerHTML='<div class="empty">PDF를 선택하면<br>보기·리포트 연결·삭제를 할 수 있습니다.</div>';return}
  let rs=catalog().reports,u='/api/local/file?id='+encodeURIComponent(f.id);
@@ -259,3 +315,66 @@ async function ragAdd(files){files=files.filter(f=>/\.pdf$/i.test(f.name)||f.typ
 function renderRagDetail(){const h=rag.hit;if(!h){$('#detail').innerHTML='<div class="empty">검색 결과의 페이지를 누르면<br>여기에 크게 표시됩니다.</div>';return}
  $('#detail').innerHTML=`<div class="detail-head"><h2>${esc(h.name)} · p.${h.page}</h2><p class="small-note">유사도 ${h.similarity.toFixed(4)} · 이 PC의 임베딩 서비스 결과</p></div><img class="rag-page" src="/api/rag/page?doc=${encodeURIComponent(h.doc)}&page=${h.page}" alt="">`}
 addEventListener('click',e=>{const b=e.target.closest('[data-rag-hit]');if(b){rag.hit=rag.hits[+b.dataset.ragHit];renderDetail()}});
+
+// Outlook path form: keep feedback and the draft across renders; never silently ignore a submit.
+let outlookPath={value:'',busy:false,message:'',error:false,invalid:false};
+function outlookPathHtml(){
+ return `<form id="pst-form" class="link-form" novalidate>
+ <input name="path" value="${esc(outlookPath.value)}" placeholder="PST·OST 파일 전체 경로 (예: D:\\메일\\보관.pst)" aria-label="PST·OST 파일 경로" aria-describedby="pst-help pst-status" required autocomplete="off" spellcheck="false">
+ <button type="submit" class="primary">경로 추가</button></form>
+ <p id="pst-help" class="small-note">PST·OST 파일의 전체 경로를 입력한 뒤 추가하세요. 탐색기의 ‘경로 복사’로 가져온 따옴표도 처리합니다. 현재 Outlook 메일함은 위의 ‘Outlook 메일함 불러오기’를 사용하세요.</p>
+ <p id="pst-status" class="small-note" role="status" aria-live="polite"></p>`;
+}
+function updateOutlookPathForm(){
+ const form=$('#pst-form'),status=$('#pst-status');
+ if(!form||!status)return;
+ const input=form.elements.namedItem('path'),button=form.querySelector('button[type="submit"]');
+ input.value=outlookPath.value;input.readOnly=outlookPath.busy;
+ input.setAttribute('aria-invalid',String(outlookPath.invalid));
+ button.disabled=outlookPath.busy;button.textContent=outlookPath.busy?'추가 중…':'경로 추가';
+ form.setAttribute('aria-busy',String(outlookPath.busy));
+ status.textContent=outlookPath.message;status.hidden=!outlookPath.message;status.classList.toggle('error',outlookPath.error);
+}
+function bindOutlookPathForm(){
+ const form=$('#pst-form');if(!form)return;
+ form.elements.namedItem('path').oninput=e=>{
+  outlookPath.value=e.target.value;
+  outlookPath.message='';outlookPath.error=false;outlookPath.invalid=false;
+  updateOutlookPathForm();
+ };
+ form.onsubmit=addOutlookPath;updateOutlookPathForm();
+}
+async function addOutlookPath(event){
+ event.preventDefault();
+ if(outlookPath.busy)return;
+ const form=event.currentTarget,input=form.elements.namedItem('path');
+ const path=input.value.trim().replace(/^"|"$/g,'').trim();
+ outlookPath.value=path;outlookPath.error=false;outlookPath.invalid=false;
+ if(!path||!/\.(pst|ost)$/i.test(path)){
+  outlookPath.message=path?'PST 또는 OST 파일의 전체 경로를 입력하세요. 폴더 경로만으로는 추가할 수 없습니다.':'추가할 PST·OST 파일의 전체 경로를 먼저 입력하세요.';
+  outlookPath.error=true;outlookPath.invalid=true;updateOutlookPathForm();input.focus();return;
+ }
+ if(local.sources.some(s=>s.path&&s.path.toLowerCase()===path.toLowerCase())){
+  outlookPath.message='이미 추가된 Outlook 경로입니다.';updateOutlookPathForm();return;
+ }
+ outlookPath.busy=true;outlookPath.message='파일 경로를 확인하고 저장하고 있습니다…';updateOutlookPathForm();
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),20000);
+ let saved=false;
+ try{
+  const result=await api('/api/outlook/source',{source:{path}},{signal:controller.signal});
+  if(!result.ok)throw Error(result.error||'Outlook 경로를 저장하지 못했습니다.');
+  saved=true;outlookPath.value='';
+  const resultLocal=await api('/api/local',undefined,{signal:controller.signal});
+  if(!resultLocal.available)throw Error(resultLocal.reason||'내 자료 목록을 불러오지 못했습니다.');
+  local={available:true,reason:'',files:resultLocal.files||[],mails:resultLocal.mails||[],sources:resultLocal.sources||[]};
+  outlookPath.message='Outlook 경로를 추가했습니다. 위의 연결 목록에서 확인할 수 있습니다.';
+  render();
+ }catch(error){
+  outlookPath.error=true;
+  outlookPath.message=saved?'경로는 저장됐지만 목록을 새로 불러오지 못했습니다. 페이지를 새로고침해 확인해 주세요.':
+   controller.signal.aborted?'경로 확인 시간이 초과되었습니다. 파일이나 네트워크 드라이브에 접근할 수 있는지 확인한 뒤 다시 시도하세요.':error.message;
+ }finally{
+  clearTimeout(timer);outlookPath.busy=false;updateOutlookPathForm();
+ }
+}
