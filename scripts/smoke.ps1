@@ -15,7 +15,7 @@ function Connect-App($kind) {
 try {
     $setup=Start-Process -FilePath (Resolve-Path dist/AVReportHub-Setup.exe) -ArgumentList @('--no-browser','--data-dir',"`"$testRoot`"") -PassThru
     $s=Connect-App 'setup'
-    $settings=@{ owner='graycoral'; repo='DailyReportAnalysis'; branch='main'; sync_time='08:00'; offline=$true; token='' } | ConvertTo-Json
+    $settings=@{ owner='graycoral'; repo='DailyReportAnalysis'; branch='main'; sync_time='08:00'; offline=$true; automatic=$true; token='' } | ConvertTo-Json
     $result=Invoke-RestMethod -Uri "$($s.address)/api/install" -Method Post -WebSession $s.session -Headers @{Origin=$s.address; 'X-AV-Request'='1'} -ContentType 'application/json' -Body $settings
     if(!$result.ok){ throw 'Setup failed' }
     $exe=Join-Path $testRoot 'bin/AVReportHub.exe'
@@ -25,6 +25,7 @@ try {
     $v=Connect-App 'viewer'
     $state=Invoke-RestMethod -Uri "$($v.address)/api/state" -WebSession $v.session
     if(!$state.config.configured -or $state.snapshot.catalog.reports.Count -lt 1){ throw 'Viewer has no configured reports' }
+    if($state.snapshot.catalog.database -and !(Test-Path (Join-Path $testRoot ('databases/' + $state.snapshot.catalog.database.sha256 + '.sqlite')))){throw 'SQLite missing'}
     $dest=Join-Path $testRoot 'attachment.md'
     Invoke-WebRequest -Uri "$($v.address)/api/download?id=2026-10-14&index=0" -WebSession $v.session -OutFile $dest
     $hash=(Get-FileHash $dest -Algorithm SHA256).Hash.ToLower()

@@ -76,13 +76,14 @@ type Related struct {
 	Reason string `json:"reason"`
 }
 type Catalog struct {
-	Schema    int        `json:"schema_version"`
-	Published string     `json:"published_at"`
-	Reports   []Report   `json:"reports"`
-	Events    []Event    `json:"events"`
-	Entities  []Entity   `json:"entities"`
-	Relations []Relation `json:"relations"`
-	Related   []Related  `json:"related"`
+	Database  *Attachment `json:"database,omitempty"`
+	Schema    int         `json:"schema_version"`
+	Published string      `json:"published_at"`
+	Reports   []Report    `json:"reports"`
+	Events    []Event     `json:"events"`
+	Entities  []Entity    `json:"entities"`
+	Relations []Relation  `json:"relations"`
+	Related   []Related   `json:"related"`
 }
 type Snapshot struct {
 	Commit   string  `json:"commit"`
@@ -107,6 +108,9 @@ func (c Config) Validate() error {
 	return nil
 }
 func (c Catalog) Validate() error {
+	if c.Database != nil && (c.Database.Path != "data/reports.sqlite" || !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(c.Database.SHA256)) {
+		return errors.New("DB 경로 또는 해시가 잘못되었습니다.")
+	}
 	if c.Schema != 1 {
 		return fmt.Errorf("지원하지 않는 데이터 버전: %d", c.Schema)
 	}

@@ -17,6 +17,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27.2'
+          cache: false
       - name: Test and build self-contained executables
         shell: pwsh
         run: ./scripts/build.ps1

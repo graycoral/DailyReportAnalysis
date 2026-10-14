@@ -85,6 +85,10 @@ func Run(setup bool, payload []byte) {
 		return
 	}
 	a.snapshot = Snapshot{Catalog: c, Origin: "bundled"}
+	if e = a.ensureDatabase(context.Background(), a.snapshot, nil); e != nil {
+		notifyError("기본 DB 준비 실패: " + e.Error())
+		return
+	}
 	if b, e := os.ReadFile(filepath.Join(dir, "snapshot.json")); e == nil {
 		var s Snapshot
 		if json.Unmarshal(b, &s) == nil && s.Catalog.Validate() == nil {
@@ -282,6 +286,7 @@ func writeResponse(w http.ResponseWriter, v any) {
 
 type Settings struct {
 	Config
+	Automatic  bool   `json:"automatic"`
 	Token      string `json:"token"`
 	ClearToken bool   `json:"clear_token"`
 }
@@ -319,6 +324,10 @@ func (a *App) validateSetup(ctx context.Context, s Settings) (*Snapshot, []strin
 	_ = os.Remove(p)
 	checks = append(checks, "저장 폴더 생성·쓰기 확인 완료")
 	checks = append(checks, "로컬 웹 서버 및 브라우저 연결 정상")
+	if a.setup && s.Automatic {
+		checks = append(checks, "기본 자료로 자동 설치; GitHub 최신화는 실행 직후 백그라운드 처리")
+		return nil, checks, nil
+	}
 	if s.Offline {
 		checks = append(checks, "오프라인 시작 선택: GitHub 연결은 나중에 설정")
 		return nil, checks, nil
@@ -335,6 +344,9 @@ func (a *App) validateSetup(ctx context.Context, s Settings) (*Snapshot, []strin
 	}
 	checks = append(checks, fmt.Sprintf("게시 데이터 검증 완료: 리포트 %d개", len(c.Reports)))
 	snap := &Snapshot{Commit: commit, Origin: s.Owner + "/" + s.Repo, SyncedAt: time.Now().In(kst).Format(time.RFC3339), Catalog: c}
+	if e = a.ensureDatabase(ctx, *snap, g); e != nil {
+		return nil, checks, e
+	}
 	return snap, checks, nil
 }
 func (a *App) checkSettings(w http.ResponseWriter, r *http.Request) {

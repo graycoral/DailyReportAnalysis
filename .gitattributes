@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.pptx binary
+*.sqlite binary
+*.exe binary

@@ -147,9 +147,17 @@ func (a *App) syncData() {
 			err = e
 			return
 		}
+		if old.Catalog.Database != nil && c.Database == nil {
+			err = errors.New("게시 저장소에 전체 DB가 아직 없습니다. 현재 보관 자료를 유지합니다.")
+			return
+		}
 		snap = Snapshot{Commit: commit, Origin: cfg.Owner + "/" + cfg.Repo, Catalog: c}
 	}
 	snap.SyncedAt = time.Now().In(kst).Format(time.RFC3339)
+	if e = a.ensureDatabase(ctx, snap, g); e != nil {
+		err = e
+		return
+	}
 	if e = writeJSON(filepath.Join(a.dir, "snapshot.json"), snap); e != nil {
 		err = e
 		return
@@ -158,6 +166,37 @@ func (a *App) syncData() {
 	a.snapshot = snap
 	a.status = "최신 자료 확인 완료"
 	a.mu.Unlock()
+}
+
+// Keep immutable SQLite snapshots alongside the matching JSON display projection.
+// No SQLite engine or AI runtime is needed on the user's PC.
+func (a *App) ensureDatabase(ctx context.Context, snap Snapshot, g *githubClient) error {
+	db := snap.Catalog.Database
+	if db == nil {
+		return nil
+	}
+	target := filepath.Join(a.dir, "databases", db.SHA256+".sqlite")
+	valid := func(b []byte) bool {
+		h := sha256.Sum256(b)
+		return hex.EncodeToString(h[:]) == db.SHA256 && len(b) > 16 && string(b[:16]) == "SQLite format 3\x00"
+	}
+	if b, e := os.ReadFile(target); e == nil && valid(b) {
+		return nil
+	}
+	b, e := assets.ReadFile("seed/reports.sqlite")
+	if e != nil || !valid(b) {
+		if g == nil || snap.Commit == "" {
+			return errors.New("DB 원본을 준비할 수 없습니다.")
+		}
+		b, e = g.content(ctx, db.Path, snap.Commit, 90<<20)
+		if e != nil {
+			return e
+		}
+	}
+	if !valid(b) {
+		return errors.New("DB 파일 검증에 실패했습니다. 기존 자료는 유지됩니다.")
+	}
+	return writeAtomic(target, b)
 }
 func (a *App) attachment(ctx context.Context, rid string, index int) ([]byte, string, error) {
 	a.mu.RLock()

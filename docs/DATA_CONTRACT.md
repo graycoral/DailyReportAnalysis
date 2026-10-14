@@ -32,3 +32,7 @@
 클라이언트에 전달하는 누적 catalog는 현재 25 MiB 이하로 제한합니다. 이 규모를 넘기기 전에 월별 분할과 별도 색인 버전을 설계합니다. 개별 첨부는 90 MiB 이하입니다.
 
 실행 파일의 초기 자료를 갱신할 때는 `data/catalog.json`을 `internal/hub/seed/catalog.json`에도 반영하고, 오프라인 첨부가 필요하면 동일한 파일을 `internal/hub/seed/`에 둡니다. 일반 일일 게시에는 EXE 재빌드가 필요하지 않습니다.
+
+## SQLite 원본
+
+`database`는 `{name: "reports.sqlite", path: "data/reports.sqlite", sha256: "..."}`입니다. 게시자는 SQLite와 DB에서 내보낸 catalog를 같은 커밋으로 게시합니다. 앱은 DB를 검증해 로컬 `databases/<hash>.sqlite`에 보관하고 화면은 JSON projection을 읽습니다. DB 서버나 SQLite 드라이버를 사용자 PC에 설치하지 않습니다. `scripts/import-history.py`는 게시 환경 전용 도구입니다. 과거 보관 이벤트의 `status: "보고일"`은 실제 사건 발생일과 구분됩니다.

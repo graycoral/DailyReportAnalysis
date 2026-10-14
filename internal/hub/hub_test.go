@@ -100,16 +100,18 @@ func TestPinnedCatalogAndCredentialScope(t *testing.T) {
 		t.Fatal(e)
 	}
 	out, e := g.catalog(context.Background(), sha)
-	if e != nil || len(out.Reports) != 1 {
+	if e != nil || len(out.Reports) != len(c.Reports) {
 		t.Fatalf("catalog failed: %v", e)
 	}
 }
 func TestEmbeddedAttachmentMatchesPublishedHash(t *testing.T) {
 	a := &App{dir: t.TempDir(), config: defaultConfig(), snapshot: Snapshot{Catalog: seedCatalog(t)}}
-	for i := 0; i < 2; i++ {
-		b, name, e := a.attachment(context.Background(), "2026-10-14", i)
-		if e != nil || len(b) == 0 || name == "" {
-			t.Fatalf("attachment: %v", e)
+	for _, report := range a.snapshot.Catalog.Reports {
+		for i := range report.Attachments {
+			b, name, e := a.attachment(context.Background(), report.ID, i)
+			if e != nil || len(b) == 0 || name == "" {
+				t.Fatalf("attachment: %v", e)
+			}
 		}
 	}
 }
