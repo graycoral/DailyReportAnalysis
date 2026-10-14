@@ -5,18 +5,44 @@ Loads google/embeddinggemma-2 through sentence-transformers with the audio encod
 (text + vision, ~440M parameters) and turns PDF pages into images for embedding.
 Nothing here is part of the shipped AVReportHub.exe.
 """
-import io, json, os, re, sys, time
+import io, json, os, re, shutil, sys, time
 from pathlib import Path
 
+os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 MODEL_ID = os.environ.get("RAG_MODEL", "google/embeddinggemma-2")
 HERE = Path(__file__).resolve().parent
-INDEX_DIR = Path(os.environ.get("RAG_INDEX", HERE / "index"))
-DOCS_DIR = Path(os.environ.get("RAG_DOCS", HERE.parent / "docs"))
+# Uploaded PDFs, page images and vectors live in the app data dir, never inside the (public) repo.
+DATA_DIR = Path(os.environ.get("AVHUB_DATA_DIR") or Path(os.environ.get("LOCALAPPDATA", ".")) / "AVReportHub")
+INDEX_DIR = Path(os.environ.get("RAG_INDEX", DATA_DIR / "rag" / "index"))
+DOCS_DIR = Path(os.environ.get("RAG_DOCS", DATA_DIR / "rag" / "demo"))
 RENDER_SCALE = float(os.environ.get("RAG_RENDER_SCALE", "1.5"))  # 72dpi * 1.5 = 108dpi
 
 
 def log(msg):
     print(msg, file=sys.stderr, flush=True)
+
+
+def git_tree(path):
+    """The git work tree containing path, or None. Index data there could be committed and pushed."""
+    p = Path(path).resolve()
+    for d in [p, *p.parents]:
+        if (d / ".git").exists():
+            return d
+    return None
+
+
+def check_storage():
+    """Exit when an index or demo folder sits inside a git work tree; move the old rag/index once."""
+    old = HERE / "index"
+    if "RAG_INDEX" not in os.environ and old.is_dir() and not INDEX_DIR.exists():
+        INDEX_DIR.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(old), str(INDEX_DIR))
+        log(f"moved {old} -> {INDEX_DIR}")
+    for d in (INDEX_DIR, DOCS_DIR):
+        g = git_tree(d)
+        if g:
+            log(f"refusing: {d} is inside the git work tree {g}; set RAG_INDEX/RAG_DOCS outside it")
+            sys.exit(3)
 
 
 def load_model():
@@ -25,7 +51,12 @@ def load_model():
     from sentence_transformers import SentenceTransformer
     torch.set_num_threads(max(1, os.cpu_count() or 1))
     t = time.perf_counter()
-    model = SentenceTransformer(MODEL_ID, config_kwargs={"audio_config": None}, device="cpu")
+    # Cached model first so a normal start makes no network request; download only the first time.
+    try:
+        model = SentenceTransformer(MODEL_ID, config_kwargs={"audio_config": None}, device="cpu", local_files_only=True)
+    except Exception:
+        log(f"{MODEL_ID} not cached; downloading model files (no documents are sent)")
+        model = SentenceTransformer(MODEL_ID, config_kwargs={"audio_config": None}, device="cpu")
     seconds = time.perf_counter() - t
     params = sum(p.numel() for p in model.parameters())
     dims = model.get_embedding_dimension()

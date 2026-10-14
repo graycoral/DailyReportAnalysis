@@ -82,4 +82,7 @@ if __name__ == "__main__":
     ap.add_argument("--docs", type=Path, default=ec.DOCS_DIR)
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
+    ec.check_storage()
+    if ec.git_tree(a.docs):
+        sys.exit(f"refusing: {a.docs} is inside a git work tree")
     sys.exit(run(a.docs, a.json))

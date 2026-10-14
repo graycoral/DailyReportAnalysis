@@ -13,7 +13,8 @@ Endpoints (all JSON unless noted):
   POST /query  {"text": "...", "top_k": 5}      top pages with similarity + thumbnail
   GET  /page?doc=<id>&page=<n>  PNG of that page
   POST /delete {"doc": "<id>"}
-Indexed PDFs are stored unencrypted under rag/index/docs/. The UI warns before upload.
+Indexed PDFs are stored unencrypted under %LOCALAPPDATA%\AVReportHub\rag\index\docs\ (never inside a git
+work tree; startup refuses that). The UI warns before upload.
 """
 import argparse, hashlib, json, os, secrets, signal, sys, threading, time, base64
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -22,7 +23,7 @@ from urllib.parse import urlparse, parse_qs
 import numpy as np
 import embed_core as ec
 
-DATA_DIR = Path(os.environ.get("AVHUB_DATA_DIR") or Path(os.environ.get("LOCALAPPDATA", ".")) / "AVReportHub")
+DATA_DIR = ec.DATA_DIR
 SERVICE_FILE = DATA_DIR / "rag-service.json"
 DOCS = ec.INDEX_DIR / "docs"
 META = ec.INDEX_DIR / "index.json"
@@ -183,6 +184,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--port", type=int, default=0)
     a = ap.parse_args()
+    ec.check_storage()
     ec.INDEX_DIR.mkdir(parents=True, exist_ok=True)
     load_index()
     ec.log("loading model …")

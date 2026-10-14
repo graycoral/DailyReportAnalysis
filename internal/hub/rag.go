@@ -16,7 +16,7 @@ import (
 // loads the embedding model. The Go app only proxies to it — no model, no Python inside the EXE.
 // The service announces itself in <data-dir>/rag-service.json ({address, key}); when that file is
 // absent the tab shows setup instructions. PDFs sent here are stored by the service unencrypted under
-// rag/index/, which the UI warns about before upload. Nothing from this path touches catalog/sync.
+// <LOCALAPPDATA>\AVReportHub\rag\index (outside any git work tree), which the UI warns about before upload. Nothing from this path touches catalog/sync.
 type ragService struct {
 	Address string `json:"address"`
 	Key     string `json:"key"`

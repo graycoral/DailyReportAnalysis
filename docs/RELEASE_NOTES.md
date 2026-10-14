@@ -1,3 +1,9 @@
+# AV Report Hub v0.1.5
+
+- **🧪 멀티모달 검색 (선택 기능)**: 분석 담당자가 자기 PC에서 `rag/rag_server.py`를 켜면 PDF 페이지를 이미지로 임베딩(`embeddinggemma-2`, CPU)해 문장으로 찾습니다. 배포본에는 모델·Python이 없고, 서비스가 없는 PC에서는 안내만 표시합니다. 자세한 내용은 [멀티모달 검색 안내](RAG_GUIDE.md)에 있습니다.
+- 멀티모달 검색 색인은 `%LOCALAPPDATA%\AVReportHub\rag\index`에 저장합니다. Git 저장소 안을 지정하면 서비스가 시작을 거부하고, 예전 `rag/index/`는 첫 실행 때 옮깁니다. 모델은 캐시를 먼저 써서 평소에는 외부 접속 없이 시작합니다.
+- 🔒 내 자료 PDF는 `%LOCALAPPDATA%\AVReportHub\docs\pdf`에 암호화해 보관합니다. 기존 파일은 자동으로 옮겨집니다.
+
 # AV Report Hub v0.1.4
 
 - **🔒 내 자료 탭**: PDF를 끌어다 넣어 리포트에 연결합니다. 파일은 현재 Windows 계정으로 암호화해 이 PC에만 보관하며 GitHub 동기화·게시와 무관합니다.
