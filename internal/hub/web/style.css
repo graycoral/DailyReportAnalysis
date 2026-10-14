@@ -91,6 +91,12 @@ header .quiet{background:transparent;color:var(--header-muted)}
 .filter-title{font-weight:700;display:flex;justify-content:space-between;align-items:center;margin:4px 0 14px;font-size:13px;color:var(--ink-2)}
 .text-button{border:0;padding:0;background:none;font-size:12px;color:var(--accent-ink);box-shadow:none!important;border-radius:0}
 .text-button:hover{text-decoration:underline}
+.report-visibility{margin:18px 0;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.report-visibility p{margin:0 0 10px;font-size:12px;color:var(--ink-2);line-height:1.6}
+.report-visibility small{display:block;margin-top:9px;font-size:11px;line-height:1.6;color:var(--muted)}
+.report-visibility button{font-size:12px;width:100%;white-space:normal}
+.report-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.report-actions button{padding:5px 0}
 label{display:block;font-weight:600;margin-bottom:12px;font-size:12.5px;color:var(--ink-2)}
 label input:not([type=checkbox]),label select{display:block;width:100%;margin-top:6px;font-weight:400;font-size:13px;padding:9px 10px}
 label small{display:block;font-weight:400;color:var(--muted);font-size:12px;line-height:1.6;margin-top:6px}
