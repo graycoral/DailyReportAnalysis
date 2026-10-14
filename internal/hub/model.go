@@ -87,6 +87,7 @@ type Catalog struct {
 }
 type Snapshot struct {
 	Commit   string  `json:"commit"`
+	ETag     string  `json:"etag,omitempty"`
 	SyncedAt string  `json:"synced_at"`
 	Origin   string  `json:"origin"`
 	Catalog  Catalog `json:"catalog"`
@@ -107,8 +108,12 @@ func (c Config) Validate() error {
 	}
 	return nil
 }
+
+var hashPattern = regexp.MustCompile(`^[a-f0-9]{64}$`)
+
+// Validate also normalises nil slices to empty ones so the UI can iterate them unconditionally.
 func (c Catalog) Validate() error {
-	if c.Database != nil && (c.Database.Path != "data/reports.sqlite" || !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(c.Database.SHA256)) {
+	if c.Database != nil && (c.Database.Path != "data/reports.sqlite" || !hashPattern.MatchString(c.Database.SHA256)) {
 		return errors.New("DB 경로 또는 해시가 잘못되었습니다.")
 	}
 	if c.Schema != 1 {
@@ -116,7 +121,8 @@ func (c Catalog) Validate() error {
 	}
 	ids := map[string]bool{}
 	entities := map[string]bool{}
-	for _, r := range c.Reports {
+	for i := range c.Reports {
+		r := &c.Reports[i]
 		if !slug.MatchString(r.ID) || ids[r.ID] || !datePattern.MatchString(r.Date) || r.Title == "" {
 			return errors.New("리포트 ID·날짜·제목이 잘못되었거나 중복입니다.")
 		}
@@ -125,9 +131,21 @@ func (c Catalog) Validate() error {
 			return errors.New("잘못된 리포트 날짜입니다.")
 		}
 		for _, a := range r.Attachments {
-			if !safeRepoPath(a.Path) || !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(a.SHA256) {
+			if !safeRepoPath(a.Path) || !hashPattern.MatchString(a.SHA256) {
 				return errors.New("첨부 경로 또는 해시가 잘못되었습니다.")
 			}
+		}
+		if r.Companies == nil {
+			r.Companies = []string{}
+		}
+		if r.Tags == nil {
+			r.Tags = []string{}
+		}
+		if r.Sources == nil {
+			r.Sources = []Source{}
+		}
+		if r.Attachments == nil {
+			r.Attachments = []Attachment{}
 		}
 	}
 	for _, e := range c.Entities {
@@ -136,12 +154,16 @@ func (c Catalog) Validate() error {
 		}
 		entities[e.ID] = true
 	}
-	for _, e := range c.Events {
+	for i := range c.Events {
+		e := &c.Events[i]
 		if !ids[e.ReportID] {
 			return errors.New("사건의 근거 리포트가 없습니다.")
 		}
 		if _, err := time.Parse("2006-01-02", e.Date); err != nil {
 			return errors.New("잘못된 사건 날짜입니다.")
+		}
+		if e.Companies == nil {
+			e.Companies = []string{}
 		}
 	}
 	for _, r := range c.Relations {

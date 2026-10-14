@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	mrand "math/rand"
 	"mime"
 	"net"
 	"net/http"
@@ -71,6 +72,7 @@ func Run(setup bool, payload []byte) {
 		defer lf.Close()
 		log.SetOutput(lf)
 	}
+	log.Printf("start v%s setup=%v dir=%s", Version, setup, dir)
 	a := &App{dir: dir, setup: setup, payload: payload, config: defaultConfig(), status: "포함된 리포트"}
 	if b, e := os.ReadFile(filepath.Join(dir, "config.json")); e == nil {
 		var c Config
@@ -86,6 +88,7 @@ func Run(setup bool, payload []byte) {
 	}
 	a.snapshot = Snapshot{Catalog: c, Origin: "bundled"}
 	if e = a.ensureDatabase(context.Background(), a.snapshot, nil); e != nil {
+		log.Printf("bundled database: %v", e)
 		notifyError("기본 DB 준비 실패: " + e.Error())
 		return
 	}
@@ -153,13 +156,18 @@ func Run(setup bool, payload []byte) {
 		}
 	}
 	if e = a.server.Serve(ln); e != nil && !errors.Is(e, http.ErrServerClosed) {
+		log.Printf("server: %v", e)
 		notifyError(e.Error())
 	}
+	log.Print("stopped")
 }
+
+// A per-process random offset (0-10 min) spreads the daily sync across PCs sharing one corporate IP.
 func (a *App) scheduler() {
 	timer := time.NewTicker(30 * time.Second)
 	defer timer.Stop()
 	var lastAttempt time.Time
+	jitter := time.Duration(mrand.Int63n(int64(10 * time.Minute)))
 	for now := range timer.C {
 		a.mu.RLock()
 		c := a.config
@@ -171,8 +179,9 @@ func (a *App) scheduler() {
 		local := now.In(kst)
 		due, _ := time.ParseInLocation("2006-01-02 15:04", local.Format("2006-01-02")+" "+c.SyncTime, kst)
 		synced, _ := time.Parse(time.RFC3339, last)
-		if !local.Before(due) && synced.Before(due) && now.Sub(lastAttempt) > 15*time.Minute {
+		if !local.Before(due.Add(jitter)) && synced.Before(due) && now.Sub(lastAttempt) > 15*time.Minute {
 			lastAttempt = now
+			log.Printf("scheduled sync (due %s, jitter %s)", due.Format("15:04"), jitter.Round(time.Second))
 			go a.syncData()
 		}
 	}
@@ -182,6 +191,12 @@ func (a *App) routes() http.Handler {
 	web, _ := fs.Sub(assets, "web")
 	mux.Handle("/", http.FileServer(http.FS(web)))
 	mux.HandleFunc("/api/ping", func(w http.ResponseWriter, r *http.Request) { writeResponse(w, map[string]any{"version": Version}) })
+	// Lightweight poll target; the UI fetches /api/state (full catalog) only when commit changes.
+	mux.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
+		a.mu.RLock()
+		defer a.mu.RUnlock()
+		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "syncing": a.syncing, "status": a.status, "commit": a.snapshot.Commit, "synced_at": a.snapshot.SyncedAt, "configured": a.config.Configured})
+	})
 	mux.HandleFunc("/api/state", func(w http.ResponseWriter, r *http.Request) {
 		a.mu.RLock()
 		defer a.mu.RUnlock()
@@ -230,6 +245,10 @@ func (a *App) routes() http.Handler {
 			return
 		}
 		b, name, e := a.attachment(r.Context(), id, index)
+		if errors.Is(e, errNoAttachment) {
+			http.Error(w, e.Error(), 404)
+			return
+		}
 		if e != nil {
 			http.Error(w, e.Error(), 502)
 			return
@@ -378,6 +397,7 @@ func (a *App) install(w http.ResponseWriter, r *http.Request) {
 	}
 	snap, checks, e := a.validateSetup(r.Context(), s)
 	if e != nil {
+		log.Printf("install validation failed: %v", e)
 		writeResponse(w, map[string]any{"ok": false, "checks": checks, "error": e.Error()})
 		return
 	}
@@ -431,6 +451,7 @@ func (a *App) install(w http.ResponseWriter, r *http.Request) {
 	}
 	a.status = "설정 완료"
 	a.mu.Unlock()
+	log.Printf("install ok: %s/%s@%s offline=%v", s.Owner, s.Repo, s.Branch, s.Offline)
 	if a.setup {
 		if e = shortcut(filepath.Join(a.dir, "bin", "AVReportHub.exe")); e != nil {
 			checks = append(checks, e.Error())

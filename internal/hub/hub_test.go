@@ -11,6 +11,12 @@ import (
 	"testing"
 )
 
+func withBase(base string, f func()) {
+	old := apiBase
+	apiBase = base
+	defer func() { apiBase = old }()
+	f()
+}
 func seedCatalog(t *testing.T) Catalog {
 	t.Helper()
 	b, e := assets.ReadFile("seed/catalog.json")
@@ -37,19 +43,96 @@ func TestAttachmentTraversalRejected(t *testing.T) {
 		t.Fatal("path traversal accepted")
 	}
 }
+
+// A remote catalog that fails validation must leave snapshot.json and the in-memory snapshot untouched.
 func TestInvalidSnapshotKeepsLastGoodData(t *testing.T) {
-	p := filepath.Join(t.TempDir(), "snapshot.json")
+	dir := t.TempDir()
 	c := seedCatalog(t)
-	if e := writeJSON(p, Snapshot{Catalog: c}); e != nil {
+	good := Snapshot{Commit: strings.Repeat("a", 40), Origin: "graycoral/DailyReportAnalysis", Catalog: c}
+	p := filepath.Join(dir, "snapshot.json")
+	if e := writeJSON(p, good); e != nil {
 		t.Fatal(e)
 	}
-	b, _ := os.ReadFile(p)
-	if _, e := parseCatalog([]byte(`{"schema_version":99}`)); e == nil {
-		t.Fatal("bad schema accepted")
-	}
+	before, _ := os.ReadFile(p)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/repos/graycoral/DailyReportAnalysis/commits/main":
+			json.NewEncoder(w).Encode(map[string]string{"sha": strings.Repeat("b", 40)})
+		case "/repos/graycoral/DailyReportAnalysis/contents/data/catalog.json":
+			w.Write([]byte(`{"schema_version":99}`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+	cfg := defaultConfig()
+	cfg.Configured = true
+	a := &App{dir: dir, config: cfg, snapshot: good}
+	withBase(srv.URL, func() { a.syncData() })
 	after, _ := os.ReadFile(p)
-	if string(b) != string(after) {
+	if string(before) != string(after) {
 		t.Fatal("good cache changed")
+	}
+	if a.snapshot.Commit != good.Commit || a.status == "최신 자료 확인 완료" {
+		t.Fatalf("bad catalog replaced snapshot: %q", a.status)
+	}
+}
+func TestConditionalRequestSkipsCatalog(t *testing.T) {
+	c := seedCatalog(t)
+	catalogHits := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/repos/graycoral/DailyReportAnalysis/commits/main":
+			if r.Header.Get("If-None-Match") == `"etag-1"` {
+				w.WriteHeader(304)
+				return
+			}
+			w.Header().Set("ETag", `"etag-1"`)
+			json.NewEncoder(w).Encode(map[string]string{"sha": strings.Repeat("b", 40)})
+		case "/repos/graycoral/DailyReportAnalysis/contents/data/catalog.json":
+			catalogHits++
+			json.NewEncoder(w).Encode(c)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+	cfg := defaultConfig()
+	cfg.Configured = true
+	a := &App{dir: t.TempDir(), config: cfg, snapshot: Snapshot{Catalog: c, Origin: "bundled"}}
+	withBase(srv.URL, func() { a.syncData(); a.syncData() })
+	if catalogHits != 1 || a.snapshot.ETag != `"etag-1"` || a.snapshot.Commit != strings.Repeat("b", 40) {
+		t.Fatalf("catalog fetched %d times, etag %q, status %q", catalogHits, a.snapshot.ETag, a.status)
+	}
+}
+func TestPruneCacheKeepsReferencedFiles(t *testing.T) {
+	dir := t.TempDir()
+	c := seedCatalog(t)
+	keep := filepath.Join(dir, "attachments", c.Reports[0].Attachments[0].SHA256)
+	stale := filepath.Join(dir, "attachments", strings.Repeat("f", 64))
+	staleDB := filepath.Join(dir, "databases", strings.Repeat("e", 64)+".sqlite")
+	for _, p := range []string{keep, stale, staleDB} {
+		if e := writeAtomic(p, []byte("x")); e != nil {
+			t.Fatal(e)
+		}
+	}
+	(&App{dir: dir}).pruneCache(c)
+	if _, e := os.Stat(keep); e != nil {
+		t.Fatal("referenced attachment removed")
+	}
+	for _, p := range []string{stale, staleDB} {
+		if _, e := os.Stat(p); e == nil {
+			t.Fatalf("stale file kept: %s", p)
+		}
+	}
+}
+func TestValidateNormalisesNilSlices(t *testing.T) {
+	c, e := parseCatalog([]byte(`{"schema_version":1,"reports":[{"id":"r1","date":"2026-01-01","title":"t"}],"events":[{"id":"e1","date":"2026-01-01","report_id":"r1"}]}`))
+	if e != nil {
+		t.Fatal(e)
+	}
+	if c.Reports[0].Companies == nil || c.Reports[0].Tags == nil || c.Reports[0].Attachments == nil || c.Events[0].Companies == nil {
+		t.Fatal("nil slice not normalised")
 	}
 }
 func TestLocalServerRejectsForeignOriginAndHost(t *testing.T) {
