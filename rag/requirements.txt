@@ -1,0 +1,8 @@
+# CPU-only. Install torch first from the CPU index to avoid pulling CUDA wheels:
+#   python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+#   python -m pip install -r requirements.txt
+sentence-transformers[image]>=6.1
+transformers
+pypdfium2
+pillow
+numpy

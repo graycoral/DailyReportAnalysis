@@ -5,3 +5,8 @@
 config.json
 token.bin
 instance*.json
+rag-service.json
+/rag/.venv/
+/rag/index/
+/rag/__pycache__/
+/docs/sample-from-*.pdf

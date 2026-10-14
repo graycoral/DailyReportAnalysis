@@ -220,3 +220,49 @@ func TestSetupStopsRunningViewerBeforeInstall(t *testing.T) {
 		t.Fatal("viewer still answering after exit")
 	}
 }
+
+func TestRagProxyRequiresServiceFileAndForwardsKey(t *testing.T) {
+	dir := t.TempDir()
+	a := &App{dir: dir, secret: strings.Repeat("c", 64), address: "http://127.0.0.1:9000", config: defaultConfig(), snapshot: Snapshot{Catalog: seedCatalog(t)}}
+	h := a.routes()
+	get := func(path string) (int, map[string]any) {
+		r := httptest.NewRequest("GET", path, nil)
+		r.Host = "127.0.0.1:9000"
+		r.AddCookie(&http.Cookie{Name: "av_session", Value: a.secret})
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		var v map[string]any
+		_ = json.Unmarshal(w.Body.Bytes(), &v)
+		return w.Code, v
+	}
+	if code, v := get("/api/rag/status"); code != 200 || v["available"] != false {
+		t.Fatalf("without service file: %d %v", code, v)
+	}
+	key := strings.Repeat("d", 64)
+	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-RAG-Key") != key {
+			http.Error(w, "unauthorized", 403)
+			return
+		}
+		writeResponse(w, map[string]any{"ok": true, "path": r.URL.Path, "name": r.Header.Get("X-File-Name")})
+	}))
+	defer up.Close()
+	if e := writeJSON(filepath.Join(dir, "rag-service.json"), ragService{up.URL, key}); e != nil {
+		t.Fatal(e)
+	}
+	if code, v := get("/api/rag/status"); code != 200 || v["ok"] != true || v["path"] != "/health" {
+		t.Fatalf("with service file: %d %v", code, v)
+	}
+	r := httptest.NewRequest("POST", "/api/rag/index?name=../x.pdf", strings.NewReader("%PDF-1.4 fake"))
+	r.Host = "127.0.0.1:9000"
+	r.Header.Set("Origin", a.address)
+	r.Header.Set("X-AV-Request", "1")
+	r.AddCookie(&http.Cookie{Name: "av_session", Value: a.secret})
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, r)
+	var v map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &v)
+	if w.Code != 200 || v["name"] != "x.pdf" {
+		t.Fatalf("index: %d %s", w.Code, w.Body.String())
+	}
+}

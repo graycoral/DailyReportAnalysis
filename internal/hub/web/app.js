@@ -41,10 +41,10 @@ function filtered(){let q=$('#query').value.trim().toLocaleLowerCase().split(/\s
 function reportCard(r,i=0){return `<button class="report-card ${selected===r.id?'selected':''}" data-report="${esc(r.id)}" style="--i:${i}"><div class="card-head"><span class="report-date">${esc(r.date)}</span><span class="card-meta">${r.attachments.length?'MD · PPTX':''}</span></div><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p><div class="chips">${r.companies.map(s=>mentions(r,s)?chip(s,'teal','company'):chip(s,'teal faint','company').replace('title="','title="점검 결과 ‘없음’으로만 언급 · ')).join('')}${r.tags.map(s=>chip(s,'','tag')).join('')}</div></button>`}
 function renderStats(rs){let c=catalog(),ids=new Set(rs.map(r=>r.id));let cos=new Set(rs.flatMap(realCompanies));let ev=c.events.filter(e=>ids.has(e.report_id)).length,rel=c.relations.filter(r=>ids.has(r.report_id)).length;
  $('#stats').innerHTML=[['리포트',rs.length,c.reports.length],['기업',cos.size,null],['사건',ev,null],['관계',rel,null]].map(([k,v,t])=>`<div class="stat"><b>${v}</b><span>${k}${t!=null&&t!==v?` <em>/ ${t}</em>`:''}</span></div>`).join('')}
-function render(){if(!state)return;let rs=filtered(),ids=new Set(rs.map(r=>r.id));$('#view-title').textContent={search:'리포트 검색',timeline:'이슈의 흐름',graph:'기업과 사건의 연결',map:'리포트·기업·분류 지도',local:'내 자료 · 이 PC 전용'}[tab];$('#result-count').textContent=`${rs.length}개 리포트 · 원문 및 사전 분석 데이터`;renderStats(rs);renderTagCloud();
+function render(){if(!state)return;let rs=filtered(),ids=new Set(rs.map(r=>r.id));$('#view-title').textContent={search:'리포트 검색',timeline:'이슈의 흐름',graph:'기업과 사건의 연결',map:'리포트·기업·분류 지도',local:'내 자료 · 이 PC 전용',rag:'멀티모달 검색 · 실험 기능'}[tab];$('#result-count').textContent=`${rs.length}개 리포트 · 원문 및 사전 분석 데이터`;renderStats(rs);renderTagCloud();
  if(tab==='search')$('#results').innerHTML=rs.map(reportCard).join('')||'<div class="empty">검색 결과가 없습니다.<br>검색어나 기간을 바꿔 보세요.</div>';
  if(tab==='timeline'){let es=catalog().events.filter(e=>ids.has(e.report_id)&&matches(e.title,e.detail,e.status,e.companies)).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date));let month='';$('#results').innerHTML='<p class="small-note">사건 날짜와 보관 기록을 표시합니다. ‘보고일’은 사건 발생일이 아니며, 계획은 완료 사실과 구분합니다.</p><div class="timeline">'+es.map((e,i)=>{let m=e.date.slice(0,7),head=m!==month?`<div class="month">${esc(m.replace('-','년 '))}월</div>`:'';month=m;return head+`<div class="event ${e.status==='계획'?'plan':''}" style="--i:${i}"><button class="report-card ${selected===e.report_id?'selected':''}" data-report="${esc(e.report_id)}"><div class="card-head"><span class="report-date">${esc(e.date)}</span>${chip(e.status,e.status==='계획'?'amber':'teal')}</div><h3>${esc(e.title)}</h3><p>${esc(e.detail)}</p><div class="chips">${e.companies.map(c=>chip(c,'','company')).join('')}</div></button></div>`}).join('')+'</div>'+(es.length?'':'<div class="empty">이 조건에 미리 정리된 사건이 없습니다.</div>')}
- if(tab==='graph')renderGraph(ids);else if(tab==='map')renderMap(rs);else if(tab==='local')renderLocal();else highlight($('#results'));
+ if(tab==='graph')renderGraph(ids);else if(tab==='map')renderMap(rs);else if(tab==='local')renderLocal();else if(tab==='rag')renderRag();else highlight($('#results'));
  if(tab!=='map'&&mapSim)mapSim.stop();
  bindChips($('#results'));
  $$('[data-report]').forEach(b=>b.onclick=()=>{selected=b.dataset.report;selectedRelation='';render()});renderDetail();
@@ -115,7 +115,7 @@ function markdown(text){
   if(l.trim())out.push(`<p>${inline(l)}</p>`)}
  return out.join('');
 }
-function renderDetail(){if(tab==='local')return renderLocalDetail();let r=catalog().reports.find(r=>r.id===selected);if(!r){$('#detail').innerHTML='<div class="empty">리포트나 그래프의 연결을 선택하면<br>본문과 관련 내용을 볼 수 있습니다.</div>';return}
+function renderDetail(){if(tab==='local')return renderLocalDetail();if(tab==='rag')return renderRagDetail();let r=catalog().reports.find(r=>r.id===selected);if(!r){$('#detail').innerHTML='<div class="empty">리포트나 그래프의 연결을 선택하면<br>본문과 관련 내용을 볼 수 있습니다.</div>';return}
  let rel=catalog().relations.find(x=>x.id===selectedRelation);let related=catalog().related.filter(x=>x.from===r.id||x.to===r.id).map(x=>({r:catalog().reports.find(z=>z.id===(x.from===r.id?x.to:x.from)),reason:x.reason})).filter(x=>x.r);
  let same=catalog().reports.filter(x=>x.id!==r.id&&!related.some(t=>t.r.id===x.id)&&x.companies.some(c=>r.companies.includes(c))).slice(0,4);
  // Body first and fully expanded; linked issues follow as title-only cards (reason shown on hover).
@@ -217,8 +217,45 @@ document.addEventListener('click',e=>{let o=e.target.closest('[data-mail-open]')
  let g=e.target.closest('[data-goto-report]');if(g){selected=g.dataset.gotoReport;selectedRelation='';setTab('search')}});
 // Files dropped anywhere become 내 자료; the browser must never open or navigate to a dropped file.
 let dragDepth=0;const dragFiles=e=>[...(e.dataTransfer?.types||[])].includes('Files');
-addEventListener('dragenter',e=>{if(!dragFiles(e))return;e.preventDefault();if(state&&!state.setup){dragDepth++;$('#drop-overlay').hidden=false}});
+addEventListener('dragenter',e=>{if(!dragFiles(e))return;e.preventDefault();if(state&&!state.setup&&tab!=='rag'){dragDepth++;$('#drop-overlay').hidden=false}});
 addEventListener('dragover',e=>{if(dragFiles(e))e.preventDefault()});
 addEventListener('dragleave',e=>{if(dragFiles(e)&&--dragDepth<=0){dragDepth=0;$('#drop-overlay').hidden=true}});
-addEventListener('drop',e=>{if(!dragFiles(e))return;e.preventDefault();dragDepth=0;$('#drop-overlay').hidden=true;if(state&&!state.setup)addFiles([...e.dataTransfer.files])});
+addEventListener('drop',e=>{if(!dragFiles(e))return;e.preventDefault();dragDepth=0;$('#drop-overlay').hidden=true;if(state&&!state.setup&&tab!=='rag')addFiles([...e.dataTransfer.files])});
 $('#local-input').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
+
+// ---- 멀티모달 검색 (optional): proxied to rag/rag_server.py on this PC; nothing here touches catalog/sync.
+let rag={status:null,demo:null,hits:[],busy:'',warned:false,hit:null,q:''};
+const fmtS=s=>s==null?'-':`${s}초`,fmtN=n=>n==null?'-':Number(n).toLocaleString('ko-KR');
+async function ragStatus(){try{rag.status=await api('/api/rag/status')}catch(e){rag.status={available:false,error:e.message}}}
+async function renderRag(){if(!rag.status)await ragStatus();const s=rag.status;$('#result-count').textContent=s&&s.ok?`문서 ${(s.docs||[]).length}개 색인 · 이 PC의 임베딩 서비스`:'서비스 연결 안 됨';
+ if(!s||!s.ok){$('#results').innerHTML=`<p class="local-note">🧪 실험 기능입니다. 이 PC에서 <b>rag/rag_server.py</b>를 실행한 경우에만 동작하며, 일반 배포본에서는 이 안내만 표시됩니다.</p><div class="empty">${esc((s&&s.error)||'멀티모달 검색 서비스가 실행 중이 아닙니다.')}<br><br><small>준비 방법은 docs/RAG_GUIDE.md를 참고하세요.</small></div><p class="form-actions"><button class="text-button" id="rag-retry">다시 확인</button></p>`;$('#rag-retry').onclick=async()=>{await ragStatus();render()};return}
+ const m=s.model||{};
+ $('#results').innerHTML=`<p class="local-note">🧪 <b>${esc(m.model||'')}</b> · 오디오 인코더 미적재 · 파라미터 ${fmtN(m.parameters)} · 차원 ${m.dimensions||'-'} · 불러오기 ${fmtS(m.load_seconds)} · ${esc(m.device||'')}<br>올린 PDF와 변환 결과는 <code>${esc(s.index_dir||'rag/index')}</code>에 암호화 없이 저장됩니다.</p>
+ <div class="dropzone" id="rag-drop" tabindex="0" role="button" aria-label="PDF 색인"><b>PDF를 여기로 끌어다 놓거나 눌러서 선택</b><span>페이지마다 이미지로 변환해 임베딩합니다 · 최대 50MB · 올리기 전 경고를 확인합니다</span></div>
+ <form class="link-form" id="rag-query"><input name="q" placeholder="문장으로 검색 (예: 안전요원 없는 무인 운행 허가)" aria-label="멀티모달 검색" value="${esc(rag.q)}"><button class="primary">검색</button></form>
+ <div class="form-actions"><button type="button" class="text-button" id="rag-demo">보여 줘 · 모델·첫 페이지 임베딩·유사도</button><button type="button" class="text-button" id="rag-demo-fresh">다시 계산</button></div>
+ <div id="rag-out">${rag.busy?`<p class="small-note">${esc(rag.busy)}</p>`:''}${ragDemoHtml()}${ragHitsHtml()}</div>
+ <h3 class="local-h">색인된 문서</h3>${(s.docs||[]).map(d=>`<div class="mail-row"><span><b>📄 ${esc(d.name)}</b><small> ${d.pages}쪽 · ${fmtSize(d.size)} · 색인 ${fmtS(d.seconds)}</small></span><button class="text-button" data-rag-del="${esc(d.id)}">삭제</button></div>`).join('')||'<p class="small-note">아직 색인된 PDF가 없습니다.</p>'}`;
+ const drop=$('#rag-drop');drop.onclick=()=>$('#rag-input').click();drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('#rag-input').click()}};
+ drop.ondragover=e=>{e.preventDefault();e.stopPropagation();drop.classList.add('over')};drop.ondragleave=()=>drop.classList.remove('over');drop.ondrop=e=>{e.preventDefault();e.stopPropagation();drop.classList.remove('over');ragAdd([...e.dataTransfer.files])};
+ $('#rag-input').onchange=e=>{ragAdd([...e.target.files]);e.target.value=''};
+ $('#rag-query').onsubmit=async e=>{e.preventDefault();const q=e.target.elements.q.value.trim();if(!q)return;rag.q=q;rag.busy='검색 중…';render();try{rag.hits=(await api('/api/rag/query',{text:q,top_k:6})).hits||[]}catch(x){toast(x.message)}rag.busy='';render()};
+ $('#rag-demo').onclick=()=>ragDemo(false);$('#rag-demo-fresh').onclick=()=>ragDemo(true);
+ $$('[data-rag-del]').forEach(b=>b.onclick=async()=>{try{await api('/api/rag/delete',{doc:b.dataset.ragDel});await ragStatus();render()}catch(x){toast(x.message)}})}
+function ragDemoHtml(){const d=rag.demo;if(!d)return'';const m=d.model||{},p=d.first_page;
+ return`<section class="rag-demo"><h3 class="local-h">모델</h3><table class="rag-table"><tr><th>불러오는 시간</th><td>${fmtS(m.load_seconds)}</td></tr><tr><th>파라미터 수</th><td>${fmtN(m.parameters)}</td></tr><tr><th>임베딩 차원</th><td>${m.dimensions||'-'}</td></tr></table>
+ ${p?`<h3 class="local-h">첫 페이지 임베딩 · ${esc(d.pdf||'')}</h3><table class="rag-table"><tr><th>이미지 변환</th><td>${fmtS(p.render_seconds)}</td></tr><tr><th>임베딩</th><td>${fmtS(p.embed_seconds)}</td></tr><tr><th>합계</th><td><b>${fmtS(p.total_seconds)}</b></td></tr><tr><th>크기</th><td>${p.width}×${p.height}px</td></tr></table>`:''}
+ ${d.note?`<p class="small-note">${esc(d.note)}</p>`:''}
+ ${(d.similarities||[]).length?`<h3 class="local-h">페이지 이미지와 문장의 유사도</h3><table class="rag-table">${d.similarities.map(x=>`<tr><th>${esc(x.label)}</th><td><b>${x.similarity.toFixed(4)}</b></td><td>${esc(x.sentence)}</td></tr>`).join('')}</table>`:''}</section>`}
+function ragHitsHtml(){if(!rag.hits.length)return rag.q&&!rag.busy?`<p class="small-note">‘${esc(rag.q)}’에 맞는 페이지가 없습니다.</p>`:'';
+ return`<h3 class="local-h">‘${esc(rag.q)}’ 검색 결과</h3><div class="rag-hits">${rag.hits.map((h,i)=>`<button class="rag-hit" data-rag-hit="${i}"><img src="${h.thumb}" alt=""><span><b>${esc(h.name)}</b> p.${h.page}<small>유사도 ${h.similarity.toFixed(4)}</small></span></button>`).join('')}</div>`}
+async function ragDemo(fresh){rag.busy=fresh?'모델과 첫 페이지를 다시 계산하는 중… (CPU에서 수십 초)':'계산 결과를 불러오는 중…';render();try{const d=await api('/api/rag/demo'+(fresh?'?fresh=1':''));if(d.error)throw Error(d.error);rag.demo=d}catch(x){toast(x.message)}rag.busy='';render()}
+function ragWarn(){return new Promise(res=>{if(rag.warned)return res(true);const dlg=$('#rag-warning');const done=ok=>{dlg.close();if(ok&&$('#rag-warning-skip').checked)rag.warned=true;res(ok)};$('#rag-warning-ok').onclick=()=>done(true);$('#rag-warning-cancel').onclick=()=>done(false);dlg.oncancel=e=>{e.preventDefault();done(false)};dlg.showModal()})}
+async function ragAdd(files){files=files.filter(f=>/\.pdf$/i.test(f.name)||f.type==='application/pdf');if(!files.length)return toast('PDF만 올릴 수 있습니다.');
+ if(!await ragWarn())return toast('취소했습니다. 아무것도 전송하지 않았습니다.');
+ for(const f of files){if(f.size>50*1048576){toast(`${f.name}: 50MB를 넘습니다.`);continue}rag.busy=`${f.name} 색인 중… 페이지 수에 따라 몇 분 걸릴 수 있습니다.`;render();
+  try{const r=await fetch('/api/rag/index?name='+encodeURIComponent(f.name),{method:'POST',headers:{'X-AV-Request':'1','Content-Type':'application/pdf'},body:f});if(!r.ok)throw Error(await r.text());const v=await r.json();if(v.error)throw Error(v.error);toast(v.created?`${f.name}: ${v.pages}쪽 색인 완료 (${v.seconds}초)`:`${f.name}: 이미 색인된 문서입니다.`)}catch(x){toast(`${f.name}: ${x.message}`)}}
+ rag.busy='';await ragStatus();render()}
+function renderRagDetail(){const h=rag.hit;if(!h){$('#detail').innerHTML='<div class="empty">검색 결과의 페이지를 누르면<br>여기에 크게 표시됩니다.</div>';return}
+ $('#detail').innerHTML=`<div class="detail-head"><h2>${esc(h.name)} · p.${h.page}</h2><p class="small-note">유사도 ${h.similarity.toFixed(4)} · 이 PC의 임베딩 서비스 결과</p></div><img class="rag-page" src="/api/rag/page?doc=${encodeURIComponent(h.doc)}&page=${h.page}" alt="">`}
+addEventListener('click',e=>{const b=e.target.closest('[data-rag-hit]');if(b){rag.hit=rag.hits[+b.dataset.ragHit];renderDetail()}});

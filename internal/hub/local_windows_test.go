@@ -60,6 +60,9 @@ func TestLocalPDFEncryptedAndKeptOutOfState(t *testing.T) {
 	if b, _ := io.ReadAll(d.Body); string(b) != secretPDF || d.Header().Get("Content-Type") != "application/pdf" {
 		t.Fatalf("download mismatch: %q", d.Header())
 	}
+	if _, e := os.Stat(filepath.Join(a.dir, "docs", "pdf", f.ID+".bin")); e != nil {
+		t.Fatal("PDF not stored under docs/pdf")
+	}
 	(&App{dir: a.dir}).pruneCache(Catalog{})
 	if _, e := os.Stat(a.blobPath(f.ID)); e != nil {
 		t.Fatal("sync cache pruning touched local files")
@@ -82,6 +85,29 @@ func TestLocalRejectsNonPDFAndGitWorkTree(t *testing.T) {
 	}
 	if _, e := os.Stat(a.localDir()); !os.IsNotExist(e) {
 		t.Fatal("local folder created inside a git work tree")
+	}
+	if _, e := os.Stat(a.pdfDir()); !os.IsNotExist(e) {
+		t.Fatal("pdf folder created inside a git work tree")
+	}
+}
+
+// PDFs saved by the first build sat in local/<id>.bin; loading the index moves them to docs/pdf.
+func TestLocalMovesOldPDFLocation(t *testing.T) {
+	a := localApp(t)
+	f, e := a.addPDF("a.pdf", []byte(secretPDF))
+	if e != nil {
+		t.Fatal(e)
+	}
+	old := filepath.Join(a.localDir(), f.ID+".bin")
+	if e = os.Rename(a.blobPath(f.ID), old); e != nil {
+		t.Fatal(e)
+	}
+	b, _, e := a.readPDF(f.ID)
+	if e != nil || string(b) != secretPDF {
+		t.Fatalf("read after move: %v", e)
+	}
+	if _, e = os.Stat(old); !os.IsNotExist(e) {
+		t.Fatal("old copy left behind")
 	}
 }
 func TestLocalRejectsForeignOrigin(t *testing.T) {

@@ -259,6 +259,7 @@ func (a *App) routes() http.Handler {
 		w.Write(b)
 	})
 	a.localRoutes(mux)
+	a.ragRoutes(mux)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		expected := strings.TrimPrefix(a.address, "http://")
 		if r.Host != expected {

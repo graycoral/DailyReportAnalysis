@@ -292,3 +292,12 @@ dialog .settings-form{border:0;padding:8px 0;box-shadow:none}
 label.strict{display:block;margin:4px 0 10px;align-items:flex-start;line-height:1.5}
 label.strict input{margin-top:2px;flex:none}
 label.strict small{margin-top:3px;font-size:11px}
+
+/* 멀티모달 검색 */
+.rag-warning-body{padding:4px 18px 18px;font-size:14px;line-height:1.7}.rag-warning-body ul{padding-left:20px;margin:8px 0}.rag-warning-body code{font-size:12px}
+.rag-table{width:100%;border-collapse:collapse;margin:4px 0 14px;font-size:13px}.rag-table th{text-align:left;white-space:nowrap;padding:6px 10px 6px 0;color:var(--muted);font-weight:600;vertical-align:top}.rag-table td{padding:6px 8px 6px 0;vertical-align:top}
+.rag-hits{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin:0 0 16px}
+.rag-hit{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);cursor:pointer;text-align:left;font:inherit;color:inherit}
+.rag-hit img{width:100%;aspect-ratio:1/1.3;object-fit:cover;object-position:top;border-radius:4px;background:#fff}.rag-hit span{font-size:12px;line-height:1.4}.rag-hit small{display:block;color:var(--muted)}
+.rag-hit:hover{border-color:var(--accent);background:var(--accent-soft)}.rag-page{width:100%;border:1px solid var(--line-2);border-radius:var(--r-sm);background:#fff}
+.dropzone.over{border-color:var(--accent);background:var(--accent-soft)}

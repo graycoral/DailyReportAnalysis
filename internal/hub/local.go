@@ -64,7 +64,8 @@ type LocalIndex struct {
 }
 
 func (a *App) localDir() string          { return filepath.Join(a.dir, "local") }
-func (a *App) blobPath(id string) string { return filepath.Join(a.localDir(), id+".bin") }
+func (a *App) pdfDir() string            { return filepath.Join(a.dir, "docs", "pdf") }
+func (a *App) blobPath(id string) string { return filepath.Join(a.pdfDir(), id+".bin") }
 
 // Local data must not sit inside a git work tree, where it could be committed and pushed by mistake.
 func (a *App) localBlocked() error {
@@ -107,6 +108,20 @@ func (a *App) loadLocal() (LocalIndex, error) {
 		x.Files = []LocalFile{}
 	}
 	for i := range x.Files {
+		// PDFs added before docs/pdf existed lived next to the index; move them once.
+		if id := x.Files[i].ID; localIDPattern.MatchString(id) {
+			p, old := a.blobPath(id), filepath.Join(a.localDir(), id+".bin")
+			if _, e := os.Stat(p); os.IsNotExist(e) {
+				if _, e = os.Stat(old); e == nil {
+					if e = os.MkdirAll(a.pdfDir(), 0700); e == nil {
+						e = os.Rename(old, p)
+					}
+					if e != nil {
+						log.Printf("local pdf move %s: %v", id, e)
+					}
+				}
+			}
+		}
 		if x.Files[i].Reports == nil {
 			x.Files[i].Reports = []string{}
 		}
