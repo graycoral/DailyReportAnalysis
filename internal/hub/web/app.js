@@ -10,7 +10,7 @@ const activeFilter=kind=>$(kind==='company'?'#company':'#category').value;
 const matches=(...fields)=>{let ts=terms().map(t=>t.toLocaleLowerCase());if(!ts.length)return true;let s=fields.flat().join(' ').toLocaleLowerCase();return ts.every(t=>s.includes(t))};
 function bindChips(root){root.querySelectorAll('[data-company],[data-tag]').forEach(el=>{const apply=e=>{e.stopPropagation();e.preventDefault();let kind=el.dataset.company!==undefined?'company':'tag',sel=$(kind==='company'?'#company':'#category'),v=el.dataset[kind];sel.value=sel.value===v?'':v;render()};el.onclick=apply;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')apply(e)}})}
 function renderTagCloud(){let count=(xs)=>{let m=new Map();xs.forEach(x=>m.set(x,(m.get(x)||0)+1));return [...m].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))};
- let tags=count(catalog().reports.flatMap(r=>r.tags)),cos=count(catalog().reports.flatMap(r=>r.companies)).slice(0,14);
+ let tags=count(catalog().reports.flatMap(r=>r.tags)),cos=count(catalog().reports.flatMap(realCompanies)).slice(0,14);
  $('#tag-cloud').innerHTML=`<div class="cloud-title">분류</div><div class="chips">${tags.map(([t,n])=>chip(t,'','tag').replace('</span>',`<b>${n}</b></span>`)).join('')}</div><div class="cloud-title">기업</div><div class="chips">${cos.map(([t,n])=>chip(t,'teal','company').replace('</span>',`<b>${n}</b></span>`)).join('')}</div>`;bindChips($('#tag-cloud'))}
 const sources=ss=>(ss||[]).map(s=>{let u=safeURL(s.url);return u?`<a class="source-link" href="${esc(u)}" target="_blank" rel="noopener noreferrer">↗ ${esc(s.title||u)}</a>`:''}).join('');
 async function api(path,body){let opts=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-AV-Request':'1'},body:JSON.stringify(body)};let r=await fetch(path,opts);if(!r.ok)throw Error(await r.text());return r.json()}
@@ -20,9 +20,26 @@ const terms=()=>$('#query').value.trim().split(/\s+/).filter(Boolean);
 // Wrap query terms in <mark> by walking text nodes, so markup and attributes are never touched.
 function highlight(root){let ts=terms();if(!ts.length||!root)return;let re=new RegExp(ts.map(t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'gi');let walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),nodes=[];while(walker.nextNode())if(re.test(walker.currentNode.data)){nodes.push(walker.currentNode)}
  for(let n of nodes){let frag=document.createDocumentFragment(),s=n.data,last=0;re.lastIndex=0;for(let m;(m=re.exec(s));){frag.append(s.slice(last,m.index));let mk=document.createElement('mark');mk.textContent=m[0];frag.append(mk);last=m.index+m[0].length}frag.append(s.slice(last));n.replaceWith(frag)}}
-function filtered(){let q=$('#query').value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean),co=$('#company').value,cat=$('#category').value,from=$('#from').value,to=$('#to').value;return catalog().reports.filter(r=>(!co||(r.companies||[]).includes(co))&&(!cat||(r.tags||[]).includes(cat))&&(!from||r.date>=from)&&(!to||r.date<=to)&&q.every(t=>[r.title,r.summary,r.body_markdown,...r.companies,...r.tags].join(' ').toLocaleLowerCase().includes(t))).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date))}
-function reportCard(r,i=0){return `<button class="report-card ${selected===r.id?'selected':''}" data-report="${esc(r.id)}" style="--i:${i}"><div class="card-head"><span class="report-date">${esc(r.date)}</span><span class="card-meta">${r.attachments.length?'MD · PPTX':''}</span></div><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p><div class="chips">${r.companies.map(s=>chip(s,'teal','company')).join('')}${r.tags.map(s=>chip(s,'','tag')).join('')}</div></button>`}
-function renderStats(rs){let c=catalog(),ids=new Set(rs.map(r=>r.id));let cos=new Set(rs.flatMap(r=>r.companies));let ev=c.events.filter(e=>ids.has(e.report_id)).length,rel=c.relations.filter(r=>ids.has(r.report_id)).length;
+// Daily reports re-list the designated companies with "신규 확인 사항 없음" even when nothing happened, so a plain
+// substring search for "Avride" hits every report. In strict mode (default) lines that only say "no news"
+// are dropped from the searchable text, and a company counts as mentioned only if it survives that cut.
+// Reference lists ("[R5] Avride 공식 사이트: https://…", "7. Avride, Official Site") are dropped too, and URLs are
+// stripped so a domain name never counts as a mention.
+const noNews=/없음|없었다|없다\.|미확인|확인되지 않았다|반복하지 않았다|다루지 않았다|제외|점검 출처|Official Site|공식 사이트|공식 뉴스|뉴스룸|Newsroom/i;
+const urlRe=/https?:\/\/\S+/g,hasURL=/https?:\/\//,refLine=/^\s*(-\s*)?\[R?\d+\]|^\s*\d+\.\s|^\s*\*{0,2}(출처|References?|참고|Reference)\s*\*{0,2}\s*[:：]/i;
+const strict=()=>$('#strict').checked;
+const subCache={};
+function substantive(r){if(subCache[r.id]&&subCache[r.id].src===r.body_markdown)return subCache[r.id].text;
+ let ls=(r.summary+'\n'+r.body_markdown).split(/\r?\n/);
+ // A numbered line whose next line is just a URL ("7. Avride, Official Site" ⏎ "   https://…") is a reference entry.
+ let text=ls.filter((l,i)=>!(hasURL.test(l)&&refLine.test(l))&&!(/^\s*\d+\.\s/.test(l)&&/^\s*https?:\/\//.test(ls[i+1]||''))&&!/^\s*(-\s*)?\[R?\d+\]/.test(l)&&!noNews.test(l.replace(urlRe,''))).map(l=>l.replace(urlRe,'')).join('\n').toLocaleLowerCase();
+ subCache[r.id]={src:r.body_markdown,text};return text}
+function searchText(r){return strict()?r.title.toLocaleLowerCase()+'\n'+substantive(r):[r.title,r.summary,r.body_markdown,...r.companies,...r.tags].join(' ').toLocaleLowerCase()}
+function mentions(r,co){return !strict()||r.title.toLocaleLowerCase().includes(co.toLocaleLowerCase())||substantive(r).includes(co.toLocaleLowerCase())}
+const realCompanies=r=>r.companies.filter(c=>mentions(r,c));
+function filtered(){let q=$('#query').value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean),co=$('#company').value,cat=$('#category').value,from=$('#from').value,to=$('#to').value;return catalog().reports.filter(r=>(!co||((r.companies||[]).includes(co)&&mentions(r,co)))&&(!cat||(r.tags||[]).includes(cat))&&(!from||r.date>=from)&&(!to||r.date<=to)&&q.every(t=>searchText(r).includes(t))).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date))}
+function reportCard(r,i=0){return `<button class="report-card ${selected===r.id?'selected':''}" data-report="${esc(r.id)}" style="--i:${i}"><div class="card-head"><span class="report-date">${esc(r.date)}</span><span class="card-meta">${r.attachments.length?'MD · PPTX':''}</span></div><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p><div class="chips">${r.companies.map(s=>mentions(r,s)?chip(s,'teal','company'):chip(s,'teal faint','company').replace('title="','title="점검 결과 ‘없음’으로만 언급 · ')).join('')}${r.tags.map(s=>chip(s,'','tag')).join('')}</div></button>`}
+function renderStats(rs){let c=catalog(),ids=new Set(rs.map(r=>r.id));let cos=new Set(rs.flatMap(realCompanies));let ev=c.events.filter(e=>ids.has(e.report_id)).length,rel=c.relations.filter(r=>ids.has(r.report_id)).length;
  $('#stats').innerHTML=[['리포트',rs.length,c.reports.length],['기업',cos.size,null],['사건',ev,null],['관계',rel,null]].map(([k,v,t])=>`<div class="stat"><b>${v}</b><span>${k}${t!=null&&t!==v?` <em>/ ${t}</em>`:''}</span></div>`).join('')}
 function render(){if(!state)return;let rs=filtered(),ids=new Set(rs.map(r=>r.id));$('#view-title').textContent={search:'리포트 검색',timeline:'이슈의 흐름',graph:'기업과 사건의 연결',map:'리포트·기업·분류 지도',local:'내 자료 · 이 PC 전용'}[tab];$('#result-count').textContent=`${rs.length}개 리포트 · 원문 및 사전 분석 데이터`;renderStats(rs);renderTagCloud();
  if(tab==='search')$('#results').innerHTML=rs.map(reportCard).join('')||'<div class="empty">검색 결과가 없습니다.<br>검색어나 기간을 바꿔 보세요.</div>';
@@ -54,7 +71,7 @@ function renderMap(rs){
  let nodes=[],links=[],idx={};
  const add=(id,kind,label,ref)=>{if(idx[id]!==undefined)return nodes[idx[id]];idx[id]=nodes.length;let p=mapPos[id]||{x:(Math.random()-.5)*300,y:(Math.random()-.5)*300};let n={id,kind,label,ref,x:p.x,y:p.y,vx:0,vy:0,deg:0,fixed:false};nodes.push(n);return n};
  const link=(a,b,kind)=>{if(a===b)return;links.push({a,b,kind});a.deg++;b.deg++};
- for(let r of rs){let n=add('r:'+r.id,'report',r.title,r);for(let c of r.companies)link(n,add('c:'+c,'company',c,c),'company');for(let t of r.tags)link(n,add('t:'+t,'tag',t,t),'tag')}
+ for(let r of rs){let n=add('r:'+r.id,'report',r.title,r);for(let c of realCompanies(r))link(n,add('c:'+c,'company',c,c),'company');for(let t of r.tags)link(n,add('t:'+t,'tag',t,t),'tag')}
  for(let x of catalog().related){let a=idx['r:'+x.from],b=idx['r:'+x.to];if(a!==undefined&&b!==undefined)link(nodes[a],nodes[b],'related')}
  const adj=new Map(nodes.map(n=>[n,new Set()]));links.forEach(l=>{adj.get(l.a).add(l.b);adj.get(l.b).add(l.a)});
  const W=1000,H=700;
@@ -122,6 +139,8 @@ $('#theme').value=document.documentElement.dataset.theme||'apple';
 $('#theme').onchange=e=>{document.documentElement.dataset.theme=e.target.value;try{localStorage.setItem('av_theme',e.target.value)}catch(x){}if(tab==='graph'||tab==='map')render()};
 {let h=location.hash.slice(1).split('&')[0];if(h&&$(`[data-tab="${h}"]`)){tab=h;$$('[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===tab)))}}
 for(let id of ['query','company','category','from','to','sort'])$('#'+id).addEventListener(id==='query'?'input':'change',render);
+try{$('#strict').checked=localStorage.getItem('av_strict')!=='0'}catch(e){}
+$('#strict').onchange=e=>{try{localStorage.setItem('av_strict',e.target.checked?'1':'0')}catch(x){}render()};
 $('#clear').onclick=()=>{$('#query').value='';render()};$('#reset').onclick=()=>{for(let id of ['query','company','category','from','to'])$('#'+id).value='';render()};
 $('#settings').onclick=()=>{if(state.setup)return;mountForm('#dialog-slot');$('#settings-dialog').showModal()};$('#close-settings').onclick=()=>$('#settings-dialog').close();
 $('#sync').onclick=async()=>{try{await api('/api/sync',{});toast('최신 자료를 확인합니다.');setTimeout(()=>refresh(),400)}catch(e){toast(e.message)}};

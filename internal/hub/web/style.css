@@ -285,3 +285,10 @@ dialog .settings-form{border:0;padding:8px 0;box-shadow:none}
 @media(max-width:1150px){.workspace{grid-template-columns:196px minmax(280px,1fr) minmax(320px,40%)}header,.toolbar{padding-left:16px;padding-right:16px}.status-pill{max-width:150px}.tabs button{padding:8px 11px}.results,.detail{padding:16px}}
 @media(max-width:850px){header{height:auto;padding:12px 16px;align-items:flex-start;flex-wrap:wrap;position:static}.header-actions{flex-wrap:wrap}.toolbar{flex-direction:column;gap:12px;align-items:stretch}.tabs{overflow:auto}.workspace{grid-template-columns:170px 1fr}.detail{grid-column:1/-1;max-height:none;position:static;border-top:1px solid var(--line);border-left:0}.form-grid{grid-template-columns:1fr}.brand strong{font-size:15px}}
 @media(min-width:851px){.workspace{height:calc(100vh - 125px);min-height:0}.filters,.results,.detail{height:100%;overflow:auto;position:static;max-height:none}.section-title{position:sticky;top:-18px;background:var(--bg);padding:4px 0 10px;z-index:1}}
+
+/* 점검 결과 ‘없음’으로만 언급된 기업 */
+.chip.faint{opacity:.45;text-decoration:line-through;text-decoration-color:var(--muted)}
+.chip.faint:hover{opacity:.8}
+label.strict{display:block;margin:4px 0 10px;align-items:flex-start;line-height:1.5}
+label.strict input{margin-top:2px;flex:none}
+label.strict small{margin-top:3px;font-size:11px}
