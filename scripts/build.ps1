@@ -7,9 +7,11 @@ go test ./internal/...
 if ($LASTEXITCODE -ne 0) { throw 'Tests failed' }
 go build -trimpath -ldflags '-s -w -H windowsgui' -o dist/AVReportHub.exe ./cmd/viewer
 if ($LASTEXITCODE -ne 0) { throw 'Viewer build failed' }
+./scripts/set-exe-icon.ps1 -Executable dist/AVReportHub.exe
 Copy-Item dist/AVReportHub.exe cmd/setup/payload/AVReportHub.exe -Force
 go build -trimpath -ldflags '-s -w -H windowsgui' -o dist/AVReportHub-Setup.exe ./cmd/setup
 if ($LASTEXITCODE -ne 0) { throw 'Setup build failed' }
+./scripts/set-exe-icon.ps1 -Executable dist/AVReportHub-Setup.exe
 $smokePath = Join-Path ([IO.Path]::GetTempPath()) 'avhub-self-test'
 $p = Start-Process -FilePath (Resolve-Path dist/AVReportHub.exe) -ArgumentList @('--self-test', '--data-dir', "`"$smokePath`"") -WindowStyle Hidden -Wait -PassThru
 if ($p.ExitCode -ne 0) { throw 'Windows smoke test failed' }
