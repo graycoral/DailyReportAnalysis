@@ -438,9 +438,28 @@ flowchart TD
 
 SQLite와 catalog가 같은 내용을 담는지 게시 단계에서 확인해야 한다. 클라이언트는 DB를 SQL로 열어 catalog와 모든 레코드를 다시 비교하지 않는다.
 
-### 11.3 현재 일괄 편입 스크립트
+### 11.3 매일 자동 게시 (GitHub Actions)
 
-`scripts/import-history.py`는 게시 환경에서 사용하는 **기존 발송본 일괄 편입 도구**다. 사용자 PC에서 실행하지 않는다. Gmail에 직접 연결하지도 않는다. 별도로 준비한 발송 메타데이터와 로컬 원본을 입력받는다.
+리포트 생성은 외부(ChatGPT 일일 작업)에서 끝나고, ChatGPT가 결과 파일을 이 저장소에 직접 push한다. 그 뒤의 게시는 `.github/workflows/publish-data.yml`이 담당한다.
+
+| 시각(KST) | 단계 | 수행 주체 |
+| --- | --- | --- |
+| 아침 | 리포트 MD·PPTX 생성 → `data/reports/날짜/`에 push | ChatGPT 일일 작업 |
+| push 직후 | 폴더 스캔 → catalog·DB·audit 재생성 (`scripts/import-history.py --from-reports --if-changed`) | GitHub Actions |
+| push 직후 | 변경이 있으면 한 커밋으로 push | GitHub Actions |
+| 08:00 | 사용자 PC가 커밋을 받아 화면 갱신 | AV Report Hub |
+
+- ChatGPT가 쓰는 GitHub 토큰은 ChatGPT 쪽에만 보관한다. 이 저장소와 Actions에는 별도 비밀 정보가 필요 없다.
+- 워크플로가 만든 커밋은 다른 워크플로를 다시 깨우지 않으므로 무한 반복이 생기지 않는다.
+- 새 리포트의 제목은 MD 머리말 `info`에서, 기업 태그는 `data/companies.json` 목록과 본문 대조로, 출처는 본문의 URL에서 자동으로 채운다. 분류는 `동향` 또는 `신규 없음`으로 시작한다.
+- 이미 catalog에 있는 리포트 ID는 편집된 요약·기업·분류·출처를 **그대로 보존**한다. 사건(`events`)·관계(`relations`)는 스크립트가 만들지 않으며 게시자가 근거와 함께 직접 넣는다.
+- 보관 이벤트(`archive-날짜`, 상태 `보고일`)는 직접 정리한 사건이 없는 리포트에만 자동 추가된다.
+- 사람이 `data/reports/`에 파일을 손으로 push해도 같은 워크플로가 실행된다.
+- 리포트 파일의 위치·머리말·섹션·표기 규칙은 [리포트 작성·게시 규칙](REPORT_FORMAT.md)에 있다. ChatGPT 일일 작업 지시문에 이 문서를 그대로 넣는다.
+
+### 11.4 수동 일괄 편입 (과거 발송본)
+
+`scripts/import-history.py`의 `--workspace`/`--manifest` 모드는 초기 19건을 Gmail 발송 기록과 대조해 편입할 때 쓴 **일괄 편입 도구**다. 사용자 PC에서 실행하지 않는다.
 
 개발자 실행 예시:
 
@@ -464,9 +483,9 @@ python scripts/import-history.py --workspace /path/to/report-workspace --manifes
 
 스크립트는 보고서 경로를 찾고 첨부를 대조한 뒤 DB를 다시 만들고 JSON을 내보낸다. 원본 위치는 `daily-YYYY-MM-DD/output/`, 초기 테스트본은 `report-output/`을 사용한다. 회수한 발송 첨부가 `build/mail-attachments/`에 있으면 그 파일을 우선한다.
 
-**이 스크립트는 범용 증분 동기화 도구가 아니다.** 입력 manifest에 있는 리포트 집합으로 DB를 재구축하므로 전체 아카이브를 유지하려면 누적 manifest가 필요하다. 초기 자료에 맞춘 테스트·보관 이벤트 처리도 포함한다. 운영용 일일 게시를 연결할 때는 증분 입력, 오류 복구, 이력 관리 절차를 별도로 정리해야 한다.
+두 모드 모두 `data/catalog.json`에 이미 있는 리포트의 편집 내용을 보존하고, DB 무결성·외래키·검색 검사를 통과해야 결과를 쓴다. 일상 운영은 11.3의 `--from-reports` 모드가 담당한다.
 
-### 11.4 실행 파일 재빌드가 필요한 경우
+### 11.5 실행 파일 재빌드가 필요한 경우
 
 리포트 데이터만 새로 게시할 때는 일반적으로 EXE를 다시 만들 필요가 없다. 앱이 GitHub에서 새 자료를 받는다. 새 설치 파일에 최신 오프라인 자료까지 넣으려면 `seed`에도 원본·catalog·DB를 반영하고 EXE를 다시 빌드한다.
 

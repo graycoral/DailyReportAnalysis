@@ -1,0 +1,34 @@
+name: Publish daily report data
+# ChatGPT pushes data/reports/YYYY-MM-DD/*.md|*.pptx to main. This workflow then rebuilds
+# catalog.json + reports.sqlite from the folder and commits the result, so viewer PCs
+# (which sync at 08:00 KST) always receive a catalog that matches the files.
+on:
+  push:
+    branches: [main]
+    paths: ['data/reports/**', 'data/companies.json']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: publish-data
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rebuild catalog and database from data/reports
+        run: python -I scripts/import-history.py --from-reports --if-changed
+      - name: Commit published data
+        run: |
+          git add data internal/hub/seed
+          if git diff --cached --quiet; then echo "no data changes"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          latest=$(ls data/reports | sort | tail -n 1)
+          git commit -m "data: publish reports through $latest"
+          git push
