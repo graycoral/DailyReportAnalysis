@@ -117,7 +117,10 @@ async function refresh(force=false){let old=state?.snapshot.commit;if(!force&&st
 // Tab is mirrored in the URL hash (#timeline, #graph, #map) so a view can be bookmarked or reloaded.
 function setTab(t){let b=$(`[data-tab="${t}"]`);if(!b)return;tab=t;$$('[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x===b)));history.replaceState(null,'',t==='search'?location.pathname:'#'+t);render()}
 $$('[data-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
-if(location.hash.length>1&&$(`[data-tab="${location.hash.slice(1)}"]`)){tab=location.hash.slice(1);$$('[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===tab)))}
+// Theme: applied early by theme.js; the header select changes and remembers it (per browser, never synced).
+$('#theme').value=document.documentElement.dataset.theme||'apple';
+$('#theme').onchange=e=>{document.documentElement.dataset.theme=e.target.value;try{localStorage.setItem('av_theme',e.target.value)}catch(x){}if(tab==='graph'||tab==='map')render()};
+{let h=location.hash.slice(1).split('&')[0];if(h&&$(`[data-tab="${h}"]`)){tab=h;$$('[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===tab)))}}
 for(let id of ['query','company','category','from','to','sort'])$('#'+id).addEventListener(id==='query'?'input':'change',render);
 $('#clear').onclick=()=>{$('#query').value='';render()};$('#reset').onclick=()=>{for(let id of ['query','company','category','from','to'])$('#'+id).value='';render()};
 $('#settings').onclick=()=>{if(state.setup)return;mountForm('#dialog-slot');$('#settings-dialog').showModal()};$('#close-settings').onclick=()=>$('#settings-dialog').close();
