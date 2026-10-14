@@ -198,3 +198,25 @@ func TestEmbeddedAttachmentMatchesPublishedHash(t *testing.T) {
 		}
 	}
 }
+
+func TestSetupStopsRunningViewerBeforeInstall(t *testing.T) {
+	dir := t.TempDir()
+	if stopRunningViewer(dir) {
+		t.Fatal("no instance file: expected false")
+	}
+	a := &App{dir: dir, secret: strings.Repeat("b", 64), config: defaultConfig(), snapshot: Snapshot{Catalog: seedCatalog(t)}}
+	srv := httptest.NewUnstartedServer(nil)
+	a.address = "http://" + srv.Listener.Addr().String()
+	a.server = &http.Server{Handler: a.routes()}
+	srv.Config = a.server
+	srv.Start()
+	if e := writeJSON(filepath.Join(dir, "instance-viewer.json"), instance{a.address, a.secret}); e != nil {
+		t.Fatal(e)
+	}
+	if !stopRunningViewer(dir) {
+		t.Fatal("expected running viewer to be stopped")
+	}
+	if _, e := http.Get(a.address + "/api/ping"); e == nil {
+		t.Fatal("viewer still answering after exit")
+	}
+}

@@ -24,10 +24,10 @@ function filtered(){let q=$('#query').value.trim().toLocaleLowerCase().split(/\s
 function reportCard(r,i=0){return `<button class="report-card ${selected===r.id?'selected':''}" data-report="${esc(r.id)}" style="--i:${i}"><div class="card-head"><span class="report-date">${esc(r.date)}</span><span class="card-meta">${r.attachments.length?'MD · PPTX':''}</span></div><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p><div class="chips">${r.companies.map(s=>chip(s,'teal','company')).join('')}${r.tags.map(s=>chip(s,'','tag')).join('')}</div></button>`}
 function renderStats(rs){let c=catalog(),ids=new Set(rs.map(r=>r.id));let cos=new Set(rs.flatMap(r=>r.companies));let ev=c.events.filter(e=>ids.has(e.report_id)).length,rel=c.relations.filter(r=>ids.has(r.report_id)).length;
  $('#stats').innerHTML=[['리포트',rs.length,c.reports.length],['기업',cos.size,null],['사건',ev,null],['관계',rel,null]].map(([k,v,t])=>`<div class="stat"><b>${v}</b><span>${k}${t!=null&&t!==v?` <em>/ ${t}</em>`:''}</span></div>`).join('')}
-function render(){if(!state)return;let rs=filtered(),ids=new Set(rs.map(r=>r.id));$('#view-title').textContent={search:'리포트 검색',timeline:'이슈의 흐름',graph:'기업과 사건의 연결',map:'리포트·기업·분류 지도'}[tab];$('#result-count').textContent=`${rs.length}개 리포트 · 원문 및 사전 분석 데이터`;renderStats(rs);renderTagCloud();
+function render(){if(!state)return;let rs=filtered(),ids=new Set(rs.map(r=>r.id));$('#view-title').textContent={search:'리포트 검색',timeline:'이슈의 흐름',graph:'기업과 사건의 연결',map:'리포트·기업·분류 지도',local:'내 자료 · 이 PC 전용'}[tab];$('#result-count').textContent=`${rs.length}개 리포트 · 원문 및 사전 분석 데이터`;renderStats(rs);renderTagCloud();
  if(tab==='search')$('#results').innerHTML=rs.map(reportCard).join('')||'<div class="empty">검색 결과가 없습니다.<br>검색어나 기간을 바꿔 보세요.</div>';
  if(tab==='timeline'){let es=catalog().events.filter(e=>ids.has(e.report_id)&&matches(e.title,e.detail,e.status,e.companies)).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date));let month='';$('#results').innerHTML='<p class="small-note">사건 날짜와 보관 기록을 표시합니다. ‘보고일’은 사건 발생일이 아니며, 계획은 완료 사실과 구분합니다.</p><div class="timeline">'+es.map((e,i)=>{let m=e.date.slice(0,7),head=m!==month?`<div class="month">${esc(m.replace('-','년 '))}월</div>`:'';month=m;return head+`<div class="event ${e.status==='계획'?'plan':''}" style="--i:${i}"><button class="report-card ${selected===e.report_id?'selected':''}" data-report="${esc(e.report_id)}"><div class="card-head"><span class="report-date">${esc(e.date)}</span>${chip(e.status,e.status==='계획'?'amber':'teal')}</div><h3>${esc(e.title)}</h3><p>${esc(e.detail)}</p><div class="chips">${e.companies.map(c=>chip(c,'','company')).join('')}</div></button></div>`}).join('')+'</div>'+(es.length?'':'<div class="empty">이 조건에 미리 정리된 사건이 없습니다.</div>')}
- if(tab==='graph')renderGraph(ids);else if(tab==='map')renderMap(rs);else highlight($('#results'));
+ if(tab==='graph')renderGraph(ids);else if(tab==='map')renderMap(rs);else if(tab==='local')renderLocal();else highlight($('#results'));
  if(tab!=='map'&&mapSim)mapSim.stop();
  bindChips($('#results'));
  $$('[data-report]').forEach(b=>b.onclick=()=>{selected=b.dataset.report;selectedRelation='';render()});renderDetail();
@@ -98,12 +98,12 @@ function markdown(text){
   if(l.trim())out.push(`<p>${inline(l)}</p>`)}
  return out.join('');
 }
-function renderDetail(){let r=catalog().reports.find(r=>r.id===selected);if(!r){$('#detail').innerHTML='<div class="empty">리포트나 그래프의 연결을 선택하면<br>본문과 관련 내용을 볼 수 있습니다.</div>';return}
+function renderDetail(){if(tab==='local')return renderLocalDetail();let r=catalog().reports.find(r=>r.id===selected);if(!r){$('#detail').innerHTML='<div class="empty">리포트나 그래프의 연결을 선택하면<br>본문과 관련 내용을 볼 수 있습니다.</div>';return}
  let rel=catalog().relations.find(x=>x.id===selectedRelation);let related=catalog().related.filter(x=>x.from===r.id||x.to===r.id).map(x=>({r:catalog().reports.find(z=>z.id===(x.from===r.id?x.to:x.from)),reason:x.reason})).filter(x=>x.r);
  let same=catalog().reports.filter(x=>x.id!==r.id&&!related.some(t=>t.r.id===x.id)&&x.companies.some(c=>r.companies.includes(c))).slice(0,4);
  // Body first and fully expanded; linked issues follow as title-only cards (reason shown on hover).
  $('#detail').innerHTML=(rel?`<div class="eyebrow">선택한 관계 · ${esc(rel.status)}</div><h2>${esc(rel.label)}</h2><div class="summary">${esc(rel.evidence)}</div>${sources(rel.sources)}<hr>`:'')+`<span class="report-date">${esc(r.date)}</span><h2>${esc(r.title)}</h2><div class="chips">${r.companies.map(s=>chip(s,'teal')).join('')}</div><div class="downloads">${r.attachments.map((a,i)=>`<a href="/api/download?id=${encodeURIComponent(r.id)}&index=${i}">${esc(a.name.endsWith('.md')?'MD 다운로드':a.name.endsWith('.pptx')?'PPTX 다운로드':a.name)}</a>`).join('')}</div><article class="markdown">${markdown(r.body_markdown)}</article><hr><h3>연결된 이슈</h3>${related.length?related.map(x=>`<button class="related-card" data-related="${esc(x.r.id)}" title="${esc(x.reason)}"><span class="report-date">${esc(x.r.date)}</span> ${esc(x.r.title)}</button>`).join(''):'<p class="small-note">게시자가 확인한 후속 연결이 아직 없습니다.</p>'}${same.length?'<h3>같은 기업이 등장한 리포트</h3>'+same.map(x=>`<button class="related-card" data-related="${esc(x.id)}" title="기업 태그가 같은 자료입니다. 같은 사건을 뜻하지 않습니다."><span class="report-date">${esc(x.date)}</span> ${esc(x.title)}</button>`).join(''):''}<h3>원문 출처</h3>${sources(r.sources)}`;
- highlight($('#detail'));
+ highlight($('#detail'));renderReportLocal(r);
  $$('[data-related]').forEach(b=>b.onclick=()=>{selected=b.dataset.related;selectedRelation='';render()});
 }
 function mountForm(target){let host=$(target);host.replaceChildren($('#settings-form').content.cloneNode(true));let f=host.querySelector('form');for(let k of ['owner','repo','branch','sync_time'])f.elements[k].value=state.config[k];f.elements.offline.checked=state.config.offline;f.querySelector('#data-location').textContent='자료 저장 위치: '+state.data_dir;f.querySelector('.save-settings').textContent=state.setup?'검사하고 설치':'검사하고 저장';
@@ -123,10 +123,80 @@ $('#clear').onclick=()=>{$('#query').value='';render()};$('#reset').onclick=()=>
 $('#settings').onclick=()=>{if(state.setup)return;mountForm('#dialog-slot');$('#settings-dialog').showModal()};$('#close-settings').onclick=()=>$('#settings-dialog').close();
 $('#sync').onclick=async()=>{try{await api('/api/sync',{});toast('최신 자료를 확인합니다.');setTimeout(()=>refresh(),400)}catch(e){toast(e.message)}};
 $('#exit').onclick=async()=>{if(!confirm('프로그램을 종료할까요? 다음 실행 전까지 자동 갱신이 멈춥니다.'))return;try{await api('/api/exit',{});document.body.innerHTML='<main class="empty"><h1>AV 리포트를 종료했습니다.</h1><p>이 브라우저 창을 닫아도 됩니다.</p></main>'}catch(e){toast(e.message)}};
-(async()=>{try{await refresh(true);if(state.setup){$('#viewer').hidden=true;$('#setup-home').hidden=false;$('#settings').hidden=true;mountForm('#setup-slot');await autoInstall()}else if(!state.config.configured){mountForm('#dialog-slot');$('#settings-dialog').showModal()}setInterval(()=>refresh().catch(()=>{}),4000)}catch(e){toast(e.message)}})();
+(async()=>{try{await refresh(true);await loadLocal();if(state.setup){$('#viewer').hidden=true;$('#setup-home').hidden=false;$('#settings').hidden=true;mountForm('#setup-slot');await autoInstall()}else if(!state.config.configured){mountForm('#dialog-slot');$('#settings-dialog').showModal()}setInterval(()=>refresh().catch(()=>{}),4000)}catch(e){toast(e.message)}})();
 
 async function autoInstall(){
  const slot=$('#setup-slot');slot.hidden=true;const status=document.createElement('p');status.className='checks';status.setAttribute('role','status');slot.before(status);
  status.textContent='환경 검사 · 실행 파일 · 기본 DB · 바로가기를 자동으로 준비합니다…';
- try{const result=await api('/api/install',{...state.config,automatic:true,token:''});if(!result.ok)throw Error(result.error);status.textContent=result.checks.join('\n')+'\n설치 완료. 리포트를 자동으로 엽니다…';await api('/api/launch',{});status.textContent='리포트가 열렸습니다. 이 설정 창은 닫아도 됩니다.';}catch(e){status.textContent='자동 준비를 완료하지 못했습니다: '+e.message;slot.hidden=false;}
+ try{const result=await api('/api/install',{...state.config,automatic:true,token:''});if(!result.ok)throw Error(result.error);status.textContent=result.checks.join('\n')+'\n설치 완료. 리포트를 자동으로 엽니다…';await api('/api/launch',{});status.textContent='설치가 끝났습니다. 리포트가 새 탭에서 열렸고 바탕화면에 AV Report Hub 바로가기가 생겼습니다.\n이 탭은 닫아도 됩니다.';}catch(e){status.textContent='자동 준비를 완료하지 못했습니다: '+e.message+'\n아래에서 설정을 확인한 뒤 다시 시도하거나, 「지금은 오프라인으로 시작」을 선택하세요.';slot.hidden=false;}
 }
+
+// 내 자료: PDFs and Outlook links stay on this PC (the server DPAPI-encrypts them; nothing goes to GitHub).
+// Outlook mail is never copied: dropped .pst/.ost/.msg files are refused and mail is searched in place via Outlook.
+let local={available:false,reason:'',files:[],mails:[],sources:[]},localSel='',outlookStores=null;const mailCache={},mailPool={};
+const fmtSize=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
+const reportOf=id=>catalog().reports.find(r=>r.id===id);
+async function loadLocal(){if(!state||state.setup)return;try{let v=await api('/api/local');local={available:v.available,reason:v.reason||'',files:v.files||[],mails:v.mails||[],sources:v.sources||[]}}catch(e){local={...local,available:false,reason:e.message}}render()}
+async function localDo(path,body,msg){try{let v=await api(path,body);if(msg)toast(msg);await loadLocal();return v}catch(e){toast(e.message)}}
+async function addFiles(list){if(!local.available)return toast(local.reason||'내 자료를 사용할 수 없습니다.');let ok=0,msgs=[];
+ for(let f of list){if(/\.(pst|ost|nst|msg|olm)$/i.test(f.name)){msgs.push(`${f.name}: 아웃룩 데이터는 복사하지 않습니다. 내 자료 탭의 ‘Outlook 연결’에서 위치를 지정하세요.`);continue}
+  if(!/\.pdf$/i.test(f.name)&&f.type!=='application/pdf'){msgs.push(`${f.name}: PDF만 추가할 수 있습니다.`);continue}
+  if(f.size>50*1048576){msgs.push(`${f.name}: 50MB를 넘습니다.`);continue}
+  try{let r=await fetch('/api/local/add?name='+encodeURIComponent(f.name),{method:'POST',headers:{'X-AV-Request':'1','Content-Type':'application/pdf'},body:f});if(!r.ok)throw Error(await r.text());localSel=(await r.json()).id;ok++}catch(e){msgs.push(`${f.name}: ${e.message}`)}}
+ await loadLocal();if(ok)setTab('local');toast([ok?`PDF ${ok}개를 이 PC에만 보관했습니다.`:'',...msgs].filter(Boolean).join('\n'))}
+const mailRow=(m,act='')=>(mailPool[m.entry_id]=m,`<div class="mail-row"><button class="mail-open" data-mail-open="${esc(m.entry_id)}" title="Outlook에서 열기"><b>✉ ${esc(m.subject||'(제목 없음)')}</b><small>${esc(m.sender)} · ${esc((m.received||'').slice(0,10))} · ${esc(m.folder)}</small></button>${act}</div>`);
+function renderLocal(){$('#result-count').textContent=`PDF ${local.files.length}개 · 연결된 메일 ${local.mails.length}개 · 이 PC에만 보관`;
+ if(!local.available){$('#results').innerHTML=`<div class="empty">${esc(local.reason||'내 자료를 불러오는 중입니다.')}</div>`;return}
+ let q=terms().map(t=>t.toLocaleLowerCase()),fs=local.files.filter(f=>q.every(t=>f.name.toLocaleLowerCase().includes(t))).sort((a,b)=>b.added.localeCompare(a.added));
+ const has=s=>local.sources.some(x=>(s.store_id&&x.store_id===s.store_id)||(s.path&&x.path&&x.path.toLowerCase()===s.path.toLowerCase()));
+ $('#results').innerHTML=`<p class="local-note">🔒 내 자료는 이 PC의 현재 Windows 계정으로 암호화해 보관하며 GitHub 동기화·게시와 무관합니다. 외부로 전송하지 않습니다. 아웃룩 메일은 복사하지 않고 위치만 연결합니다.</p>
+ <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="PDF 추가"><b>PDF를 여기로 끌어다 놓으세요</b><span>또는 눌러서 파일 선택 · 최대 50MB</span></div>
+ <h3 class="local-h">PDF</h3>${fs.map(f=>`<button class="report-card ${localSel===f.id?'selected':''}" data-local="${esc(f.id)}"><div class="card-head"><span class="report-date">${esc(f.added.slice(0,10))}</span><span class="card-meta">${fmtSize(f.size)}</span></div><h3>📄 ${esc(f.name)}</h3><p>${f.reports.length?`연결된 리포트 ${f.reports.length}개`:'연결된 리포트 없음'}</p></button>`).join('')||'<p class="small-note">아직 추가한 PDF가 없습니다.</p>'}
+ <h3 class="local-h">Outlook 연결</h3><p class="small-note">클래식 Outlook으로 메일을 검색합니다. 검색할 메일함(OST)이나 PST 파일을 지정하세요. 지정한 PST는 Outlook 폴더 목록에 추가됩니다.</p>
+ ${local.sources.map((s,i)=>`<div class="mail-row"><span class="source-name">📬 <b>${esc(s.name)}</b>${s.path?`<small>${esc(s.path)}</small>`:''}</span><button class="text-button" data-src-remove="${i}">제거</button></div>`).join('')||'<p class="small-note">지정된 메일 자료가 없습니다.</p>'}
+ <div class="link-form"><button id="load-stores">Outlook 메일함 불러오기</button></div>
+ ${outlookStores?outlookStores.map((s,i)=>has(s)?'':`<div class="mail-row"><span class="source-name">${esc(s.name)}${s.path?`<small>${esc(s.path)}</small>`:''}</span><button class="text-button" data-store-add="${i}">추가</button></div>`).join('')||'<p class="small-note">추가할 메일함이 없습니다.</p>':''}
+ <form id="pst-form" class="link-form"><input name="path" placeholder="PST·OST 파일 전체 경로 (예: D:\\메일\\보관.pst)" aria-label="PST·OST 파일 경로"><button class="primary">경로 추가</button></form>
+ <h3 class="local-h">연결된 메일</h3>${local.mails.map(m=>mailRow(m,`<button class="text-button" data-goto-report="${esc(m.report)}">${esc(reportOf(m.report)?.title||m.report)}</button>`)).join('')||'<p class="small-note">리포트를 열면 관련 메일을 제안합니다. 그중 연결한 메일이 여기에 모입니다.</p>'}`;
+ const dz=$('#dropzone');dz.onclick=()=>$('#local-input').click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();dz.click()}};
+ $$('[data-local]').forEach(b=>b.onclick=()=>{localSel=b.dataset.local;$$('[data-local]').forEach(x=>x.classList.toggle('selected',x===b));renderLocalDetail()});
+ $$('[data-src-remove]').forEach(b=>b.onclick=()=>localDo('/api/outlook/source',{source:local.sources[+b.dataset.srcRemove],remove:true},'메일 자료 지정을 해제했습니다.'));
+ $$('[data-store-add]').forEach(b=>b.onclick=()=>localDo('/api/outlook/source',{source:outlookStores[+b.dataset.storeAdd]},'메일함을 추가했습니다.'));
+ $('#load-stores').onclick=async e=>{e.target.disabled=true;e.target.textContent='Outlook 확인 중…';try{outlookStores=(await api('/api/outlook/stores',{})).stores||[]}catch(x){toast(x.message)}render()};
+ $('#pst-form').onsubmit=e=>{e.preventDefault();let p=e.target.elements.path.value.trim().replace(/^"|"$/g,'');if(p)localDo('/api/outlook/source',{source:{path:p}},'Outlook 파일을 추가했습니다.')};
+}
+function renderLocalDetail(){let f=local.files.find(x=>x.id===localSel);if(!f){$('#detail').innerHTML='<div class="empty">PDF를 선택하면<br>보기·리포트 연결·삭제를 할 수 있습니다.</div>';return}
+ let rs=catalog().reports,u='/api/local/file?id='+encodeURIComponent(f.id);
+ $('#detail').innerHTML=`<span class="report-date">${esc(f.added.slice(0,10))} 추가 · ${fmtSize(f.size)} · 이 PC 전용</span><h2>📄 ${esc(f.name)}</h2><div class="downloads"><a href="${u}&view=1" target="_blank" rel="noopener">보기</a><a href="${u}">다운로드</a></div>
+ <h3>연결된 리포트</h3>${f.reports.map(id=>`<div class="mail-row"><button class="related-card" data-goto-report="${esc(id)}">${esc(reportOf(id)?.title||id)}<small>${esc(reportOf(id)?.date||'')}</small></button><button class="text-button" data-pdf-unlink="${esc(id)}">해제</button></div>`).join('')||'<p class="small-note">연결된 리포트가 없습니다.</p>'}
+ <div class="link-form"><select id="pdf-target" aria-label="연결할 리포트"><option value="">리포트 선택…</option>${rs.filter(r=>!f.reports.includes(r.id)).map(r=>`<option value="${esc(r.id)}">${esc(r.date)} · ${esc(r.title)}</option>`).join('')}</select><button id="pdf-link" class="primary">연결</button></div>
+ <h3>삭제</h3><button id="pdf-delete" class="danger">이 PC에서 삭제</button>`;
+ $('#pdf-link').onclick=()=>{let v=$('#pdf-target').value;if(v)localDo('/api/local/link',{id:f.id,report:v},'리포트에 연결했습니다.')};
+ $$('[data-pdf-unlink]').forEach(b=>b.onclick=()=>localDo('/api/local/link',{id:f.id,report:b.dataset.pdfUnlink,remove:true}));
+ $('#pdf-delete').onclick=async()=>{if(!confirm(`‘${f.name}’을(를) 이 PC에서 삭제할까요? 되돌릴 수 없습니다.`))return;localSel='';await localDo('/api/local/delete',{id:f.id},'삭제했습니다.')};
+}
+// Report detail: linked PDFs/mail, Outlook suggestions from the report's companies (±30 days), and a manual search.
+function renderReportLocal(r){if(state.setup||!local.available)return;
+ let pdfs=local.files.filter(f=>f.reports.includes(r.id)),linked=local.mails.filter(m=>m.report===r.id),sug=mailCache[r.id],box=document.createElement('section');box.className='local-links';
+ let list=sug===undefined?(r.companies.length?'':'<p class="small-note">기업 태그가 없어 자동 제안이 없습니다. 직접 검색하세요.</p>'):sug.loading?'<p class="small-note">Outlook에서 찾는 중…</p>':sug.error?`<p class="small-note error">${esc(sug.error)}</p>`:(sug.mails.filter(m=>!linked.some(x=>x.entry_id===m.entry_id)).map(m=>mailRow(m,`<button class="text-button" data-mail-link="${esc(m.entry_id)}">연결</button>`)).join('')||'<p class="small-note">찾은 메일이 없습니다.</p>');
+ box.innerHTML=`<h3>🔒 내 자료 <small>이 PC 전용</small></h3>${pdfs.map(f=>`<div class="mail-row"><a class="mail-open" href="/api/local/file?id=${encodeURIComponent(f.id)}&view=1" target="_blank" rel="noopener"><b>📄 ${esc(f.name)}</b><small>${fmtSize(f.size)}</small></a></div>`).join('')}${linked.map(m=>mailRow(m,`<button class="text-button" data-mail-unlink="${esc(m.entry_id)}">해제</button>`)).join('')}${pdfs.length||linked.length?'':'<p class="small-note">연결된 PDF·메일이 없습니다.</p>'}
+ ${local.sources.length?`<div class="cloud-title">${sug?.q?`‘${esc(sug.q)}’ 검색 결과`:`관련 메일 제안 · ${esc(r.companies.slice(0,6).join(', '))} · 리포트 전후 30일`}</div>${list}<form class="link-form"><input name="q" placeholder="메일 직접 검색 (제목·본문)" aria-label="메일 직접 검색" value="${esc(sug?.q||'')}"><button class="primary">검색</button></form>`:'<p class="small-note">내 자료 탭에서 Outlook 메일함이나 PST를 지정하면 관련 메일을 찾아 연결할 수 있습니다.</p>'}`;
+ let at=$('#detail .downloads');at?at.after(box):$('#detail').append(box);
+ box.querySelectorAll('[data-mail-link]').forEach(b=>b.onclick=()=>localDo('/api/outlook/link',{report:r.id,mail:mailPool[b.dataset.mailLink]},'메일을 연결했습니다.'));
+ box.querySelectorAll('[data-mail-unlink]').forEach(b=>b.onclick=()=>localDo('/api/outlook/link',{report:r.id,mail:mailPool[b.dataset.mailUnlink],remove:true}));
+ let form=box.querySelector('form');if(form)form.onsubmit=e=>{e.preventDefault();findMails(r,form.elements.q.value.trim())};
+ if(local.sources.length&&sug===undefined&&r.companies.length)findMails(r);
+}
+async function findMails(r,q=''){let d=Date.parse(r.date+'T00:00:00Z'),iso=t=>new Date(t).toISOString().slice(0,10);
+ let body=q?{terms:q.split(/\s+/).filter(Boolean).slice(0,12),all:true}:{terms:r.companies.slice(0,12),all:false,from:iso(d-30*864e5),to:iso(d+30*864e5)};
+ const redraw=()=>{if(selected===r.id&&tab!=='local')renderDetail()};mailCache[r.id]={loading:true,q,mails:[]};redraw();
+ try{mailCache[r.id]={q,mails:(await api('/api/outlook/search',body)).mails||[]}}catch(e){mailCache[r.id]={q,mails:[],error:e.message}}redraw()}
+document.addEventListener('click',e=>{let o=e.target.closest('[data-mail-open]');if(o){api('/api/outlook/open',{mail:mailPool[o.dataset.mailOpen]}).then(()=>toast('Outlook에서 메일을 엽니다.'),x=>toast(x.message));return}
+ let g=e.target.closest('[data-goto-report]');if(g){selected=g.dataset.gotoReport;selectedRelation='';setTab('search')}});
+// Files dropped anywhere become 내 자료; the browser must never open or navigate to a dropped file.
+let dragDepth=0;const dragFiles=e=>[...(e.dataTransfer?.types||[])].includes('Files');
+addEventListener('dragenter',e=>{if(!dragFiles(e))return;e.preventDefault();if(state&&!state.setup){dragDepth++;$('#drop-overlay').hidden=false}});
+addEventListener('dragover',e=>{if(dragFiles(e))e.preventDefault()});
+addEventListener('dragleave',e=>{if(dragFiles(e)&&--dragDepth<=0){dragDepth=0;$('#drop-overlay').hidden=true}});
+addEventListener('drop',e=>{if(!dragFiles(e))return;e.preventDefault();dragDepth=0;$('#drop-overlay').hidden=true;if(state&&!state.setup)addFiles([...e.dataTransfer.files])});
+$('#local-input').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};

@@ -37,6 +37,7 @@ type App struct {
 	snapshot             Snapshot
 	mu                   sync.RWMutex
 	syncLock             sync.Mutex
+	localMu              sync.Mutex
 	syncing              bool
 	status               string
 	server               *http.Server
@@ -257,6 +258,7 @@ func (a *App) routes() http.Handler {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Write(b)
 	})
+	a.localRoutes(mux)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		expected := strings.TrimPrefix(a.address, "http://")
 		if r.Host != expected {
@@ -291,6 +293,47 @@ func (a *App) routes() http.Handler {
 	})
 }
 func (a *App) stop() { time.Sleep(400 * time.Millisecond); _ = a.server.Shutdown(context.Background()) }
+
+// Setup re-runs for updates must not fail because the viewer is still open: ask it to exit via its own
+// loopback API (same cookie/Origin rules as the UI) and wait until it stops answering. Returns true if one was stopped.
+func stopRunningViewer(dir string) bool {
+	b, e := os.ReadFile(filepath.Join(dir, "instance-viewer.json"))
+	if e != nil {
+		return false
+	}
+	var ins instance
+	if json.Unmarshal(b, &ins) != nil || !strings.HasPrefix(ins.Address, "http://127.0.0.1:") || len(ins.Key) != 64 {
+		return false
+	}
+	client := http.Client{Timeout: 2 * time.Second, CheckRedirect: func(r *http.Request, v []*http.Request) error { return http.ErrUseLastResponse }}
+	call := func(method, path string) int {
+		req, _ := http.NewRequest(method, ins.Address+path, nil)
+		req.AddCookie(&http.Cookie{Name: "av_session", Value: ins.Key})
+		req.Header.Set("Origin", ins.Address)
+		req.Header.Set("X-AV-Request", "1")
+		res, e := client.Do(req)
+		if e != nil {
+			return 0
+		}
+		res.Body.Close()
+		return res.StatusCode
+	}
+	if call("GET", "/api/ping") != 200 {
+		return false
+	}
+	if call("POST", "/api/exit") != 200 {
+		return false
+	}
+	for i := 0; i < 50; i++ {
+		time.Sleep(100 * time.Millisecond)
+		if call("GET", "/api/ping") != 200 {
+			log.Print("stopped running viewer before install")
+			return true
+		}
+	}
+	log.Print("running viewer did not stop in time")
+	return false
+}
 func post(w http.ResponseWriter, r *http.Request) bool {
 	if r.Method != "POST" {
 		http.Error(w, "POST required", 405)
@@ -413,6 +456,9 @@ func (a *App) install(w http.ResponseWriter, r *http.Request) {
 		if len(a.payload) < 2 || string(a.payload[:2]) != "MZ" {
 			http.Error(w, "실행 파일 패키지가 잘못되었습니다.", 500)
 			return
+		}
+		if stopRunningViewer(a.dir) {
+			checks = append(checks, "실행 중이던 AV 리포트 자동 종료")
 		}
 		if e = writeAtomic(filepath.Join(a.dir, "bin", "AVReportHub.exe"), a.payload); e != nil {
 			http.Error(w, "실행 파일을 설치할 수 없습니다. 실행 중인 AV 리포트를 종료한 뒤 다시 시도하세요.", 500)
