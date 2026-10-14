@@ -31,10 +31,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view v0.1.0 --repo $env:GITHUB_REPOSITORY *> $null
+          gh release view v0.1.1 --repo $env:GITHUB_REPOSITORY *> $null
           if ($LASTEXITCODE -ne 0) {
-            gh release create v0.1.0 --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "AV Report Hub v0.1.0" --notes-file docs/RELEASE_NOTES.md
+            gh release create v0.1.1 --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "AV Report Hub v0.1.1" --notes-file docs/RELEASE_NOTES.md
             if ($LASTEXITCODE -ne 0) { throw 'Release creation failed' }
           }
-          gh release upload v0.1.0 dist/AVReportHub-Windows-x64.zip dist/AVReportHub-Setup.exe dist/AVReportHub.exe dist/SHA256SUMS.txt --repo $env:GITHUB_REPOSITORY --clobber
+          gh release upload v0.1.1 dist/AVReportHub-Windows-x64.zip dist/AVReportHub-Setup.exe dist/AVReportHub.exe dist/SHA256SUMS.txt --repo $env:GITHUB_REPOSITORY --clobber
           if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
