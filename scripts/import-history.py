@@ -25,6 +25,28 @@ def frontmatter(body):
             if sep: out[k.strip()] = v.strip().strip('"\'')
     return out
 
+# Mirror of substantive() in internal/hub/web/app.js: a company is tagged only if it appears outside
+# "no news" lines ("Avride·Bolt…는 신규 확인 사항 없음"), reference entries and URLs. Keep both in sync.
+NO_NEWS = re.compile(r'없음|없었다|없다\.|미확인|확인되지 않았다|반복하지 않았다|다루지 않았다|제외|점검 출처|Official Site|공식 사이트|공식 뉴스|뉴스룸|Newsroom', re.I)
+URL = re.compile(r'https?://\S+')
+REF_LINE = re.compile(r'^\s*(-\s*)?\[R?\d+\]|^\s*\d+\.\s|^\s*\*{0,2}(출처|References?|참고|Reference)\s*\*{0,2}\s*[:：]', re.I)
+
+def substantive(text):
+    lines = text.splitlines()
+    keep = []
+    for i, l in enumerate(lines):
+        nxt = lines[i + 1] if i + 1 < len(lines) else ''
+        if URL.search(l) and REF_LINE.search(l): continue
+        if re.match(r'^\s*\d+\.\s', l) and re.match(r'^\s*https?://', nxt): continue
+        if re.match(r'^\s*(-\s*)?\[R?\d+\]', l): continue
+        if NO_NEWS.search(URL.sub('', l)): continue
+        keep.append(URL.sub('', l))
+    return '\n'.join(keep).lower()
+
+def mentioned(cfg, title, body):
+    low = title.lower() + '\n' + substantive(body)
+    return [c for c in cfg['companies'] if c.lower() in low]
+
 def derive(date, title, body, existing, cfg):
     if date in existing:
         return dict(existing[date])
@@ -36,9 +58,8 @@ def derive(date, title, body, existing, cfg):
             text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', line[2:]).replace('**', '')
             if 'http' not in text and len(text) > 25: bullets.append(text)
         if len(bullets) == 2: break
-    low = body.lower()
     return dict(id=date, date=date, title=title, summary=' '.join(bullets)[:420],
-                companies=[c for c in cfg['companies'] if c.lower() in low],
+                companies=mentioned(cfg, title, body),
                 tags=['신규 없음' if title == cfg['no_update_title'] else '동향'], sources=sources)
 
 def att_entry(source, dest):
@@ -57,6 +78,8 @@ def from_reports(existing, cfg):
         mds = sorted(folder.glob('*.md'))
         if not mds:
             print(f'skip {date}: no .md', file=sys.stderr); continue
+        if len(mds) > 1:
+            print(f'warning {date}: {len(mds)} .md files, using {mds[0].name} as the body (all are attached)', file=sys.stderr)
         body = mds[0].read_text(encoding='utf-8')
         fm = frontmatter(body)
         title = (existing.get(date) or {}).get('title') or fm.get('info') or fm.get('title') or f'자율주행 데일리 리포트 {date}'

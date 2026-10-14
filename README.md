@@ -106,7 +106,7 @@ Setup 안에 실행 프로그램이 포함됩니다. 설치 후 위치는 `%LOCA
 ChatGPT가 매일 아침 리포트를 만들어 이 저장소의 `main` 브랜치에 push합니다. 그 뒤는 GitHub Actions가 처리하며, 사용자 PC나 게시자 PC에서 돌리는 작업은 없습니다.
 
 1. ChatGPT가 `data/reports/YYYY-MM-DD/`에 MD·PPTX를 push합니다. 이 push가 `publish-data` 워크플로를 깨웁니다.
-2. `scripts/import-history.py --from-reports`가 폴더를 스캔해 `catalog.json`·`reports.sqlite`·`import-audit.json`을 다시 만듭니다. 제목은 MD 머리말의 `info`, 기업 태그는 `data/companies.json` 목록으로 본문을 대조해 채웁니다.
+2. `scripts/import-history.py --from-reports`가 폴더를 스캔해 `catalog.json`·`reports.sqlite`·`import-audit.json`을 다시 만듭니다. 제목은 MD 머리말의 `info`, 기업 태그는 `data/companies.json` 목록으로 본문을 대조해 채우되, "신규 확인 사항 없음" 같은 점검 줄·출처 목록·URL에만 나오는 기업은 태그하지 않습니다(화면의 ‘없음’ 언급 제외와 같은 규칙).
 3. 변경이 있을 때만 한 커밋으로 push합니다. 사용자 PC는 08:00 KST 갱신(또는 `지금 업데이트`)으로 이 커밋을 받습니다.
 
 ChatGPT 쪽이 지켜야 할 파일 위치·머리말·본문 구성·표기 규칙은 **[리포트 작성·게시 규칙](docs/REPORT_FORMAT.md)**에 정리했습니다. 기존 발송본(2026-10-14)의 형식을 기준으로 삼았습니다. 08:00 전에 push가 끝나야 그날 아침 갱신에 포함됩니다.
