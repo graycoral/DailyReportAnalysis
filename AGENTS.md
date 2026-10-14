@@ -7,3 +7,4 @@
 - `data/catalog.json` 변경은 `docs/DATA_CONTRACT.md`를 따른다.
 - 원본 보고서 파일과 catalog 변경은 동일 커밋으로 게시한다.
 - 의미 있는 검증: `go test ./internal/...`; 배포는 Windows CI 설치·실행 검사를 통과해야 한다.
+- Codex가 작성한 변경이 포함된 커밋에는 `Co-Authored-By: Codex {model} <noreply@openai.com>` trailer를 추가한다. `{model}`에는 작업 세션에서 확인된 실제 모델명을 넣고 추측하지 않는다. 예: `Co-Authored-By: Codex GPT-6 <noreply@openai.com>`. squash 머지 시 최종 커밋에도 이 trailer를 유지한다.

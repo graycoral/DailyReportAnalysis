@@ -41,6 +41,11 @@ type App struct {
 	visibilityMu         sync.Mutex
 	syncing              bool
 	status               string
+	ragSetupMu           sync.Mutex
+	ragSetupState        ragSetupStatus
+	ragSetupChecked      bool
+	ragCancel            context.CancelFunc
+	ragProcess           *os.Process
 	server               *http.Server
 }
 type instance struct {
@@ -76,6 +81,7 @@ func Run(setup bool, payload []byte) {
 	}
 	log.Printf("start v%s setup=%v dir=%s", Version, setup, dir)
 	a := &App{dir: dir, setup: setup, payload: payload, config: defaultConfig(), status: "포함된 리포트"}
+	defer a.stopRagTask()
 	if b, e := os.ReadFile(filepath.Join(dir, "config.json")); e == nil {
 		var c Config
 		if json.Unmarshal(b, &c) == nil && c.Validate() == nil {

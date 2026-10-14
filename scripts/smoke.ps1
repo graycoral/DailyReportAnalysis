@@ -43,7 +43,13 @@ try {
     $null=Invoke-RestMethod -Uri "$($v.address)/api/exit" -Method Post -WebSession $v.session -Headers @{Origin=$v.address; 'X-AV-Request'='1'} -Body '{}'
     Write-Host 'Windows setup, install, embedded icon, desktop shortcut, viewer, and attachment smoke test passed.'
 } finally {
-    foreach($p in @($setup,$viewer)){if($null -ne $p -and !$p.HasExited){Stop-Process -Id $p.Id -ErrorAction SilentlyContinue}}
+    foreach($p in @($setup,$viewer)){
+        if($null -ne $p){
+            if(!$p.HasExited){Stop-Process -Id $p.Id -ErrorAction SilentlyContinue}
+            if(!$p.WaitForExit(10000)){throw 'Smoke-test process did not exit before packaging'}
+            $p.Dispose()
+        }
+    }
     # Installation uses the real Desktop; leave the user's pre-existing shortcut intact.
     if ((Test-Path -LiteralPath $shortcutPath) -and $shell.CreateShortcut($shortcutPath).TargetPath -eq $exe) {
         if ($null -ne $shortcutBackup) { [IO.File]::WriteAllBytes($shortcutPath,$shortcutBackup) }
