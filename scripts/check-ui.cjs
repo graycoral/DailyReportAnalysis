@@ -1,0 +1,23 @@
+const {chromium}=require('playwright');
+const fs=require('fs');const path=require('path');
+(async()=>{
+ const instance=JSON.parse(fs.readFileSync(path.join(__dirname,'../build/test-data/instance-viewer.json'),'utf8'));
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});const page=await browser.newPage({viewport:{width:1600,height:1000}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(instance.address+'/open?key='+instance.key);await page.getByRole('dialog').waitFor();
+ await page.getByRole('checkbox',{name:'지금은 오프라인으로 시작하고 연결은 나중에 설정'}).check();
+ await page.getByRole('button',{name:'검사하고 저장'}).click();await page.getByRole('dialog').waitFor({state:'hidden'});
+ await page.getByRole('heading',{name:'Uber 자율주행 책임자 교체 예정',exact:true}).last().waitFor();
+ await page.screenshot({path:path.join(__dirname,'../build/search.png'),fullPage:true});
+ await page.getByRole('tab',{name:'타임라인',exact:true}).click();await page.getByText('Sarfraz Maredia 퇴사 예정일',{exact:true}).waitFor();
+ await page.screenshot({path:path.join(__dirname,'../build/timeline.png'),fullPage:true});
+ await page.getByRole('tab',{name:'관계 그래프',exact:true}).click();await page.locator('[data-relation="uber-maredia"]').click();
+ await page.getByText('선택한 관계 · 계획',{exact:true}).waitFor();await page.screenshot({path:path.join(__dirname,'../build/graph.png'),fullPage:true});
+ await page.getByRole('tab',{name:'검색',exact:true}).click();await page.getByLabel('리포트 검색').fill('존재하지않는검색어');await page.getByText('검색 결과가 없습니다.',{exact:false}).waitFor();
+ await page.getByLabel('리포트 검색').fill('Uber');
+ const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('link',{name:'MD 다운로드',exact:true}).click()]);
+ await download.saveAs(path.join(__dirname,'../build/download.md'));
+ await page.getByRole('button',{name:'설정',exact:true}).click();await page.getByRole('dialog').waitFor();
+ await page.screenshot({path:path.join(__dirname,'../build/settings.png'),fullPage:true});
+ await browser.close();if(errors.length)throw Error(errors.join('\n'));console.log('UI passed: offline setup, search, timeline, graph evidence, filters, attachment, settings.');
+})().catch(e=>{console.error(e);process.exit(1)});

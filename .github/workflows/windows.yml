@@ -1,0 +1,39 @@
+name: Build Windows application
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['data/**']
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.2'
+      - name: Test and build self-contained executables
+        shell: pwsh
+        run: ./scripts/build.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AVReportHub-Windows-x64
+          path: dist/*
+          retention-days: 30
+      - name: Publish Windows download
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view v0.1.0 --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create v0.1.0 --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "AV Report Hub v0.1.0" --notes-file docs/RELEASE_NOTES.md
+            if ($LASTEXITCODE -ne 0) { throw 'Release creation failed' }
+          }
+          gh release upload v0.1.0 dist/AVReportHub-Windows-x64.zip dist/AVReportHub-Setup.exe dist/AVReportHub.exe dist/SHA256SUMS.txt --repo $env:GITHUB_REPOSITORY --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }

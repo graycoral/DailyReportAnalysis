@@ -1,0 +1,7 @@
+/dist/
+/build/
+/cmd/setup/payload/AVReportHub.exe
+*.log
+config.json
+token.bin
+instance*.json
