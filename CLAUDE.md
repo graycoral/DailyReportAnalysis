@@ -31,7 +31,7 @@ Everything lives in `internal/hub` (package `hub`). `cmd/viewer` and `cmd/setup`
 - `github.go` — GitHub REST client (commit SHA → contents at that SHA), `syncData()`, `ensureDatabase()`, `attachment()`.
 - `model.go` — `Config`, `Catalog` and its `Validate()`, `writeAtomic`/`writeJSON`. `Version` constant lives here.
 - `platform_windows.go` / `platform_other.go` — DPAPI (`protect`/`unprotect`), `MoveFileExW` replace, `ShellExecute`, `MessageBox`, desktop shortcut via PowerShell. Non-Windows stubs exist only so tests/dev builds compile; the product is Windows-only.
-- `web/` — embedded vanilla HTML/CSS/JS SPA (`app.js` renders search/timeline/graph tabs and the detail pane; the markdown renderer is a tiny hand-written one).
+- `web/` — embedded vanilla HTML/CSS/JS SPA, no external fonts or CDN (CSP forbids them). `app.js` renders four tabs — search, timeline, evidence graph (`renderGraph`, circular SVG), and the force-directed map (`renderMap`, hand-rolled simulation with drag/zoom) — plus the detail pane; the markdown renderer is a small hand-written one. Chips with `data-company`/`data-tag` are filter shortcuts; the active tab is mirrored in `location.hash`. Map palette teal/blue/amber was validated with the dataviz skill's `validate_palette.js`.
 - `seed/` — embedded copy of `data/catalog.json`, `data/reports.sqlite`, and all attachments so the app works offline on first run. `build.ps1` overwrites `seed/catalog.json` from `data/catalog.json`; the SQLite and attachments are only refreshed by `import-history.py`. **Seed DB SHA-256 must match `catalog.json`'s `database.sha256` or the app refuses to start** (`ensureDatabase` at startup; `--self-test` catches this).
 
 ### Request security model (`routes()` wrapper in app.go)
