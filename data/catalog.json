@@ -1397,6 +1397,69 @@
   ],
   "events": [
     {
+      "id": "minneapolis-av-veto-override-failed-20261015",
+      "date": "2026-10-15",
+      "title": "미니애폴리스 로보택시 안전요원 의무 조례 재의결 실패",
+      "status": "재의결 실패",
+      "report_id": "2026-10-16",
+      "detail": "시장 거부권을 뒤집는 데 필요한 9표에 못 미치는 찬성 7표로 재의결 시도가 실패했다. 신규 무인 상용 허가나 승객 서비스 개시를 뜻하지 않는다.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "MPR News · Minneapolis City Council fails to override mayoral veto of autonomous rideshare rules",
+          "url": "https://www.mprnews.org/story/2026/10/15/minneapolis-city-council-fails-override-mayoral-veto-autonomous-rideshare-rules"
+        },
+        {
+          "title": "Minnesota Reformer · Minneapolis council fails to override mayoral veto of ban on driverless robotaxis",
+          "url": "https://minnesotareformer.com/2026/10/15/minneapolis-council-fails-to-override-mayoral-veto-of-ban-on-driverless-robotaxis/"
+        }
+      ]
+    },
+    {
+      "id": "tesla-remote-crash-disclosure-20261015",
+      "date": "2026-10-15",
+      "title": "Tesla 원격운전 중 접촉사고 2건 보도·원자료 확인",
+      "status": "사고자료 보도",
+      "report_id": "2026-10-16",
+      "detail": "보도일 기준 사건이다. 사고는 2026년 8월, 제출은 9월이며 정확한 발생 일자는 공개되지 않았다. NHTSA 13781-16678·16679는 Dallas 약 0.40 mph, Austin 약 1 mph 접촉을 기록하고, 두 건 모두 승객 없음·보고된 부상 없음이다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "NHTSA · SGO ADS Incident Reports CSV — Tesla 13781-16678·16679",
+          "url": "https://static.nhtsa.gov/odi/ffdd/sgo-2021-01/SGO-2021-01_Incident_Reports_ADS.csv"
+        },
+        {
+          "title": "Electrek · Tesla remote operators keep crashing its Robotaxis, data shows",
+          "url": "https://electrek.co/2026/10/15/tesla-remote-operators-crashing-robotaxis/"
+        }
+      ]
+    },
+    {
+      "id": "zoox-hayward-lease-report-20261015",
+      "date": "2026-10-15",
+      "title": "Zoox Hayward 추가 공간 임차 보도",
+      "status": "보도·원문 미확인",
+      "report_id": "2026-10-16",
+      "detail": "[유료 기사][원문 미확인] 검색 제공 텍스트에서 25500 Clawiter Road의 35만 ft² 초과 임차 보도 확인. 계약일·가동일·신규 생산능력은 미확인. 공개 EDA 자료는 기존 공장 배경만 보완한다.",
+      "companies": [
+        "Zoox"
+      ],
+      "sources": [
+        {
+          "title": "San Francisco Chronicle [유료 기사][원문 미확인] · Zoox more than doubles its robotaxi footprint in Bay Area city",
+          "url": "https://www.sfchronicle.com/realestate/article/zoox-hayward-expansion-350000-square-feet-22478588.php"
+        },
+        {
+          "title": "East Bay EDA · Members tour the Zoox robotaxi production facility in Hayward",
+          "url": "https://eastbayeda.org/members-tour-the-zoox-robotaxi-production-facility-in-hayward/"
+        }
+      ]
+    },
+    {
       "id": "waymo-three-city-open-access-20261014",
       "date": "2026-10-14",
       "title": "Waymo 미국 3개 도시 일반 앱 호출 개방",
@@ -2137,6 +2200,11 @@
       "from": "2026-10-02",
       "to": "2026-10-08",
       "reason": "Minneapolis 안전요원 의무 조례: 의회 통과 및 거부권 예고 → 시장 거부권 행사 보도."
+    },
+    {
+      "from": "2026-10-08",
+      "to": "2026-10-16",
+      "reason": "미니애폴리스 안전요원 의무 조례: 시장 거부권 행사 → 10월 15일 재의결 실패."
     }
   ],
   "database": {
