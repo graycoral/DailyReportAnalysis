@@ -1299,6 +1299,64 @@
   ],
   "events": [
     {
+      "id": "waymo-three-city-open-access-20261014",
+      "date": "2026-10-14",
+      "title": "Waymo 미국 3개 도시 일반 앱 호출 개방",
+      "status": "운영 확대",
+      "report_id": "2026-10-15",
+      "detail": "샌안토니오·샌디에이고·탬파에서 누구나 완전 자율주행 차량을 호출할 수 있게 됐다. 샌안토니오 국제공항 포함. 도시 최초 진출이나 증차 수 발표와 구분.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "Waymo · Waymo is opening to everyone in San Antonio, San Diego, and Tampa · 2026-10-14",
+          "url": "https://waymo.com/blog/shorts/sat-sd-tpa/"
+        }
+      ]
+    },
+    {
+      "id": "uber-pony-manchester-trial-20261014",
+      "date": "2026-10-14",
+      "title": "Uber·Pony.ai·Verne 맨체스터 Gen-7 시험 발표",
+      "status": "시험 확인",
+      "report_id": "2026-10-15",
+      "detail": "공식 발표일 기준 시험 진행 확인. 정확한 첫 주행일은 미공개. 안전요원 동승·무승객 시험이며 무인 상용 개시가 아님.",
+      "companies": [
+        "Uber",
+        "Pony.ai"
+      ],
+      "sources": [
+        {
+          "title": "Uber 공식 LinkedIn · Manchester Gen-7 robotaxi testing 발표 · 2026-10-14",
+          "url": "https://gb.linkedin.com/company/uber-com"
+        },
+        {
+          "title": "Pony.ai 공식 LinkedIn · Manchester testing with Uber and Verne 발표 · 2026-10-14",
+          "url": "https://jp.linkedin.com/company/pony-ai/"
+        },
+        {
+          "title": "The Guardian · Uber to trial self-driving robotaxis in Manchester · 2026-10-14",
+          "url": "https://www.theguardian.com/technology/2026/oct/14/uber-self-driving-robotaxi-trial-manchester"
+        }
+      ]
+    },
+    {
+      "id": "london-assembly-av-recommendations-20261009",
+      "date": "2026-10-09",
+      "title": "London Assembly 자율주행 승객 서비스 권고 발표",
+      "status": "정책 권고",
+      "report_id": "2026-10-15",
+      "detail": "TfL 허가 권한·차량 수 상한·안전정보 제공 관련 권고. 시행 법령·사업자 허가가 아님. 10월 15일 보고에서 처음 확인한 10월 9일 발표.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "London Assembly · DfT v TfL: Who’s behind the wheel of robocabs? · 2026-10-09",
+          "url": "https://www.london.gov.uk/who-we-are/what-london-assembly-does/london-assembly-press-releases/dft-v-tfl-whos-behind-wheel-robocabs"
+        }
+      ]
+    },
+    {
       "id": "uber-leadership-announcement",
       "date": "2026-10-13",
       "title": "Uber 자율주행 책임자 퇴사 예정 보도",
@@ -1825,6 +1883,16 @@
       "id": "verne",
       "label": "Verne",
       "kind": "기업"
+    },
+    {
+      "id": "pony-ai",
+      "label": "Pony.ai",
+      "kind": "기업"
+    },
+    {
+      "id": "manchester",
+      "label": "Manchester",
+      "kind": "지역"
     }
   ],
   "relations": [
@@ -1919,6 +1987,44 @@
         {
           "title": "EVwire · 당시 보고서 출처",
           "url": "https://evwire.com/p/verne-ceo-confirms-uber-investment-robotaxi-europe"
+        }
+      ]
+    },
+    {
+      "id": "uber-pony-manchester-testing-20261014",
+      "from": "uber",
+      "to": "pony-ai",
+      "label": "맨체스터 Gen-7 공동 시험",
+      "status": "시험 진행 확인",
+      "report_id": "2026-10-15",
+      "evidence": "양사 공식 10월 14일 게시물이 Pony.ai 기술과 Uber 플랫폼을 결합한 맨체스터 Gen-7 시험 진행을 명시한다. 무인 상용 서비스 개시는 확인되지 않았다.",
+      "sources": [
+        {
+          "title": "Uber 공식 LinkedIn · Manchester Gen-7 robotaxi testing 발표 · 2026-10-14",
+          "url": "https://gb.linkedin.com/company/uber-com"
+        },
+        {
+          "title": "Pony.ai 공식 LinkedIn · Manchester testing with Uber and Verne 발표 · 2026-10-14",
+          "url": "https://jp.linkedin.com/company/pony-ai/"
+        }
+      ]
+    },
+    {
+      "id": "verne-manchester-operations-20261014",
+      "from": "verne",
+      "to": "manchester",
+      "label": "시험 운영 체계 참여",
+      "status": "시험 진행 확인",
+      "report_id": "2026-10-15",
+      "evidence": "Uber·Pony.ai 공식 발표가 Verne를 맨체스터 시험의 운영 참여사로 명시한다. 단순 동시 언급에서 추정한 관계가 아니다.",
+      "sources": [
+        {
+          "title": "Uber 공식 LinkedIn · Manchester Gen-7 robotaxi testing 발표 · 2026-10-14",
+          "url": "https://gb.linkedin.com/company/uber-com"
+        },
+        {
+          "title": "Pony.ai 공식 LinkedIn · Manchester testing with Uber and Verne 발표 · 2026-10-14",
+          "url": "https://jp.linkedin.com/company/pony-ai/"
         }
       ]
     }
