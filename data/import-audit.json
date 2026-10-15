@@ -1,7 +1,7 @@
 {
-  "count": 18,
+  "count": 19,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-15",
+  "through_date": "2026-10-16",
   "records": [
     {
       "date": "2026-09-20",
@@ -306,6 +306,23 @@
           "name": "autonomous_driving_daily_2026-10-15.pptx",
           "path": "data/reports/2026-10-15/autonomous_driving_daily_2026-10-15.pptx",
           "sha256": "ac42e5aedaee3b8aab269ae6717a5be9a74a8d504bab866207ff1bc5c1019c78"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-16",
+      "title": "미니애폴리스 재의결 실패·Tesla 원격운전 사고 확인",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-16.md",
+          "path": "data/reports/2026-10-16/autonomous_driving_daily_2026-10-16.md",
+          "sha256": "2af192ae6d34d660a4b3fa934165e7da565919ecf791bce5c7e8d83f65eec3a1"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-16.pptx",
+          "path": "data/reports/2026-10-16/autonomous_driving_daily_2026-10-16.pptx",
+          "sha256": "69cbe0fce3eb7270e241474f0b052e51d27bd5943b66c7661b04eb73f6afede1"
         }
       ]
     }
