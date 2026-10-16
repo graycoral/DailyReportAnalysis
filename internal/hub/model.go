@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const Version = "0.1.5"
+const Version = "0.1.7"
 
 var slug = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$`)
 var datePattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)

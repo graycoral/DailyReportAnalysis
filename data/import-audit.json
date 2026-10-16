@@ -1,260 +1,22 @@
 {
-  "count": 17,
+  "count": 19,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-14",
+  "through_date": "2026-10-16",
   "records": [
     {
-      "date": "2026-10-14",
-      "title": "Uber 자율주행 책임자 교체 예정",
+      "date": "2026-09-20",
+      "title": "유럽 2.5만대 로보택시 계획",
       "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
       "attachments": [
         {
-          "name": "autonomous_driving_daily_2026-10-14.md",
-          "path": "data/reports/2026-10-14/autonomous_driving_daily_2026-10-14.md",
-          "sha256": "8cda1770a78b1b7a667282cc79394a4d23284d0811c5eb34d254c193c9cc5151"
+          "name": "autonomous_driving_daily_2026-09-20.md",
+          "path": "data/reports/2026-09-20/autonomous_driving_daily_2026-09-20.md",
+          "sha256": "49e08c6d607b214b953afa2847ede3f2ac6ba3e05dc0a6a145f46b7f0ccf03c7"
         },
         {
-          "name": "autonomous_driving_daily_2026-10-14.pptx",
-          "path": "data/reports/2026-10-14/autonomous_driving_daily_2026-10-14.pptx",
-          "sha256": "220d2b59efaed8e670ce559ba422e69f20835c39e037762f4b4cb2bfbb1e3732"
-        }
-      ]
-    },
-    {
-      "date": "2026-10-13",
-      "title": "Tesla 로보택시 학교구역 속도 검토",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-10-13.md",
-          "path": "data/reports/2026-10-13/autonomous_driving_daily_2026-10-13.md",
-          "sha256": "3beafcb29c6f7a574ab73647117e2cf948d403fceec14f5da5695c03e02954ad"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-10-13.pptx",
-          "path": "data/reports/2026-10-13/autonomous_driving_daily_2026-10-13.pptx",
-          "sha256": "cf36b620cd15b7ae770aa22f916dc25ae332c664c7eea8c35f5b383292a7f60a"
-        }
-      ]
-    },
-    {
-      "date": "2026-10-09",
-      "title": "미국 L4 트럭 5년 규제 특례",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-10-09.md",
-          "path": "data/reports/2026-10-09/autonomous_driving_daily_2026-10-09.md",
-          "sha256": "6723da1e0781e266cbd4c4ae71447cc846185b2efd99033c8cc93d14e22ad593"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-10-09.pptx",
-          "path": "data/reports/2026-10-09/autonomous_driving_daily_2026-10-09.pptx",
-          "sha256": "d0a265bc095c64e778375786331bf0a3166e096b1804b160ca7f17bcbfefffcd"
-        }
-      ]
-    },
-    {
-      "date": "2026-10-08",
-      "title": "Waymo 디트로이트 완전무인 운행 전환",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-10-08.md",
-          "path": "data/reports/2026-10-08/autonomous_driving_daily_2026-10-08.md",
-          "sha256": "e7ffb311571fb05e89d0bd14021d7b2a3e3dd0608a065c09294a87c19690bb03"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-10-08.pptx",
-          "path": "data/reports/2026-10-08/autonomous_driving_daily_2026-10-08.pptx",
-          "sha256": "d009d2379a5c1a0113d59fa8b9699f5c88ecbc0515757c1fdeca0df9526513f9"
-        }
-      ]
-    },
-    {
-      "date": "2026-10-07",
-      "title": "Einride 오하이오 무인 화물운송 개시",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-10-07.md",
-          "path": "data/reports/2026-10-07/autonomous_driving_daily_2026-10-07.md",
-          "sha256": "92a48e0d596e4f25b08094444b2839e6d3b93f65abe1986c76693a8b8f5e902c"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-10-07.pptx",
-          "path": "data/reports/2026-10-07/autonomous_driving_daily_2026-10-07.pptx",
-          "sha256": "2c3ec1e3fc3e6ee9f391fa821541b14e8ec2af9361037b8270c3f0029bf8ef59"
-        }
-      ]
-    },
-    {
-      "date": "2026-10-06",
-      "title": "Volvo–Waabi 고객 화물운송 개시",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-10-06.md",
-          "path": "data/reports/2026-10-06/autonomous_driving_daily_2026-10-06.md",
-          "sha256": "de7146ba70fd34867c6ed341de6f88b6335e94748fc71ba14061ee674613195d"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-10-06.pptx",
-          "path": "data/reports/2026-10-06/autonomous_driving_daily_2026-10-06.pptx",
-          "sha256": "a7e11297a827f53a66c4c94020f22af5bb7e550840d66aa22e43615ff9ccdee2"
-        }
-      ]
-    },
-    {
-      "date": "2026-10-05",
-      "title": "캘리포니아 로보택시 대응법 확정",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-10-05.md",
-          "path": "data/reports/2026-10-05/autonomous_driving_daily_2026-10-05.md",
-          "sha256": "23cca55874129f0cbeb4efdd49b53a70d9b22fbea7508c13938bb2246b2c884c"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-10-05.pptx",
-          "path": "data/reports/2026-10-05/autonomous_driving_daily_2026-10-05.pptx",
-          "sha256": "232146b5d8264001b4f21a5d780c78a461dd95435b25e8ffd826c4d1e8daeb31"
-        }
-      ]
-    },
-    {
-      "date": "2026-10-02",
-      "title": "서울시 L4 시내버스 500대 추진",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-10-02.md",
-          "path": "data/reports/2026-10-02/autonomous_driving_daily_2026-10-02.md",
-          "sha256": "17afc8f4b59c9a55babe3b22c90b13359c10997bf8e99d16ee8ed21a964cf63d"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-10-02.pptx",
-          "path": "data/reports/2026-10-02/autonomous_driving_daily_2026-10-02.pptx",
-          "sha256": "2313578c175466fc93bef82d2204b2fca3845ef449cc33f7f8d4ba10f504a4a8"
-        }
-      ]
-    },
-    {
-      "date": "2026-10-01",
-      "title": "Momenta 2027년 수천대 로보택시 목표",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-10-01.md",
-          "path": "data/reports/2026-10-01/autonomous_driving_daily_2026-10-01.md",
-          "sha256": "c31823f7742147605317064fca5dd3837ea621ac4e75d04951d5999a1b2845dc"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-10-01.pptx",
-          "path": "data/reports/2026-10-01/autonomous_driving_daily_2026-10-01.pptx",
-          "sha256": "3972f1bc43a4d4f13059d84a4756f45924ee80021ecb977b3f0c2e25d9cfdae2"
-        }
-      ]
-    },
-    {
-      "date": "2026-09-30",
-      "title": "Mobileye 로보택시 시험 단계 구체화",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-09-30.md",
-          "path": "data/reports/2026-09-30/autonomous_driving_daily_2026-09-30.md",
-          "sha256": "5009b76589a2c73c87730f171d63f7470d05225e42fb07ea2e5ef00cb34beff7"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-09-30.pptx",
-          "path": "data/reports/2026-09-30/autonomous_driving_daily_2026-09-30.pptx",
-          "sha256": "145d0d6e1e4fc1c2cd2072687afccf4d51cc1820f539267b215195a1c5366309"
-        }
-      ]
-    },
-    {
-      "date": "2026-09-29",
-      "title": "Faraday Future 로보택시 전환 선언",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-09-29.md",
-          "path": "data/reports/2026-09-29/autonomous_driving_daily_2026-09-29.md",
-          "sha256": "fbbf0409c50770488cb70917b7a3d10ad99c1e482e599ac929e56ac689dab17c"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-09-29.pptx",
-          "path": "data/reports/2026-09-29/autonomous_driving_daily_2026-09-29.pptx",
-          "sha256": "c2e8672c1bcf451a8d02c32a2af9dc92a942b0a92ed9fc9198bd675d61ac9b50"
-        }
-      ]
-    },
-    {
-      "date": "2026-09-28",
-      "title": "Kodiak Dallas–Houston 무인화 준비",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-09-28.md",
-          "path": "data/reports/2026-09-28/autonomous_driving_daily_2026-09-28.md",
-          "sha256": "25d1b57c3113e9ba83b04f516e2a358bde488edfc43237b3f5dae0f767b4e9f7"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-09-28.pptx",
-          "path": "data/reports/2026-09-28/autonomous_driving_daily_2026-09-28.pptx",
-          "sha256": "2690a4ecc3827a3b5cd0c389ee5b21503b5bb15da286d8edb4a506302a286cb6"
-        }
-      ]
-    },
-    {
-      "date": "2026-09-24",
-      "title": "Tesla 텍사스 TNC 면허 만료",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-09-24.md",
-          "path": "data/reports/2026-09-24/autonomous_driving_daily_2026-09-24.md",
-          "sha256": "bc185584318e8ce02ff725b1563a1300e257b1ecf65ba5e42668c2a27e59b544"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-09-24.pptx",
-          "path": "data/reports/2026-09-24/autonomous_driving_daily_2026-09-24.pptx",
-          "sha256": "158e9262d113f25b75548a58941fc4bfe375d3e0ac3c9b3b09a09a1eb9b6227a"
-        }
-      ]
-    },
-    {
-      "date": "2026-09-23",
-      "title": "Mercedes–Wayve 자율주행 협력",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-09-23.md",
-          "path": "data/reports/2026-09-23/autonomous_driving_daily_2026-09-23.md",
-          "sha256": "302f729de399deb858fdf94c91d174e90b84eb72a753945df74fe4f7eab5c01b"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-09-23.pptx",
-          "path": "data/reports/2026-09-23/autonomous_driving_daily_2026-09-23.pptx",
-          "sha256": "27e67f08f0d29a218959d69204aea171e4f814caa9ca08756d6eb54dd721d4e8"
-        }
-      ]
-    },
-    {
-      "date": "2026-09-22",
-      "title": "체코 FSD 잠정 승인",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-09-22.md",
-          "path": "data/reports/2026-09-22/autonomous_driving_daily_2026-09-22.md",
-          "sha256": "05ed2076ca19d38564b95095536652b6ca0b98bfc7f1f09b30ee4e0c2ab25ace"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-09-22.pptx",
-          "path": "data/reports/2026-09-22/autonomous_driving_daily_2026-09-22.pptx",
-          "sha256": "de1f45d2385946251e6f0b006d49d6565089cadf09b4bd7729d26de279d678f5"
+          "name": "autonomous_driving_daily_2026-09-20.pptx",
+          "path": "data/reports/2026-09-20/autonomous_driving_daily_2026-09-20.pptx",
+          "sha256": "5dda30ae53be3603f5daded00973918b4ffb26e714b951eeeafb2b3f0997fd29"
         }
       ]
     },
@@ -276,19 +38,291 @@
       ]
     },
     {
-      "date": "2026-09-20",
-      "title": "유럽 2.5만대 로보택시 계획",
+      "date": "2026-09-22",
+      "title": "체코 FSD 잠정 승인",
       "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
       "attachments": [
         {
-          "name": "autonomous_driving_daily_2026-09-20.md",
-          "path": "data/reports/2026-09-20/autonomous_driving_daily_2026-09-20.md",
-          "sha256": "49e08c6d607b214b953afa2847ede3f2ac6ba3e05dc0a6a145f46b7f0ccf03c7"
+          "name": "autonomous_driving_daily_2026-09-22.md",
+          "path": "data/reports/2026-09-22/autonomous_driving_daily_2026-09-22.md",
+          "sha256": "05ed2076ca19d38564b95095536652b6ca0b98bfc7f1f09b30ee4e0c2ab25ace"
         },
         {
-          "name": "autonomous_driving_daily_2026-09-20.pptx",
-          "path": "data/reports/2026-09-20/autonomous_driving_daily_2026-09-20.pptx",
-          "sha256": "5dda30ae53be3603f5daded00973918b4ffb26e714b951eeeafb2b3f0997fd29"
+          "name": "autonomous_driving_daily_2026-09-22.pptx",
+          "path": "data/reports/2026-09-22/autonomous_driving_daily_2026-09-22.pptx",
+          "sha256": "de1f45d2385946251e6f0b006d49d6565089cadf09b4bd7729d26de279d678f5"
+        }
+      ]
+    },
+    {
+      "date": "2026-09-23",
+      "title": "Mercedes–Wayve 자율주행 협력",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-09-23.md",
+          "path": "data/reports/2026-09-23/autonomous_driving_daily_2026-09-23.md",
+          "sha256": "302f729de399deb858fdf94c91d174e90b84eb72a753945df74fe4f7eab5c01b"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-09-23.pptx",
+          "path": "data/reports/2026-09-23/autonomous_driving_daily_2026-09-23.pptx",
+          "sha256": "27e67f08f0d29a218959d69204aea171e4f814caa9ca08756d6eb54dd721d4e8"
+        }
+      ]
+    },
+    {
+      "date": "2026-09-24",
+      "title": "Tesla 텍사스 TNC 면허 만료",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-09-24.md",
+          "path": "data/reports/2026-09-24/autonomous_driving_daily_2026-09-24.md",
+          "sha256": "bc185584318e8ce02ff725b1563a1300e257b1ecf65ba5e42668c2a27e59b544"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-09-24.pptx",
+          "path": "data/reports/2026-09-24/autonomous_driving_daily_2026-09-24.pptx",
+          "sha256": "158e9262d113f25b75548a58941fc4bfe375d3e0ac3c9b3b09a09a1eb9b6227a"
+        }
+      ]
+    },
+    {
+      "date": "2026-09-28",
+      "title": "Kodiak Dallas–Houston 무인화 준비",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-09-28.md",
+          "path": "data/reports/2026-09-28/autonomous_driving_daily_2026-09-28.md",
+          "sha256": "25d1b57c3113e9ba83b04f516e2a358bde488edfc43237b3f5dae0f767b4e9f7"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-09-28.pptx",
+          "path": "data/reports/2026-09-28/autonomous_driving_daily_2026-09-28.pptx",
+          "sha256": "2690a4ecc3827a3b5cd0c389ee5b21503b5bb15da286d8edb4a506302a286cb6"
+        }
+      ]
+    },
+    {
+      "date": "2026-09-29",
+      "title": "Faraday Future 로보택시 전환 선언",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-09-29.md",
+          "path": "data/reports/2026-09-29/autonomous_driving_daily_2026-09-29.md",
+          "sha256": "fbbf0409c50770488cb70917b7a3d10ad99c1e482e599ac929e56ac689dab17c"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-09-29.pptx",
+          "path": "data/reports/2026-09-29/autonomous_driving_daily_2026-09-29.pptx",
+          "sha256": "c2e8672c1bcf451a8d02c32a2af9dc92a942b0a92ed9fc9198bd675d61ac9b50"
+        }
+      ]
+    },
+    {
+      "date": "2026-09-30",
+      "title": "Mobileye 로보택시 시험 단계 구체화",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-09-30.md",
+          "path": "data/reports/2026-09-30/autonomous_driving_daily_2026-09-30.md",
+          "sha256": "5009b76589a2c73c87730f171d63f7470d05225e42fb07ea2e5ef00cb34beff7"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-09-30.pptx",
+          "path": "data/reports/2026-09-30/autonomous_driving_daily_2026-09-30.pptx",
+          "sha256": "145d0d6e1e4fc1c2cd2072687afccf4d51cc1820f539267b215195a1c5366309"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-01",
+      "title": "Momenta 2027년 수천대 로보택시 목표",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-01.md",
+          "path": "data/reports/2026-10-01/autonomous_driving_daily_2026-10-01.md",
+          "sha256": "c31823f7742147605317064fca5dd3837ea621ac4e75d04951d5999a1b2845dc"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-01.pptx",
+          "path": "data/reports/2026-10-01/autonomous_driving_daily_2026-10-01.pptx",
+          "sha256": "3972f1bc43a4d4f13059d84a4756f45924ee80021ecb977b3f0c2e25d9cfdae2"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-02",
+      "title": "서울시 L4 시내버스 500대 추진",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-02.md",
+          "path": "data/reports/2026-10-02/autonomous_driving_daily_2026-10-02.md",
+          "sha256": "17afc8f4b59c9a55babe3b22c90b13359c10997bf8e99d16ee8ed21a964cf63d"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-02.pptx",
+          "path": "data/reports/2026-10-02/autonomous_driving_daily_2026-10-02.pptx",
+          "sha256": "2313578c175466fc93bef82d2204b2fca3845ef449cc33f7f8d4ba10f504a4a8"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-05",
+      "title": "캘리포니아 로보택시 대응법 확정",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-05.md",
+          "path": "data/reports/2026-10-05/autonomous_driving_daily_2026-10-05.md",
+          "sha256": "23cca55874129f0cbeb4efdd49b53a70d9b22fbea7508c13938bb2246b2c884c"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-05.pptx",
+          "path": "data/reports/2026-10-05/autonomous_driving_daily_2026-10-05.pptx",
+          "sha256": "232146b5d8264001b4f21a5d780c78a461dd95435b25e8ffd826c4d1e8daeb31"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-06",
+      "title": "Volvo–Waabi 고객 화물운송 개시",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-06.md",
+          "path": "data/reports/2026-10-06/autonomous_driving_daily_2026-10-06.md",
+          "sha256": "de7146ba70fd34867c6ed341de6f88b6335e94748fc71ba14061ee674613195d"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-06.pptx",
+          "path": "data/reports/2026-10-06/autonomous_driving_daily_2026-10-06.pptx",
+          "sha256": "a7e11297a827f53a66c4c94020f22af5bb7e550840d66aa22e43615ff9ccdee2"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-07",
+      "title": "Einride 오하이오 무인 화물운송 개시",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-07.md",
+          "path": "data/reports/2026-10-07/autonomous_driving_daily_2026-10-07.md",
+          "sha256": "92a48e0d596e4f25b08094444b2839e6d3b93f65abe1986c76693a8b8f5e902c"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-07.pptx",
+          "path": "data/reports/2026-10-07/autonomous_driving_daily_2026-10-07.pptx",
+          "sha256": "2c3ec1e3fc3e6ee9f391fa821541b14e8ec2af9361037b8270c3f0029bf8ef59"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-08",
+      "title": "Waymo 디트로이트 완전무인 운행 전환",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-08.md",
+          "path": "data/reports/2026-10-08/autonomous_driving_daily_2026-10-08.md",
+          "sha256": "e7ffb311571fb05e89d0bd14021d7b2a3e3dd0608a065c09294a87c19690bb03"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-08.pptx",
+          "path": "data/reports/2026-10-08/autonomous_driving_daily_2026-10-08.pptx",
+          "sha256": "d009d2379a5c1a0113d59fa8b9699f5c88ecbc0515757c1fdeca0df9526513f9"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-09",
+      "title": "미국 L4 트럭 5년 규제 특례",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-09.md",
+          "path": "data/reports/2026-10-09/autonomous_driving_daily_2026-10-09.md",
+          "sha256": "6723da1e0781e266cbd4c4ae71447cc846185b2efd99033c8cc93d14e22ad593"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-09.pptx",
+          "path": "data/reports/2026-10-09/autonomous_driving_daily_2026-10-09.pptx",
+          "sha256": "d0a265bc095c64e778375786331bf0a3166e096b1804b160ca7f17bcbfefffcd"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-13",
+      "title": "Tesla 로보택시 학교구역 속도 검토",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-13.md",
+          "path": "data/reports/2026-10-13/autonomous_driving_daily_2026-10-13.md",
+          "sha256": "3beafcb29c6f7a574ab73647117e2cf948d403fceec14f5da5695c03e02954ad"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-13.pptx",
+          "path": "data/reports/2026-10-13/autonomous_driving_daily_2026-10-13.pptx",
+          "sha256": "cf36b620cd15b7ae770aa22f916dc25ae332c664c7eea8c35f5b383292a7f60a"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-14",
+      "title": "Uber 자율주행 책임자 교체 예정",
+      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-14.md",
+          "path": "data/reports/2026-10-14/autonomous_driving_daily_2026-10-14.md",
+          "sha256": "8cda1770a78b1b7a667282cc79394a4d23284d0811c5eb34d254c193c9cc5151"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-14.pptx",
+          "path": "data/reports/2026-10-14/autonomous_driving_daily_2026-10-14.pptx",
+          "sha256": "220d2b59efaed8e670ce559ba422e69f20835c39e037762f4b4cb2bfbb1e3732"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-15",
+      "title": "Waymo 3개 도시 일반 공개와 Uber 맨체스터 시험",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-15.md",
+          "path": "data/reports/2026-10-15/autonomous_driving_daily_2026-10-15.md",
+          "sha256": "22bb7b76f19d5aec1e66eb9c874eeaa27c0defc90f4d24e852b83478a0d10e4b"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-15.pptx",
+          "path": "data/reports/2026-10-15/autonomous_driving_daily_2026-10-15.pptx",
+          "sha256": "ac42e5aedaee3b8aab269ae6717a5be9a74a8d504bab866207ff1bc5c1019c78"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-16",
+      "title": "미니애폴리스 재의결 실패·Tesla 원격운전 사고 확인",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-16.md",
+          "path": "data/reports/2026-10-16/autonomous_driving_daily_2026-10-16.md",
+          "sha256": "2af192ae6d34d660a4b3fa934165e7da565919ecf791bce5c7e8d83f65eec3a1"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-16.pptx",
+          "path": "data/reports/2026-10-16/autonomous_driving_daily_2026-10-16.pptx",
+          "sha256": "69cbe0fce3eb7270e241474f0b052e51d27bd5943b66c7661b04eb73f6afede1"
         }
       ]
     }
