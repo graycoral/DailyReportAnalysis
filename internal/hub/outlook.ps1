@@ -1,12 +1,11 @@
-# AV Report Hub - classic Outlook bridge (run by outlook.go via -EncodedCommand).
-# Reads mail metadata through the Outlook object model. Never copies mail bodies or attachments,
-# never sends anything over the network. Input: base64 UTF-8 JSON in $env:AVHUB_IN.
+# AV Report Hub - classic Outlook bridge. Script and base64 JSON arrive through stdin.
+# Matching reports from explicitly selected folders may be returned to encrypted local storage.
 # Output: base64 UTF-8 JSON on stdout, either the result or {error, code}.
 $ErrorActionPreference = 'Stop'
 function Send($o) { [Console]::Out.Write([Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes((ConvertTo-Json -InputObject $o -Depth 5 -Compress)))) }
 function Fail($code, $msg) { Send @{ error = [string]$msg; code = $code }; exit 0 }
 if ($ExecutionContext.SessionState.LanguageMode -ne 'FullLanguage') { Fail 'clm' 'PowerShell language mode' }
-$req = ConvertFrom-Json ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($env:AVHUB_IN)))
+$req = ConvertFrom-Json ([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String([Console]::In.ReadToEnd())))
 try { $ol = New-Object -ComObject Outlook.Application; $ns = $ol.GetNamespace('MAPI') } catch { Fail 'com' $_.Exception.Message }
 
 function FilePathOf($s) { try { return [string]$s.FilePath } catch { return '' } }
@@ -32,6 +31,21 @@ function Skip($store) {
 }
 
 switch ($req.op) {
+  # REPORT_IMPORT_CASE
+  'folders' {
+    $list = New-Object System.Collections.ArrayList
+    $store = StoreOf $req.sources[0]
+    $queue = New-Object System.Collections.Queue
+    $queue.Enqueue(@($store.GetRootFolder(), [string]$store.DisplayName))
+    $skip = Skip $store
+    while ($queue.Count -gt 0) {
+      $folder, $path = $queue.Dequeue()
+      if ($skip.ContainsKey($folder.EntryID)) { continue }
+      foreach ($f in $folder.Folders) { $queue.Enqueue(@($f, ($path + '/' + $f.Name))) }
+      if ($folder.DefaultItemType -eq 0) { [void]$list.Add(@{name=$path; folder_name=[string]$folder.Name; folder_id=[string]$folder.EntryID; store_id=[string]$store.StoreID; path=(FilePathOf $store)}) }
+    }
+    Send @{folders=$list}
+  }
   'stores' {
     $list = New-Object System.Collections.ArrayList
     foreach ($s in $ns.Stores) { try { [void]$list.Add(@{ name = [string]$s.DisplayName; path = (FilePathOf $s); store_id = [string]$s.StoreID }) } catch {} }
@@ -52,11 +66,12 @@ switch ($req.op) {
       $skip = Skip $store
       $queue = New-Object System.Collections.Queue
       $root = $store.GetRootFolder()
+      if ($src.folder_id) { $root = $ns.GetFolderFromID($src.folder_id, $store.StoreID) }
       $queue.Enqueue(@($root, [string]$store.DisplayName))
       while ($queue.Count -gt 0) {
         $folder, $path = $queue.Dequeue()
         if ($skip.ContainsKey($folder.EntryID)) { continue }
-        foreach ($f in $folder.Folders) { $queue.Enqueue(@($f, ($path + '/' + $f.Name))) }
+        if (-not $src.folder_id) { foreach ($f in $folder.Folders) { $queue.Enqueue(@($f, ($path + '/' + $f.Name))) } }
         if ($folder.DefaultItemType -ne 0) { continue }
         try {
           $t = $folder.GetTable($filter, 0)

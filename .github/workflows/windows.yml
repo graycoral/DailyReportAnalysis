@@ -13,14 +13,42 @@ concurrency:
 jobs:
   build:
     runs-on: windows-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27.2'
           cache: false
+      - name: Check catalog, local and multimodal UI
+        shell: pwsh
+        run: |
+          node --check internal/hub/web/app.js
+          if ($LASTEXITCODE -ne 0) { throw 'JavaScript syntax check failed' }
+          node scripts/check-catalog-ui.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Catalog visibility UI tests failed' }
+          node scripts/check-rag-ui.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'RAG setup UI tests failed' }
+          node scripts/check-rag-media-ui.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'RAG media/map UI tests failed' }
+          node scripts/check-outlook-ui.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Outlook path UI tests failed' }
+          node scripts/check-import-model.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Local report import UI tests failed' }
+          node scripts/check-source-layers.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Map source visibility tests failed' }
+      - name: Test release retry and verification
+        shell: pwsh
+        run: node scripts/check-release.cjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Test optional media service without downloading a model
+        shell: pwsh
+        run: |
+          python -m pip install numpy pillow pillow-heif pypdfium2
+          if ($LASTEXITCODE -ne 0) { throw 'Media test dependencies failed' }
+          python -m unittest discover -s rag -p test_media.py
+          if ($LASTEXITCODE -ne 0) { throw 'Media service tests failed' }
       - name: Test and build self-contained executables
         shell: pwsh
         run: ./scripts/build.ps1
@@ -29,19 +57,19 @@ jobs:
           name: AVReportHub-Windows-x64
           path: dist/*
           retention-days: 30
+  publish:
+    needs: build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: AVReportHub-Windows-x64
+          path: dist
       - name: Publish Windows download
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          # Release tag follows the Version constant in internal/hub/model.go so code and release never drift.
-          $ver = (Select-String -Path internal/hub/model.go -Pattern 'Version = "([^"]+)"').Matches[0].Groups[1].Value
-          $tag = "v$ver"
-          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne $tag) { throw "Tag $env:GITHUB_REF_NAME does not match Version $ver" }
-          gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $tag --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "AV Report Hub $tag" --notes-file docs/RELEASE_NOTES.md
-            if ($LASTEXITCODE -ne 0) { throw 'Release creation failed' }
-          }
-          gh release upload $tag dist/AVReportHub-Windows-x64.zip dist/AVReportHub-Setup.exe dist/AVReportHub.exe dist/SHA256SUMS.txt --repo $env:GITHUB_REPOSITORY --clobber
-          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
+        run: node scripts/publish-release.cjs

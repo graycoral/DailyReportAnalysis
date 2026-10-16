@@ -1,5 +1,5 @@
 {
-  "count": 19,
+  "count": 17,
   "from_date": "2026-09-20",
   "through_date": "2026-10-14",
   "records": [
@@ -34,23 +34,6 @@
           "name": "autonomous_driving_daily_2026-10-13.pptx",
           "path": "data/reports/2026-10-13/autonomous_driving_daily_2026-10-13.pptx",
           "sha256": "cf36b620cd15b7ae770aa22f916dc25ae332c664c7eea8c35f5b383292a7f60a"
-        }
-      ]
-    },
-    {
-      "date": "2026-10-12",
-      "title": "주요 신규 업데이트 없음",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-10-12.md",
-          "path": "data/reports/2026-10-12/autonomous_driving_daily_2026-10-12.md",
-          "sha256": "a09f44e62ec0a821c018befac421e408af446b5b4b52f41a19549735ce30709e"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-10-12.pptx",
-          "path": "data/reports/2026-10-12/autonomous_driving_daily_2026-10-12.pptx",
-          "sha256": "73c51eb7c95bebe089873e156f7497c944cc6ddbcc528ae7cf9e74b41d2399e6"
         }
       ]
     },
@@ -221,23 +204,6 @@
           "name": "autonomous_driving_daily_2026-09-28.pptx",
           "path": "data/reports/2026-09-28/autonomous_driving_daily_2026-09-28.pptx",
           "sha256": "2690a4ecc3827a3b5cd0c389ee5b21503b5bb15da286d8edb4a506302a286cb6"
-        }
-      ]
-    },
-    {
-      "date": "2026-09-25",
-      "title": "주요 신규 업데이트 없음",
-      "verification": "Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관",
-      "attachments": [
-        {
-          "name": "autonomous_driving_daily_2026-09-25.md",
-          "path": "data/reports/2026-09-25/autonomous_driving_daily_2026-09-25.md",
-          "sha256": "0dabdb50d095b9f1b4b1158243c1128ae59312fdf86fa93e610bb56236a76ef9"
-        },
-        {
-          "name": "autonomous_driving_daily_2026-09-25.pptx",
-          "path": "data/reports/2026-09-25/autonomous_driving_daily_2026-09-25.pptx",
-          "sha256": "321f62c0131a497516080c01f4e74cd7228e7e9bd0184871f5d479c929b1f9ec"
         }
       ]
     },

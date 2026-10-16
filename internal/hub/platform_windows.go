@@ -91,7 +91,7 @@ func shortcut(target string) error {
 		return errors.New("바로가기 생성 도구가 없습니다. 설치 폴더에서 실행할 수 있습니다.")
 	}
 	quote := func(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
-	script := "$w=New-Object -ComObject WScript.Shell; $p=Join-Path ([Environment]::GetFolderPath('Desktop')) 'AV Report Hub.lnk'; $s=$w.CreateShortcut($p); $s.TargetPath=" + quote(target) + "; $s.WorkingDirectory=" + quote(filepath.Dir(target)) + "; $s.Save()"
+	script := "$ErrorActionPreference='Stop'; $w=New-Object -ComObject WScript.Shell; $p=Join-Path ([Environment]::GetFolderPath('Desktop')) 'AV Report Hub.lnk'; $s=$w.CreateShortcut($p); $s.TargetPath=" + quote(target) + "; $s.WorkingDirectory=" + quote(filepath.Dir(target)) + "; $s.IconLocation=" + quote(target+",0") + "; $s.Save()"
 	cmd := exec.Command(ps, "-NoProfile", "-NonInteractive", "-Command", script)
 	hideCommand(cmd)
 	if err := cmd.Run(); err != nil {

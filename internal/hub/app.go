@@ -38,8 +38,18 @@ type App struct {
 	mu                   sync.RWMutex
 	syncLock             sync.Mutex
 	localMu              sync.Mutex
+	visibilityMu         sync.Mutex
 	syncing              bool
 	status               string
+	syncState            string
+	outlookImportMu      sync.Mutex
+	outlookStatusMu      sync.Mutex
+	outlookImportStatus  outlookImportStatus
+	ragSetupMu           sync.Mutex
+	ragSetupState        ragSetupStatus
+	ragSetupChecked      bool
+	ragCancel            context.CancelFunc
+	ragProcess           *os.Process
 	server               *http.Server
 }
 type instance struct {
@@ -75,6 +85,7 @@ func Run(setup bool, payload []byte) {
 	}
 	log.Printf("start v%s setup=%v dir=%s", Version, setup, dir)
 	a := &App{dir: dir, setup: setup, payload: payload, config: defaultConfig(), status: "포함된 리포트"}
+	defer a.stopRagTask()
 	if b, e := os.ReadFile(filepath.Join(dir, "config.json")); e == nil {
 		var c Config
 		if json.Unmarshal(b, &c) == nil && c.Validate() == nil {
@@ -147,6 +158,9 @@ func Run(setup bool, payload []byte) {
 	defer os.Remove(instancePath)
 	a.server = &http.Server{Handler: a.routes(), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 30 * time.Second, WriteTimeout: 120 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16384}
 	go a.scheduler()
+	if !setup {
+		go a.outlookScheduler()
+	}
 	if !setup && a.config.Configured && !a.config.Offline {
 		go a.syncData()
 	}
@@ -196,13 +210,13 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
 		a.mu.RLock()
 		defer a.mu.RUnlock()
-		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "syncing": a.syncing, "status": a.status, "commit": a.snapshot.Commit, "synced_at": a.snapshot.SyncedAt, "configured": a.config.Configured})
+		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "syncing": a.syncing, "status": a.status, "sync_state": a.syncAvailability(), "commit": a.snapshot.Commit, "synced_at": a.snapshot.SyncedAt, "configured": a.config.Configured, "report_visibility": a.reportVisibility(), "local_revision": a.localReportRevision(), "outlook_import": a.outlookImportView()})
 	})
 	mux.HandleFunc("/api/state", func(w http.ResponseWriter, r *http.Request) {
 		a.mu.RLock()
 		defer a.mu.RUnlock()
 		_, te := os.Stat(filepath.Join(a.dir, "token.bin"))
-		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "config": a.config, "data_dir": a.dir, "has_token": te == nil, "snapshot": a.snapshot, "syncing": a.syncing, "status": a.status})
+		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "config": a.config, "data_dir": a.dir, "has_token": te == nil, "snapshot": a.snapshot, "syncing": a.syncing, "status": a.status, "sync_state": a.syncAvailability(), "report_visibility": a.reportVisibility(), "outlook_import": a.outlookImportView()})
 	})
 	mux.HandleFunc("/api/sync", func(w http.ResponseWriter, r *http.Request) {
 		if !post(w, r) {
@@ -258,7 +272,9 @@ func (a *App) routes() http.Handler {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Write(b)
 	})
+	mux.HandleFunc("/api/report-visibility", a.changeReportVisibility)
 	a.localRoutes(mux)
+	a.reportImportRoutes(mux)
 	a.ragRoutes(mux)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		expected := strings.TrimPrefix(a.address, "http://")
@@ -497,6 +513,10 @@ func (a *App) install(w http.ResponseWriter, r *http.Request) {
 		a.snapshot = *snap
 	}
 	a.status = "설정 완료"
+	a.syncState = ""
+	if snap != nil {
+		a.syncState = "ready"
+	}
 	a.mu.Unlock()
 	log.Printf("install ok: %s/%s@%s offline=%v", s.Owner, s.Repo, s.Branch, s.Offline)
 	if a.setup {

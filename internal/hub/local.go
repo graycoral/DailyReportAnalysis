@@ -22,7 +22,7 @@ import (
 // 내 자료: PDFs the user drops in, plus links to Outlook mail. All of it stays on this PC:
 // the index and PDF copies are DPAPI-encrypted for the current Windows user under <data-dir>/local,
 // never enter catalog/snapshot/state or logs, and no sync, prune or GitHub code path reads that folder.
-// Outlook mail is never copied; only its IDs and list metadata live in the encrypted index.
+// Ordinary mail links keep metadata only; matching daily reports have a separate encrypted archive.
 const localMax = 50 << 20
 
 var localIDPattern = regexp.MustCompile(`^[a-f0-9]{32}$`)
@@ -53,9 +53,11 @@ type MailLink struct {
 	Linked string `json:"linked"`
 }
 type OutlookSource struct {
-	Name    string `json:"name"`
-	Path    string `json:"path,omitempty"`
-	StoreID string `json:"store_id,omitempty"`
+	Name       string `json:"name"`
+	Path       string `json:"path,omitempty"`
+	StoreID    string `json:"store_id,omitempty"`
+	FolderID   string `json:"folder_id,omitempty"`
+	FolderName string `json:"folder_name,omitempty"`
 }
 type LocalIndex struct {
 	Files   []LocalFile     `json:"files"`
@@ -206,10 +208,19 @@ func cleanName(s string) string {
 }
 func (a *App) hasReport(id string) bool {
 	a.mu.RLock()
-	defer a.mu.RUnlock()
 	for _, r := range a.snapshot.Catalog.Reports {
 		if r.ID == id {
+			a.mu.RUnlock()
 			return true
+		}
+	}
+	a.mu.RUnlock()
+	x, e := a.viewReports()
+	if e == nil {
+		for _, r := range x.Reports {
+			if r.ID == id {
+				return true
+			}
 		}
 	}
 	return false
@@ -314,6 +325,10 @@ func (a *App) linkPDF(id, report string, on bool) error {
 // A PST/OST is identified by its path, a profile mailbox by its StoreID; either must look like one.
 func checkSource(s OutlookSource) (OutlookSource, error) {
 	s.Name = cleanText(s.Name, 120)
+	s.FolderName = cleanText(s.FolderName, 120)
+	if s.FolderID != "" && (!mapiID(s.FolderID) || s.StoreID == "" || s.FolderName == "") {
+		return s, errors.New("Outlook에서 가져올 폴더를 다시 선택하세요.")
+	}
 	if s.StoreID != "" {
 		if !mapiID(s.StoreID) {
 			return s, errors.New("Outlook 메일함 정보가 잘못되었습니다.")
@@ -336,6 +351,9 @@ func checkSource(s OutlookSource) (OutlookSource, error) {
 	return s, nil
 }
 func sameSource(a, b OutlookSource) bool {
+	if !strings.EqualFold(a.FolderID, b.FolderID) {
+		return false
+	}
 	return (a.StoreID != "" && strings.EqualFold(a.StoreID, b.StoreID)) || (a.Path != "" && strings.EqualFold(a.Path, b.Path))
 }
 
@@ -405,6 +423,11 @@ func (a *App) localRoutes(mux *http.ServeMux) {
 		writeResponse(w, f)
 	})
 	mux.HandleFunc("/api/local/file", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			w.Header().Set("Allow", "GET, HEAD")
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
 		b, f, e := a.readPDF(r.URL.Query().Get("id"))
 		if e != nil {
 			http.Error(w, e.Error(), 404)
@@ -413,13 +436,18 @@ func (a *App) localRoutes(mux *http.ServeMux) {
 		disp := "attachment"
 		if r.URL.Query().Get("view") == "1" {
 			disp = "inline"
+			// Only the authenticated PDF response may be framed by our own UI.
+			// All other responses retain frame-ancestors 'none'.
+			w.Header().Set("Content-Security-Policy", strings.Replace(w.Header().Get("Content-Security-Policy"), "frame-ancestors 'none'", "frame-ancestors 'self'", 1))
 		}
 		if h := mime.FormatMediaType(disp, map[string]string{"filename": f.Name}); h != "" {
 			disp = h
 		}
 		w.Header().Set("Content-Disposition", disp)
 		w.Header().Set("Content-Type", "application/pdf")
-		w.Write(b)
+		// Native PDF viewers use HEAD and byte ranges while navigating large files.
+		// Decrypted bytes stay in memory; no plaintext preview/cache file is written.
+		http.ServeContent(w, r, f.Name, time.Time{}, bytes.NewReader(b))
 	})
 	mux.HandleFunc("/api/local/delete", func(w http.ResponseWriter, r *http.Request) {
 		var v struct {
@@ -477,6 +505,7 @@ func (a *App) localRoutes(mux *http.ServeMux) {
 		}
 		writeResponse(w, v)
 	})
+	mux.HandleFunc("/api/outlook/pick", a.outlookPickerHandler(pickOutlookFile))
 	mux.HandleFunc("/api/outlook/source", func(w http.ResponseWriter, r *http.Request) {
 		var v struct {
 			Source OutlookSource `json:"source"`
@@ -509,6 +538,9 @@ func (a *App) localRoutes(mux *http.ServeMux) {
 		if e != nil {
 			localFail(w, "outlook source", e)
 			return
+		}
+		if !v.Remove && v.Source.FolderID != "" {
+			go a.importOutlookReports()
 		}
 		writeResponse(w, map[string]any{"ok": true})
 	})

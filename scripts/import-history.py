@@ -4,7 +4,8 @@ Two input modes:
   --from-reports            scan data/reports/YYYY-MM-DD/ (what GitHub Actions runs daily)
   --workspace/--manifest    legacy bulk import from a local report workspace + sent-mail manifest
 Both rebuild data/reports.sqlite, data/catalog.json, internal/hub/seed/* and data/import-audit.json.
-Existing report ids keep their edited summary/companies/tags/sources; only body and attachments are refreshed.
+Existing report ids keep their edited summary/companies/tags/sources, except the obsolete archive tag.
+No-update titles are omitted on every import; body and attachments of eligible reports are refreshed.
 """
 import argparse, hashlib, json, re, shutil, sqlite3, sys
 from datetime import datetime, timezone, timedelta
@@ -47,6 +48,13 @@ def mentioned(cfg, title, body):
     low = title.lower() + '\n' + substantive(body)
     return [c for c in cfg['companies'] if c.lower() in low]
 
+def is_no_update(title, cfg):
+    return ''.join(title.split()) == ''.join(cfg['no_update_title'].split())
+
+def listed_report(report):
+    # Remove only the obsolete category, preserving the report and every other field.
+    return dict(report, tags=[t for t in report.get('tags', []) if ''.join(t.split()) != '과거발송본'])
+
 def derive(date, title, body, existing, cfg):
     if date in existing:
         return dict(existing[date])
@@ -60,7 +68,7 @@ def derive(date, title, body, existing, cfg):
         if len(bullets) == 2: break
     return dict(id=date, date=date, title=title, summary=' '.join(bullets)[:420],
                 companies=mentioned(cfg, title, body),
-                tags=['신규 없음' if title == cfg['no_update_title'] else '동향'], sources=sources)
+                tags=['동향'], sources=sources)
 
 def att_entry(source, dest):
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -70,6 +78,7 @@ def att_entry(source, dest):
 
 def from_reports(existing, cfg):
     records, audit = [], []
+    seen = 0
     prior = {}
     try: prior = {a['date']: a.get('verification', '') for a in json.loads((ROOT/'data/import-audit.json').read_text(encoding='utf-8'))['records']}
     except Exception: pass
@@ -78,25 +87,33 @@ def from_reports(existing, cfg):
         mds = sorted(folder.glob('*.md'))
         if not mds:
             print(f'skip {date}: no .md', file=sys.stderr); continue
+        seen += 1
         if len(mds) > 1:
             print(f'warning {date}: {len(mds)} .md files, using {mds[0].name} as the body (all are attached)', file=sys.stderr)
         body = mds[0].read_text(encoding='utf-8')
         fm = frontmatter(body)
         title = (existing.get(date) or {}).get('title') or fm.get('info') or fm.get('title') or f'자율주행 데일리 리포트 {date}'
+        if is_no_update(title, cfg):
+            print(f'skip {date}: no new updates', file=sys.stderr); continue
         files = mds + sorted(folder.glob('*.pptx'))
         attachments = [att_entry(f, f) for f in files]
         r = derive(date, title, body, existing, cfg)
         r.update(body_markdown=body, attachments=attachments)
         records.append(r)
         audit.append(dict(date=date, title=title, verification=prior.get(date) or 'data/reports 폴더 스캔; SHA-256 기록', attachments=attachments))
+    if not seen: raise SystemExit('no report files found')
     return records, audit
 
 def from_manifest(workspace, manifest, existing, cfg):
     records, audit = [], []
+    seen = 0
     for email in manifest:
         match = re.search(r'(\d{4}-\d{2}-\d{2}) - (.+)', email['subject'])
         if not match: continue
+        seen += 1
         date, title = match.groups()
+        if is_no_update(title, cfg) or is_no_update(existing.get(date, {}).get('title', ''), cfg):
+            print(f'skip {date}: no new updates', file=sys.stderr); continue
         if any(r['id'] == date for r in records): raise ValueError('Duplicate date '+date)
         folder = workspace/('report-output' if date == '2026-09-20' else f'daily-{date}/output')
         attachments = []
@@ -113,12 +130,21 @@ def from_manifest(workspace, manifest, existing, cfg):
         r.update(body_markdown=body, attachments=attachments)
         records.append(r)
         audit.append(dict(date=date, title=title, verification='Gmail SENT 제목·첨부 파일명·바이트 크기 대조; 로컬 원본 보관', attachments=attachments))
+    if not seen: raise SystemExit('no report subjects found in manifest')
     return records, audit
 
 def build(records, audit, catalog, if_changed=False):
-    if not records: raise SystemExit('no reports found')
     before = {k: v for k, v in catalog.items() if k not in ('published_at', 'database')}
+    cfg = settings()
+    excluded = {r['id'] for r in catalog['reports'] + records if is_no_update(r['title'], cfg)}
+    records = [listed_report(r) for r in records if not is_no_update(r['title'], cfg)]
+    ids = {r['id'] for r in records}
+    excluded -= ids
+    audit = [a for a in audit if a['date'] in ids]
     catalog['reports'] = sorted(records, key=lambda r: r['date'], reverse=True)
+    catalog['events'] = [e for e in catalog['events'] if e['report_id'] not in excluded]
+    catalog['relations'] = [r for r in catalog['relations'] if r['report_id'] not in excluded]
+    catalog['related'] = [r for r in catalog['related'] if r['from'] not in excluded and r['to'] not in excluded]
     # A report date is not an event date. Archive entries are explicitly labelled and only added
     # for reports that have no curated (non-archive) event of their own.
     curated = {e['report_id'] for e in catalog['events'] if not e['id'].startswith('archive-')}
@@ -127,7 +153,6 @@ def build(records, audit, catalog, if_changed=False):
         if r['id'] in curated: continue
         catalog['events'].append(dict(id='archive-'+r['id'], date=r['date'], title=r['title'], status='보고일', report_id=r['id'],
             detail='해당 날짜 발송본의 보관 기록입니다. 사건 발생일 또는 계획 달성일을 뜻하지 않습니다.', companies=r['companies'], sources=r['sources'][:2]))
-    ids = {r['id'] for r in records}
     for x in catalog['relations']:
         if x['report_id'] not in ids: raise ValueError(f'relation {x["id"]} references missing report {x["report_id"]}')
     dbpath = ROOT/'data/reports.sqlite'; tmp = dbpath.with_suffix('.tmp'); tmp.unlink(missing_ok=True)
@@ -168,7 +193,7 @@ def build(records, audit, catalog, if_changed=False):
     for p in [ROOT/'data/catalog.json', ROOT/'internal/hub/seed/catalog.json']:
         p.write_text(json.dumps(catalog, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     shutil.copyfile(dbpath, ROOT/'internal/hub/seed/reports.sqlite')
-    (ROOT/'data/import-audit.json').write_text(json.dumps(dict(count=len(records), from_date=min(r['date'] for r in records), through_date=max(r['date'] for r in records), records=audit), ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+    (ROOT/'data/import-audit.json').write_text(json.dumps(dict(count=len(records), from_date=min((r['date'] for r in records), default=None), through_date=max((r['date'] for r in records), default=None), records=audit), ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
     print(f'Imported {len(records)} reports, {sum(len(r["attachments"]) for r in records)} attachments. SQLite integrity, foreign keys and search passed.')
 
 if __name__ == '__main__':

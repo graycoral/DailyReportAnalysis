@@ -1,0 +1,110 @@
+// Browser integration with mocked Outlook/local sources; never opens a real mailbox or starts a model.
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
+const {spawn}=require('node:child_process'),{chromium}=require('playwright');
+const root=path.resolve(__dirname,'..'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'avhub-outlook-sources-'));
+const catalog=JSON.parse(fs.readFileSync(path.join(root,'data/catalog.json'),'utf8')),published=catalog.reports[0];
+const mail={entry_id:'AABB',store_id:'CCDD',subject:'Outlook 원본 리포트',sender:'테스트 분석팀',folder:'리포트',received:'2026-10-14T10:00:00+09:00'};
+const imported={...published,id:'local-'+published.date,title:'Outlook에서 가져온 리포트',origin:'outlook-report',attachments:[],mail};
+const pdf={id:'test-pdf',name:'직접 연결한 참고자료.pdf',size:1024,added:'2026-10-14',reports:[published.id]};
+const store={name:'테스트 메일함',store_id:'CCDD'},folder={...store,name:'테스트 메일함/리포트',folder_id:'EEFF',folder_name:'리포트'};
+let viewer,browser,page,sources=[],storeCalls=0,mapCalls=0,opened;
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+async function capture(name){await page.screenshot({path:path.join(root,'build',name+'.png'),fullPage:false})}
+async function fits(){assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'viewport overflow')}
+(async()=>{
+ fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',configured:true,offline:true,sync_time:'08:00'}));
+ viewer=spawn(path.join(root,'build/navigation-viewer.exe'),['--no-browser','--data-dir',dir],{windowsHide:true,stdio:'ignore'});
+ const file=path.join(dir,'instance-viewer.json');for(let i=0;i<100&&!fs.existsSync(file);i++)await wait(100);
+ const instance=JSON.parse(fs.readFileSync(file,'utf8'));
+ browser=await chromium.launch({channel:'msedge',headless:true});
+ page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/api/local',r=>r.fulfill({json:{available:true,files:[pdf],mails:[{...mail,entry_id:'1122',subject:'직접 연결한 메일',report:published.id}],sources}}));
+ await page.route('**/api/local/reports',r=>r.fulfill({json:{reports:[imported],revision:'fixture'}}));
+ await page.route('**/api/outlook/stores',r=>{storeCalls++;return r.fulfill({json:{stores:[store]}})});
+ await page.route('**/api/outlook/folders',r=>r.fulfill({json:{folders:[folder]}}));
+ await page.route('**/api/outlook/source',r=>{sources=[r.request().postDataJSON().source];return r.fulfill({json:{ok:true}})});
+ await page.route('**/api/outlook/search',r=>r.fulfill({json:{mails:[]}}));
+ await page.route('**/api/outlook/open',r=>{opened=r.request().postDataJSON().mail;return r.fulfill({json:{ok:true}})});
+ await page.route('**/api/rag/map',r=>{mapCalls++;return r.fulfill({json:{ok:true,docs:[{id:'image',name:'색인한 이미지.png',kind:'image',pages:1,size:100},{id:'indexed-pdf',name:'색인한 PDF.pdf',kind:'pdf',pages:2,size:100}],links:[{from:'image',to:'indexed-pdf',from_page:1,to_page:2,similarity:.8}]}})});
+ await page.goto(instance.address+'/open?key='+instance.key);
+ await page.locator('#results [data-report]').first().waitFor();
+ await page.getByRole('tab',{name:'Outlook',exact:true}).click();
+ assert.equal(storeCalls,0,'opening the Outlook tab must not access mailboxes');
+ assert.equal(await page.locator('#report-filters').isVisible(),false);
+ await page.locator('#results [data-report="'+imported.id+'"]').click();
+ await page.getByRole('button',{name:'Outlook 원문 열기',exact:true}).click();
+ assert.equal(opened.entry_id,mail.entry_id);
+ await page.getByRole('button',{name:'Outlook 연동',exact:true}).click();
+ await page.getByRole('button',{name:'폴더 선택',exact:true}).click();
+ await page.getByRole('button',{name:'이 폴더 추가',exact:true}).click();
+ await page.getByText('자동 가져오기 · 태그: 리포트',{exact:true}).waitFor();
+ assert.equal(storeCalls,1);assert.equal(sources[0].folder_id,folder.folder_id);
+ await page.getByRole('button',{name:'연결 설정 접기',exact:true}).click();
+ await page.getByLabel('Outlook 자료 검색').fill('테스트 분석팀');
+ assert.equal(await page.locator('#results [data-report]').count(),1);
+ await page.locator('#results [data-goto-report="'+published.id+'"]').click();
+ assert.equal(await page.locator('#detail>h2').innerText(),published.title,'a saved mail link must open the original published report even when search overlays its date');
+ await capture('outlook-tab');
+ await page.getByRole('tab',{name:'내 자료',exact:true}).click();
+ assert.equal(await page.locator('#outlook-connect').count(),0);
+ assert.equal(await page.locator('#results [data-local]').count(),1);
+
+ await page.getByRole('tab',{name:'관계 그래프',exact:true}).click();
+ assert.equal(await page.getByRole('switch').count(),3);
+ assert.equal(await page.locator('#results [data-reference]').count(),3);
+ assert.ok(await page.locator('#results [data-relation]').count()>0);
+ await page.locator('[data-reference="origin:'+imported.id+'"]').click();
+ assert.match(await page.locator('#detail').innerText(),/REPORT_FORMAT/);
+ await page.locator('[data-reference="pdf-link:'+pdf.id+':'+published.id+'"]').click();
+ assert.match(await page.locator('#detail').innerText(),/사용자가 내 자료에서/);
+ await page.locator('#source-local').uncheck();
+ assert.equal(await page.locator('#results [data-reference]').count(),2);
+ assert.doesNotMatch(await page.locator('#detail').innerText(),/직접 연결한 참고자료/);
+ await page.locator('#source-outlook').uncheck();
+ assert.equal(await page.locator('#results [data-reference]').count(),0);
+ assert.ok(await page.locator('#results [data-relation]').count()>0,'same-date published facts must survive Outlook disabled');
+ await page.locator('#source-daily').uncheck();
+ assert.match(await page.locator('#results').innerText(),/표시할 자료를 위에서 켜/);
+
+ await page.getByRole('tab',{name:'전체 지도',exact:true}).click();
+ assert.equal(await page.locator('#results .mn').count(),0);
+ assert.equal(mapCalls,0,'disabled local source must not contact the optional media service');
+ await page.reload();await page.locator('#source-local').waitFor();
+ assert.equal(await page.locator('#source-local').isChecked(),false);
+ assert.equal(await page.locator('#source-outlook').isChecked(),false);
+ assert.equal(await page.locator('#results .mn').count(),0);
+ await page.locator('#source-outlook').check();
+ assert.equal(await page.locator('#results [data-source="daily"]').count(),0);
+ assert.ok(await page.locator('#results [data-source="outlook"]').count()>0);
+ await page.locator('#source-daily').check();
+ await page.locator('#source-local').check();
+ await page.locator('#results .mn.media').first().waitFor();
+ assert.equal(await page.locator('#results .mn.pdf').count(),1);
+ assert.equal(await page.locator('#results .ml.reference').count(),3);
+ assert.equal(await page.locator('#results .ml.similarity').count(),1);
+ await fits();await capture('outlook-sources-map');
+ await page.locator('#results .mn.pdf').press('Enter');
+ assert.match(await page.locator('#detail').innerText(),/PDF 원문 보기/);
+ await page.locator('#source-local').uncheck();
+ assert.equal(await page.locator('#results [data-source="local"]').count(),0);
+ assert.equal(await page.locator('#results .ml.similarity').count(),0);
+ assert.equal(await page.locator('#results .ml.reference').count(),2);
+ await page.locator('#source-local').check();
+ await page.getByRole('tab',{name:'관계 그래프',exact:true}).click();
+ await page.locator('[data-reference="origin:'+imported.id+'"]').click();
+ await page.locator('.document-connections').scrollIntoViewIfNeeded();
+ await capture('outlook-sources-graph');
+ for(const width of [850,390]){
+  await page.setViewportSize({width,height:900});
+  await fits();await capture('outlook-sources-'+width);
+  await page.getByRole('tab',{name:'Outlook',exact:true}).click();
+  await fits();
+  await page.getByRole('tab',{name:'관계 그래프',exact:true}).click();
+ }
+ assert.deepEqual(errors,[]);
+ console.log('PASS: separate Outlook tab/connect/folder flow, independent search, three source switches, provenance selection, all-off/reload, original facts, PDF/mail/map layers, evidence details and responsive layout');
+})().catch(async error=>{if(page)await capture('outlook-sources-failure').catch(()=>{});console.error(String(error.stack||error).replace(/([?&]key=)[a-f0-9]+/g,'$1[redacted]'));process.exitCode=1}).finally(async()=>{
+ if(browser)await browser.close();if(viewer&&viewer.exitCode===null){const done=new Promise(r=>viewer.once('exit',r));viewer.kill();await done}
+ const relative=path.relative(os.tmpdir(),dir);if(relative&&!relative.startsWith('..')&&!path.isAbsolute(relative)&&path.basename(dir).startsWith('avhub-outlook-sources-'))fs.rmSync(dir,{recursive:true,force:true});
+});

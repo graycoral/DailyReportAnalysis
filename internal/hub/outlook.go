@@ -5,7 +5,6 @@ import (
 	"context"
 	_ "embed"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"log"
@@ -14,25 +13,28 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"unicode/utf16"
 )
 
 // Classic Outlook is driven through its COM object model by the built-in Windows PowerShell.
-// Input and output cross the process boundary as base64 UTF-8 JSON (env var / stdout), so Korean
-// text survives any console code page. The bridge only returns metadata; mail bodies are never copied.
+// Script/input and output cross the process boundary as base64 UTF-8 over pipes.
+// Selected report folders additionally return candidate Markdown, never to a temporary file.
 //
 //go:embed outlook.ps1
 var outlookScript string
 
+//go:embed outlook_reports.ps1
+var outlookReportScript string
+
 type outlookReq struct {
-	Op      string          `json:"op"`
-	Sources []OutlookSource `json:"sources,omitempty"`
-	Terms   []string        `json:"terms,omitempty"`
-	All     bool            `json:"all,omitempty"`
-	From    string          `json:"from,omitempty"`
-	To      string          `json:"to,omitempty"`
-	Limit   int             `json:"limit,omitempty"`
-	Mail    *MailRef        `json:"mail,omitempty"`
+	Op      string                   `json:"op"`
+	Sources []OutlookSource          `json:"sources,omitempty"`
+	Terms   []string                 `json:"terms,omitempty"`
+	All     bool                     `json:"all,omitempty"`
+	From    string                   `json:"from,omitempty"`
+	To      string                   `json:"to,omitempty"`
+	Limit   int                      `json:"limit,omitempty"`
+	Mail    *MailRef                 `json:"mail,omitempty"`
+	Cursors map[string]outlookCursor `json:"cursors,omitempty"`
 }
 
 func outlookMessage(code, msg string) string {
@@ -56,14 +58,10 @@ func runOutlook(ctx context.Context, req outlookReq, out any) error {
 	if e != nil {
 		return e
 	}
-	u := utf16.Encode([]rune(outlookScript))
-	script := make([]byte, len(u)*2)
-	for i, c := range u {
-		binary.LittleEndian.PutUint16(script[i*2:], c)
-	}
+	script := strings.Replace(outlookScript, "# REPORT_IMPORT_CASE", outlookReportScript, 1)
 	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
-	cmd := exec.CommandContext(ctx, ps, "-NoProfile", "-NonInteractive", "-EncodedCommand", base64.StdEncoding.EncodeToString(script))
-	cmd.Env = append(os.Environ(), "AVHUB_IN="+base64.StdEncoding.EncodeToString(in))
+	cmd := exec.CommandContext(ctx, ps, "-NoProfile", "-NonInteractive", "-Command", "$s=[Console]::ReadLine(); & ([scriptblock]::Create([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($s))))")
+	cmd.Stdin = strings.NewReader(base64.StdEncoding.EncodeToString([]byte(script)) + "\n" + base64.StdEncoding.EncodeToString(in))
 	hideCommand(cmd)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr

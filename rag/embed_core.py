@@ -45,7 +45,7 @@ def check_storage():
             sys.exit(3)
 
 
-def load_model():
+def load_model(offline=False):
     """Text + vision only: audio_config=None means the audio encoder is never loaded."""
     import torch
     from sentence_transformers import SentenceTransformer
@@ -55,6 +55,8 @@ def load_model():
     try:
         model = SentenceTransformer(MODEL_ID, config_kwargs={"audio_config": None}, device="cpu", local_files_only=True)
     except Exception:
+        if offline:
+            raise
         log(f"{MODEL_ID} not cached; downloading model files (no documents are sent)")
         model = SentenceTransformer(MODEL_ID, config_kwargs={"audio_config": None}, device="cpu")
     seconds = time.perf_counter() - t

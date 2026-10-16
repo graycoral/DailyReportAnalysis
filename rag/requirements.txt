@@ -5,4 +5,5 @@ sentence-transformers[image]>=6.1
 transformers
 pypdfium2
 pillow
+pillow-heif
 numpy

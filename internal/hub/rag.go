@@ -1,11 +1,13 @@
 package hub
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,7 +26,7 @@ type ragService struct {
 
 const ragMax = 50 << 20
 
-var errRagDown = errors.New("멀티모달 검색 서비스가 실행 중이 아닙니다. rag/rag_server.py를 먼저 실행하세요.")
+var errRagDown = errors.New("AI 검색 서비스가 실행 중이 아닙니다. rag/rag_server.py를 먼저 실행하세요.")
 
 func (a *App) ragServiceInfo() (ragService, error) {
 	b, e := os.ReadFile(filepath.Join(a.dir, "rag-service.json"))
@@ -55,7 +57,8 @@ func (a *App) ragProxy(w http.ResponseWriter, r *http.Request, method, path stri
 		req.Header.Set("Content-Type", contentType)
 	}
 	if fileName != "" {
-		req.Header.Set("X-File-Name", fileName)
+		req.Header.Set("X-File-Name", url.PathEscape(fileName))
+		req.Header.Set("X-File-Name-Encoding", "percent-utf8")
 	}
 	res, e := (&http.Client{Timeout: timeout}).Do(req)
 	if e != nil {
@@ -70,8 +73,12 @@ func (a *App) ragProxy(w http.ResponseWriter, r *http.Request, method, path stri
 }
 
 func (a *App) ragRoutes(mux *http.ServeMux) {
+	a.ragSetupRoutes(mux)
 	mux.HandleFunc("/api/rag/status", func(w http.ResponseWriter, r *http.Request) {
 		a.ragProxy(w, r, "GET", "/health", nil, "", "", 5*time.Second)
+	})
+	mux.HandleFunc("/api/rag/map", func(w http.ResponseWriter, r *http.Request) {
+		a.ragProxy(w, r, "GET", "/map", nil, "", "", 2*time.Minute)
 	})
 	mux.HandleFunc("/api/rag/demo", func(w http.ResponseWriter, r *http.Request) {
 		q := ""
@@ -88,8 +95,8 @@ func (a *App) ragRoutes(mux *http.ServeMux) {
 			return
 		}
 		name := filepath.Base(r.URL.Query().Get("name"))
-		if name == "" || name == "." || !strings.HasSuffix(strings.ToLower(name), ".pdf") {
-			http.Error(w, "PDF 파일만 색인할 수 있습니다.", 400)
+		if name == "" || name == "." {
+			http.Error(w, "파일 이름이 필요합니다.", 400)
 			return
 		}
 		b, e := io.ReadAll(http.MaxBytesReader(w, r.Body, ragMax))
@@ -97,12 +104,13 @@ func (a *App) ragRoutes(mux *http.ServeMux) {
 			http.Error(w, "50MB를 넘습니다.", 413)
 			return
 		}
-		if len(b) < 4 || string(b[:4]) != "%PDF" {
-			http.Error(w, "PDF 파일만 색인할 수 있습니다.", 400)
+		contentType := ragUploadType(name, b)
+		if contentType == "" {
+			http.Error(w, "PDF 또는 지원하는 이미지(PNG·JPG·WebP·GIF·BMP·TIFF·AVIF·HEIC·ICO)를 선택해 주세요.", 400)
 			return
 		}
 		log.Printf("rag: index %d bytes", len(b))
-		a.ragProxy(w, r, "POST", "/index", strings.NewReader(string(b)), "application/pdf", name, 30*time.Minute)
+		a.ragProxy(w, r, "POST", "/index", bytes.NewReader(b), contentType, name, 30*time.Minute)
 	})
 	for _, p := range []string{"query", "delete"} {
 		path := p
@@ -118,4 +126,36 @@ func (a *App) ragRoutes(mux *http.ServeMux) {
 			a.ragProxy(w, r, "POST", "/"+path, strings.NewReader(string(b)), "application/json", "", 2*time.Minute)
 		})
 	}
+}
+
+// This is a cheap format gate; the local service fully decodes every image before indexing.
+func ragUploadType(name string, data []byte) string {
+	ext := strings.ToLower(filepath.Ext(name))
+	if ext == ".pdf" {
+		if bytes.HasPrefix(data, []byte("%PDF")) {
+			return "application/pdf"
+		}
+		return ""
+	}
+	allowed := map[string]bool{".png": true, ".jpg": true, ".jpeg": true, ".jfif": true, ".webp": true,
+		".gif": true, ".bmp": true, ".tif": true, ".tiff": true, ".avif": true, ".heic": true, ".heif": true, ".ico": true}
+	if !allowed[ext] {
+		return ""
+	}
+	contentType := http.DetectContentType(data)
+	if strings.HasPrefix(contentType, "image/") {
+		return contentType
+	}
+	if bytes.HasPrefix(data, []byte{'I', 'I', 42, 0}) || bytes.HasPrefix(data, []byte{'M', 'M', 0, 42}) {
+		return "image/tiff"
+	}
+	if len(data) >= 12 && string(data[4:8]) == "ftyp" {
+		switch string(data[8:12]) {
+		case "avif", "avis":
+			return "image/avif"
+		case "heic", "heix", "hevc", "hevx", "heim", "heis", "mif1", "msf1":
+			return "image/heif"
+		}
+	}
+	return ""
 }
