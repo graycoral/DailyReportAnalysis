@@ -27,7 +27,7 @@ def pick_sentences(page_text):
     return related, unrelated
 
 
-def run(docs, as_json=False):
+def run(docs, as_json=False, *, model=None, info=None, model_call=None, return_result=False):
     out = {"docs_dir": str(docs)}
     pdfs = ec.list_pdfs(docs)
     sample = None
@@ -35,9 +35,13 @@ def run(docs, as_json=False):
         sample = ec.ensure_sample_pdf(docs)
         pdfs = ec.list_pdfs(docs)
         out["note"] = f"docs 폴더에 PDF가 없어 최신 리포트로 샘플 PDF를 만들었습니다: {sample.name}" if sample else "docs 폴더에 PDF가 없습니다."
-    model, info = ec.load_model()
+    if model is None:
+        model, info = ec.load_model()
+    compute = model_call or (lambda function, *args: function(*args))
     out["model"] = info
     if not pdfs:
+        if return_result:
+            return out
         print(json.dumps(out, ensure_ascii=False, indent=2) if as_json else report(out))
         return 0
     pdf = pdfs[0]
@@ -45,7 +49,7 @@ def run(docs, as_json=False):
     t = time.perf_counter()
     page_no, img = next(ec.pdf_pages(pdf, first_only=True))
     render_s = time.perf_counter() - t
-    vec, embed_s = ec.embed_image(model, img)
+    vec, embed_s = compute(ec.embed_image, model, img)
     out["first_page"] = {"page": page_no, "width": img.width, "height": img.height,
                          "render_seconds": round(render_s, 2), "embed_seconds": round(embed_s, 2),
                          "total_seconds": round(render_s + embed_s, 2)}
@@ -53,11 +57,13 @@ def run(docs, as_json=False):
     related, unrelated = pick_sentences(text)
     sims = []
     for label, s in [("관련 1", related[0]), ("관련 2", related[1]), ("무관", unrelated)]:
-        q = ec.embed_query(model, s)
+        q = compute(ec.embed_query, model, s)
         sims.append({"label": label, "sentence": s, "similarity": round(float(model.similarity(q, vec)[0][0]), 4)})
     out["similarities"] = sims
     out["page_text_preview"] = text[:200]
     ec.save_json(ec.INDEX_DIR / "last-demo.json", out)
+    if return_result:
+        return out
     print(json.dumps(out, ensure_ascii=False, indent=2) if as_json else report(out))
     return 0
 

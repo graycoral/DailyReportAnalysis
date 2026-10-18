@@ -5,16 +5,89 @@ package hub
 import (
 	"bytes"
 	"io"
+	"mime"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
 
 const secretPDF = "%PDF-1.7\n사내-기밀-표식 internal-marker-42\n%%EOF"
+
+func TestLocalPDFPreviewHTTP(t *testing.T) {
+	a := localApp(t)
+	f, err := a.addPDF("미리보기 보고서.pdf", []byte(secretPDF))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := a.routes()
+	path := "/api/local/file?id=" + f.ID
+	for _, tc := range []struct {
+		name, method, query, byteRange string
+		status                         int
+		body, disposition, ancestors   string
+	}{
+		{"preview", "GET", "&view=1", "", 200, secretPDF, "inline", "'self'"},
+		{"head", "HEAD", "&view=1", "", 200, "", "inline", "'self'"},
+		{"page range", "GET", "&view=1", "bytes=0-7", 206, secretPDF[:8], "inline", "'self'"},
+		{"download", "GET", "", "", 200, secretPDF, "attachment", "'none'"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := httptest.NewRequest(tc.method, path+tc.query, nil)
+			r.Host = "127.0.0.1:9000"
+			r.AddCookie(&http.Cookie{Name: "av_session", Value: a.secret})
+			if tc.byteRange != "" {
+				r.Header.Set("Range", tc.byteRange)
+			}
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, r)
+			if w.Code != tc.status || w.Body.String() != tc.body {
+				t.Fatalf("response: %d %q", w.Code, w.Body.String())
+			}
+			disposition, params, err := mime.ParseMediaType(w.Header().Get("Content-Disposition"))
+			if err != nil || disposition != tc.disposition || params["filename"] != f.Name {
+				t.Fatalf("disposition: %s", w.Header().Get("Content-Disposition"))
+			}
+			if w.Header().Get("Content-Type") != "application/pdf" || w.Header().Get("Cache-Control") != "no-store" || w.Header().Get("X-Content-Type-Options") != "nosniff" {
+				t.Fatalf("missing PDF protections: %v", w.Header())
+			}
+			if !strings.Contains(w.Header().Get("Content-Security-Policy"), "frame-ancestors "+tc.ancestors) {
+				t.Fatalf("frame policy: %s", w.Header().Get("Content-Security-Policy"))
+			}
+			if tc.byteRange != "" && w.Header().Get("Content-Range") != "bytes 0-7/"+strconv.Itoa(len(secretPDF)) {
+				t.Fatal("missing byte range metadata")
+			}
+			if tc.method == "HEAD" && w.Header().Get("Content-Length") != strconv.Itoa(len(secretPDF)) {
+				t.Fatal("HEAD must report size without sending PDF bytes")
+			}
+		})
+	}
+	for _, method := range []string{"GET", "HEAD"} {
+		r := httptest.NewRequest(method, path+"&view=1", nil)
+		r.Host = "127.0.0.1:9000"
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		if w.Code != 403 || strings.Contains(w.Body.String(), "internal-marker-42") {
+			t.Fatalf("unauthenticated %s: %d", method, w.Code)
+		}
+	}
+	if w := call(t, h, "GET", "/", ""); !strings.Contains(w.Header().Get("Content-Security-Policy"), "frame-ancestors 'none'") {
+		t.Fatal("app shell must still reject framing")
+	}
+	if w := call(t, h, "POST", path+"&view=1", ""); w.Code != 405 {
+		t.Fatalf("PDF endpoint accepted mutation method: %d", w.Code)
+	}
+	if err := a.deletePDF(f.ID); err != nil {
+		t.Fatal(err)
+	}
+	if w := call(t, h, "GET", path+"&view=1", ""); w.Code != 404 || !strings.Contains(w.Header().Get("Content-Security-Policy"), "frame-ancestors 'none'") {
+		t.Fatal("deleted PDF must be unavailable and its error must not allow framing")
+	}
+}
 
 func localApp(t *testing.T) *App {
 	t.Helper()

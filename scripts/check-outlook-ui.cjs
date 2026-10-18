@@ -11,12 +11,13 @@ assert.ok(app.includes('bindOutlookPathForm();'));
 function fixture(){
  const input={value:'',attributes:{},focus(){this.focused=true},setAttribute(k,v){this.attributes[k]=v}};
  const button={disabled:false,textContent:''};
+ const browse={disabled:false,textContent:''};
  const status={hidden:true,textContent:'',classes:new Set(),classList:{toggle(k,on){if(on)status.classes.add(k);else status.classes.delete(k)}}};
  const form={elements:{namedItem:()=>input},querySelector:()=>button,setAttribute(){}};
  let timer,implementation=async()=>{throw Error('Unexpected request')};
  const calls=[];
  const context=vm.createContext({
-  $:selector=>({'#pst-form':form,'#pst-status':status}[selector]),
+  $:selector=>({'#pst-form':form,'#pst-status':status,'#pst-browse':browse}[selector]),
   esc:s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;'),
   local:{sources:[],files:[],mails:[]},
   api:async(...args)=>{calls.push(args);return implementation(...args)},
@@ -27,7 +28,7 @@ function fixture(){
  const evaluate=code=>vm.runInContext(code,context);
  evaluate('bindOutlookPathForm()');
  return {
-  input,button,status,form,calls,context,evaluate,
+  input,button,browse,status,form,calls,context,evaluate,
   type(value){input.value=value;input.oninput({target:input})},
   submit(){return form.onsubmit({currentTarget:form,preventDefault(){}})},
   respond(fn){implementation=fn},
@@ -35,8 +36,62 @@ function fixture(){
  };
 }
 (async()=>{
+ // The primary action opens the native picker without needing a typed path.
+ let f=fixture(),releasePicker;
+ f.respond(async(url,body)=>{
+  if(url==='/api/outlook/pick')return new Promise(resolve=>{releasePicker=resolve});
+  if(url==='/api/outlook/source'){
+   assert.equal(body.source.path,'D:\\회사 메일\\보관.pst');
+   return {ok:true};
+  }
+  assert.equal(url,'/api/local');
+  return {available:true,sources:[{path:'D:\\회사 메일\\보관.pst',name:'보관.pst'}]};
+ });
+ const picking=f.browse.onclick();
+ assert.equal(f.calls[0][0],'/api/outlook/pick');
+ assert.equal(f.browse.disabled,true);
+ assert.equal(f.button.disabled,true);
+ assert.equal(f.input.readOnly,true);
+ assert.match(f.status.textContent,/파일 선택 창/);
+ await f.browse.onclick();await f.submit();
+ assert.equal(f.calls.length,1,'duplicate clicks must not open additional dialogs or save');
+ f.evaluate('bindOutlookPathForm()');
+ assert.equal(f.browse.disabled,true,'re-render must keep picker busy');
+ releasePicker({path:'D:\\회사 메일\\보관.pst',cancelled:false});
+ await picking;
+ assert.equal(f.context.local.sources.length,1);
+ assert.match(f.status.textContent,/추가했습니다/);
+ assert.equal(f.browse.disabled,false);
+
+ // Cancel preserves the draft and does not save; a later picker can succeed.
+ f=fixture();f.type('C:\\draft.pst');
+ f.respond(async()=>({path:'',cancelled:true}));
+ await f.browse.onclick();
+ assert.equal(f.calls.length,1);
+ assert.equal(f.input.value,'C:\\draft.pst');
+ assert.match(f.status.textContent,/취소/);
+ assert.equal(f.status.classes.has('error'),false);
+ assert.equal(f.browse.disabled,false);
+ f.respond(async()=>{throw Error('파일 선택 창을 열지 못했습니다.')});
+ await f.browse.onclick();
+ assert.match(f.status.textContent,/열지 못했습니다/);
+ assert.equal(f.input.value,'C:\\draft.pst');
+ assert.equal(f.input.readOnly,false);
+ assert.equal(f.browse.disabled,false);
+
+ // Picker results still use the same extension and duplicate validation as typed paths.
+ f=fixture();f.respond(async()=>({path:'C:\\wrong.pdf',cancelled:false}));
+ await f.browse.onclick();
+ assert.equal(f.calls.length,1);
+ assert.match(f.status.textContent,/PST 또는 OST/);
+ f.context.local.sources=[{path:'C:\\mail.pst'}];
+ f.respond(async()=>({path:'c:\\MAIL.PST',cancelled:false}));
+ await f.browse.onclick();
+ assert.equal(f.calls.length,2);
+ assert.match(f.status.textContent,/이미 추가된/);
+
  // Empty and folder-only submissions must show a persistent message and focus the input.
- let f=fixture();
+ f=fixture();
  await f.submit();
  assert.match(f.status.textContent,/전체 경로를 먼저 입력/);
  assert.equal(f.status.hidden,false);
@@ -120,5 +175,5 @@ function fixture(){
  assert.ok(f.evaluate('outlookPathHtml()').includes('&lt;img src=x&gt;'));
  f.evaluate('bindOutlookPathForm()');
  assert.equal(f.input.value,'C:\\<img src=x>.pst');
- console.log('PASS: Outlook path validation, quoted path save, progress, duplicate prevention, errors, timeout, refresh failure and draft retention');
+ console.log('PASS: Outlook native picker, selection/save, cancellation, repeated clicks, validation, quoted paths, errors, timeout, refresh failure and draft retention');
 })().catch(error=>{console.error(error);process.exitCode=1});

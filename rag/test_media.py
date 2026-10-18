@@ -3,6 +3,7 @@ import io
 import json
 import tempfile
 import threading
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -34,7 +35,8 @@ class MediaTests(unittest.TestCase):
                         patch.object(ec, "embed_query", return_value=np.array([1., 0., 0.]))]
         for p in self.patches:
             p.start()
-        server.state.update(docs={}, vecs={}, model=None, info={"model": "test"}, revision=0, map_cache=None)
+        server.state.update(docs={}, vecs={}, model=None, info={"model": "test"}, revision=0, map_cache=None, pair_cache={})
+        server.jobs = server.Jobs()
 
     def tearDown(self):
         for p in reversed(self.patches):
@@ -108,7 +110,18 @@ class MediaTests(unittest.TestCase):
         address = f"http://127.0.0.1:{http.server_port}"
         def request(path, body=None, headers=None):
             with urlopen(Request(address + path, data=body, headers={"X-RAG-Key": "test-only", **(headers or {})}), timeout=5) as response:
-                return json.load(response)
+                value = json.load(response)
+            deadline = time.monotonic() + 10
+            while "job" in value:
+                if value["state"] == "done":
+                    return value["result"]
+                if value["state"] == "error":
+                    raise AssertionError(value["error"])
+                self.assertLess(time.monotonic(), deadline)
+                time.sleep(.01)
+                with urlopen(Request(address + "/jobs?id=" + value["job"], headers={"X-RAG-Key": "test-only"}), timeout=5) as response:
+                    value = json.load(response)
+            return value
         try:
             with self.assertRaises(HTTPError) as rejected:
                 urlopen(address + "/map", timeout=5)

@@ -37,6 +37,23 @@ func newGitHub(c Config, token string) *githubClient {
 }
 
 var apiBase = "https://api.github.com" // overridden in tests
+
+// Caller holds mu. A failed update remains retryable, including after a network change.
+func (a *App) syncAvailability() string {
+	if a.syncing {
+		return "checking"
+	}
+	if a.config.Offline {
+		return "offline"
+	}
+	if !a.config.Configured {
+		return "unconfigured"
+	}
+	if a.syncState == "" {
+		return "unknown"
+	}
+	return a.syncState
+}
 func (g *githubClient) get(ctx context.Context, path, accept string, limit int64) ([]byte, error) {
 	b, _, e := g.getETag(ctx, path, accept, "", limit)
 	return b, e
@@ -154,6 +171,9 @@ func (a *App) syncData() {
 		if err != nil {
 			log.Printf("sync failed: %v", err)
 			a.status = err.Error()
+			a.syncState = "unavailable"
+		} else {
+			a.syncState = "ready"
 		}
 	}()
 	if !cfg.Configured || cfg.Offline {

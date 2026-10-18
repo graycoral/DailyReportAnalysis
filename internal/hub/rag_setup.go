@@ -84,7 +84,7 @@ func (a *App) ragEnvironment() ragSetupStatus {
 	defer a.ragSetupMu.Unlock()
 	if !a.ragSetupChecked {
 		a.ragSetupChecked = true
-		a.ragSetupState = ragSetupStatus{State: "missing", Message: "멀티모달 검색을 사용하려면 환경을 설정해 주세요."}
+		a.ragSetupState = ragSetupStatus{State: "missing", Message: "AI 검색을 사용하려면 환경을 설정해 주세요."}
 		if runtime.GOOS != "windows" {
 			a.ragSetupState.Message = "앱에서 환경 설정은 Windows에서 지원합니다."
 		} else if a.ragMarkerValid() {
@@ -308,7 +308,7 @@ func (a *App) installRagEnvironment(ctx context.Context) {
 		{"pip을 확인하고 있습니다.", a.ragPython(), []string{"-m", "ensurepip", "--upgrade"}, 2 * time.Minute},
 		{"패키지 설치 도구를 준비하고 있습니다.", a.ragPython(), []string{"-m", "pip", "install", "--upgrade", "pip"}, 5 * time.Minute},
 		{"CPU용 검색 엔진을 설치하고 있습니다. 처음에는 몇 분 걸릴 수 있습니다.", a.ragPython(), []string{"-m", "pip", "install", "torch", "--index-url", "https://download.pytorch.org/whl/cpu"}, 30 * time.Minute},
-		{"PDF·이미지 처리와 임베딩 패키지를 설치하고 있습니다.", a.ragPython(), []string{"-m", "pip", "install", "-r", filepath.Join(dir, "requirements.txt")}, 30 * time.Minute},
+		{"PDF 처리와 임베딩 패키지를 설치하고 있습니다.", a.ragPython(), []string{"-m", "pip", "install", "-r", filepath.Join(dir, "requirements.txt")}, 30 * time.Minute},
 		{"검색 모델을 내려받고 이미지·문장 검색을 검증하고 있습니다.", a.ragPython(), []string{filepath.Join(dir, "setup_env.py")}, 45 * time.Minute},
 	}
 	for i, step := range steps {

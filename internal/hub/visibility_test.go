@@ -96,6 +96,56 @@ func TestReportVisibilityConcurrentHides(t *testing.T) {
 	}
 }
 
+func TestReportVisibilitySelectedRestorePreservesOtherChoices(t *testing.T) {
+	a := visibilityApp(t)
+	first, second := a.snapshot.Catalog.Reports[0].ID, a.snapshot.Catalog.Reports[1].ID
+	path := filepath.Join(a.dir, "report-visibility.json")
+	if err := writeJSON(path, reportVisibility{HiddenReports: []string{first, second, "retired-id"}}); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := json.Marshal(a.snapshot)
+	for i := 0; i < 2; i++ { // Repeated restore is idempotent, including removed catalog entries.
+		body := `{"action":"restore","report_ids":["` + first + `","` + first + `","retired-id","already-visible"]}`
+		if w := visibilityRequest(a, "POST", "/api/report-visibility", body); w.Code != 200 {
+			t.Fatalf("selected restore: %d %s", w.Code, w.Body)
+		}
+	}
+	if got := a.reportVisibility().HiddenReports; !reflect.DeepEqual(got, []string{second}) {
+		t.Fatalf("unselected report changed: %v", got)
+	}
+	restarted := visibilityApp(t)
+	restarted.dir = a.dir
+	if got := restarted.reportVisibility().HiddenReports; !reflect.DeepEqual(got, []string{second}) {
+		t.Fatalf("selection was not persisted: %v", got)
+	}
+	after, _ := json.Marshal(a.snapshot)
+	if string(before) != string(after) {
+		t.Fatal("selected restore modified the published catalog")
+	}
+}
+
+func TestReportVisibilityConcurrentHideAndRestore(t *testing.T) {
+	a := visibilityApp(t)
+	first, second := a.snapshot.Catalog.Reports[0].ID, a.snapshot.Catalog.Reports[1].ID
+	if err := writeJSON(filepath.Join(a.dir, "report-visibility.json"), reportVisibility{HiddenReports: []string{first}}); err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	for _, body := range []string{`{"action":"restore","report_ids":["` + first + `"]}`, `{"action":"hide","report_id":"` + second + `"}`} {
+		wg.Add(1)
+		go func(body string) {
+			defer wg.Done()
+			if w := visibilityRequest(a, "POST", "/api/report-visibility", body); w.Code != 200 {
+				t.Errorf("change: %d %s", w.Code, w.Body)
+			}
+		}(body)
+	}
+	wg.Wait()
+	if got := a.reportVisibility().HiddenReports; !reflect.DeepEqual(got, []string{second}) {
+		t.Fatalf("concurrent change was lost: %v", got)
+	}
+}
+
 func TestReportVisibilityRejectsInvalidRequestsAndStorageFailures(t *testing.T) {
 	a := visibilityApp(t)
 	for _, tc := range []struct {
@@ -104,6 +154,8 @@ func TestReportVisibilityRejectsInvalidRequestsAndStorageFailures(t *testing.T) 
 	}{
 		{"GET", "", 405}, {"POST", "{", 400}, {"POST", `{"action":"delete"}`, 400},
 		{"POST", `{"action":"hide","report_id":"../missing"}`, 404},
+		{"POST", `{"action":"restore","report_ids":[]}`, 400},
+		{"POST", `{"action":"restore","report_ids":"bad-type"}`, 400},
 	} {
 		if w := visibilityRequest(a, tc.method, "/api/report-visibility", tc.body); w.Code != tc.code {
 			t.Fatalf("%+v: %d", tc, w.Code)
@@ -118,6 +170,9 @@ func TestReportVisibilityRejectsInvalidRequestsAndStorageFailures(t *testing.T) 
 	}
 	if w := visibilityRequest(a, "POST", "/api/report-visibility", `{"action":"hide","report_id":"`+a.snapshot.Catalog.Reports[0].ID+`"}`); w.Code != 500 {
 		t.Fatal("unreadable settings were overwritten")
+	}
+	if w := visibilityRequest(a, "POST", "/api/report-visibility", `{"action":"restore","report_ids":["one"]}`); w.Code != 500 {
+		t.Fatal("selective restore overwrote unreadable settings")
 	}
 	if b, _ := os.ReadFile(path); string(b) != "broken" {
 		t.Fatal("unreadable settings were changed")
