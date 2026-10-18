@@ -38,6 +38,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Local report import UI tests failed' }
           node scripts/check-source-layers.cjs
           if ($LASTEXITCODE -ne 0) { throw 'Map source visibility tests failed' }
+          node scripts/check-map-model.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Map identity and source-link tests failed' }
       - name: Test release retry and verification
         shell: pwsh
         run: node scripts/check-release.cjs
@@ -58,6 +60,15 @@ jobs:
       - name: Test and build self-contained executables
         shell: pwsh
         run: ./scripts/build.ps1
+      - name: Test map selection in Edge
+        shell: pwsh
+        run: |
+          npm install --prefix build/ui-tools --no-save --no-fund --no-audit playwright@1.55.0
+          if ($LASTEXITCODE -ne 0) { throw 'Browser test dependency installation failed' }
+          $env:NODE_PATH = Join-Path $PWD 'build/ui-tools/node_modules'
+          $env:AV_NAV_VIEWER = Join-Path $PWD 'dist/AVReportHub.exe'
+          node scripts/check-map-ui.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Map browser tests failed' }
       - uses: actions/upload-artifact@v4
         with:
           name: AVReportHub-Windows-x64
