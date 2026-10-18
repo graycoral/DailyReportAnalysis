@@ -47,7 +47,7 @@ function bindChips(root){root.querySelectorAll('[data-company],[data-tag]').forE
  (target||$(tab==='outlook'?'#outlook-query':'#filter-toggle')).focus({preventScroll:true});
  }})}
 function renderTagCloud(){let count=(xs)=>{let m=new Map();xs.forEach(x=>m.set(x,(m.get(x)||0)+1));return [...m].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))};
- let tags=count(catalog().reports.flatMap(r=>r.tags)),cos=count(catalog().reports.flatMap(realCompanies)).slice(0,14);
+ let tags=count(catalog().reports.flatMap(r=>tab==='map'?mapReportTags(r):r.tags)),cos=count(catalog().reports.flatMap(r=>tab==='map'?mapReportCompanies(r):realCompanies(r))).slice(0,14);
  $('#tag-cloud').innerHTML=`<div><div class="cloud-title">분류</div><div class="chips">${tags.map(([t,n])=>chip(t,'','tag',n)).join('')}</div></div><div><div class="cloud-title">기업</div><div class="chips">${cos.map(([t,n])=>chip(t,'teal','company',n)).join('')}</div></div>`;bindChips($('#tag-cloud'))}
 const sources=ss=>(ss||[]).map(s=>{let u=safeURL(s.url);return u?`<a class="source-link" href="${esc(u)}" target="_blank" rel="noopener noreferrer">↗ ${esc(s.title||u)}</a>`:''}).join('');
 async function api(path,body,options={}){let opts=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-AV-Request':'1'},body:JSON.stringify(body)};let r=await fetch(path,{...opts,signal:options.signal});if(!r.ok)throw Error(await r.text());return r.json()}
@@ -170,7 +170,8 @@ function dailyCatalog(){
 function outlookDailyStatus(r){dailyCatalog();return dailyStatuses.get(r.id)||'데일리 목록에서 숨김'}
 function catalog(){
  const source=state.snapshot.catalog;
- // Maps keep distinct source records and their original evidence, including identical reports.
+ if(tab==='map')return mapCatalog();
+ // The relationship view keeps each source record with its original published evidence.
  if(networkView())return visibleCatalog({...source,reports:[...source.reports,...importedReports].filter(r=>networkSources[reportSource(r)])});
  if(tab==='outlook')return visibleCatalog({...source,reports:importedReports.filter(r=>reportSource(r)==='outlook')});
  if(['local','rag','settings'].includes(tab))return visibleCatalog({...source,reports:[...source.reports,...importedReports]});
@@ -202,11 +203,11 @@ const realCompanies=r=>r.companies.filter(c=>mentions(r,c));
 function filtered(){
  const q=$('#query').value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean),co=$('#company').value,cat=$('#category').value,from=$('#from').value,to=$('#to').value,c=catalog();
  const match=r=>(!co||((r.companies||[]).includes(co)&&mentions(r,co)))&&(!cat||(r.tags||[]).includes(cat))&&(!from||r.date>=from)&&(!to||r.date<=to)&&q.every(t=>searchText(r).includes(t));
- return c.reports.filter(r=>(c===mergedCatalog?dailySearchMembers.get(r.id)||[r]:[r]).some(match)).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date));
+ return c.reports.filter(r=>(tab==='map'?mapReportMembers(r):c===mergedCatalog?dailySearchMembers.get(r.id)||[r]:[r]).some(match)).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date));
 }
 const deleteIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>';
 function reportCard(r,i=0){return `<div class="report-card-shell"><button type="button" class="report-card ${selected===r.id?'selected':''}" data-report="${esc(r.id)}" data-list-index="${i}"><div class="card-head"><span class="report-date">${esc(r.date)}</span><span class="card-meta">${tab==='outlook'?outlookDailyStatus(r):r.origin==='outlook-report'?'Outlook':r.attachments.length?'MD · PPTX':''}</span></div><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p></button><div class="chips">${r.companies.map(s=>mentions(r,s)?chip(s,'teal','company'):chip(s,'teal faint','company').replace('title="','title="점검 결과 ‘없음’으로만 언급 · ')).join('')}${r.tags.map(s=>chip(s,'','tag')).join('')}</div><button type="button" class="list-delete" data-hide-report="${esc(r.id)}" aria-label="${esc(r.title)} 목록에서 삭제" title="목록·관계·지도에서 숨기기 · 원본 보관 · 설정에서 복원">${deleteIcon}<span>삭제</span></button></div>`}
-function renderStats(rs){let c=catalog(),ids=new Set(rs.map(r=>r.id));let cos=new Set(rs.flatMap(realCompanies));let ev=c.events.filter(e=>ids.has(e.report_id)).length,rel=c.relations.filter(r=>ids.has(r.report_id)).length;
+function renderStats(rs){let c=catalog(),ids=new Set(rs.map(r=>r.id));let cos=new Set(rs.flatMap(r=>tab==='map'?mapReportCompanies(r):realCompanies(r)));let ev=c.events.filter(e=>ids.has(e.report_id)).length,rel=c.relations.filter(r=>ids.has(r.report_id)).length;
  $('#stats').innerHTML=[['리포트',rs.length,c.reports.length],['기업',cos.size,null],['사건',ev,null],['관계',rel,null]].map(([k,v,t])=>`<span class="stat"><span>${k}</span><b>${v}${t!=null&&t!==v?` <em>/ ${t}</em>`:''}</b></span>`).join('')}
 function saveStrict(){try{localStorage.setItem('av_strict',$('#strict').checked?'1':'0')}catch(e){}}
 const reportListView=()=>['search','timeline','outlook'].includes(tab);
@@ -306,11 +307,13 @@ function noteNetworkStatusHTML(){
 function networkItemButton(n){return `<button class="related-card" data-network-node="${esc(n.id)}"><small>${esc(sourceLabel(n.source))}</small> ${esc(n.label)}</button>`}
 function bindNetworkItems(){
  $$('[data-note-network-refresh]').forEach(b=>b.onclick=()=>loadNoteNetwork(true));
- $$('[data-network-node]').forEach(b=>b.onclick=()=>{const n=currentDocuments.nodes.find(n=>n.id===b.dataset.networkNode);if(!n)return;if(n.kind==='report'){networkSelection=null;selected=n.ref.id;selectedRelation='';renderDetail();markReportRead(selected)}else selectNetwork('node',n.id)});
+ $$('[data-network-node]').forEach(b=>b.onclick=()=>{const n=currentDocuments.nodes.find(n=>n.id===b.dataset.networkNode);if(!n)return;if(tab==='map'){selectMapNode(n.id);return}if(n.kind==='report'){networkSelection=null;selected=n.ref.id;selectedRelation='';renderDetail();markReportRead(selected)}else selectNetwork('node',n.id)});
  $$('[data-edit-network-note]').forEach(b=>b.onclick=()=>window.AVNotes.open(b.dataset.editNetworkNote).catch(e=>toast(e.message)));
 }
 // Saved source/reference edges are distinct from published company/event assertions.
 function buildDocumentNetwork(rs){
+ const representatives=rs;
+ if(tab==='map')rs=rs.flatMap(mapReportMembers);
  const nodes=[],links=[],byID=new Map();
  const add=(id,kind,label,ref,source)=>{if(byID.has(id))return byID.get(id);const node={id,kind,label,ref,source};nodes.push(node);byID.set(id,node);return node};
  const link=(id,from,report,label,evidence)=>{const to=byID.get('r:'+report);if(to)links.push({id,from:from.id,to:to.id,label,evidence,report_id:report})};
@@ -328,7 +331,8 @@ function buildDocumentNetwork(rs){
   for(const n of noteNetworkState.nodes)if(matches(n.label,n.ref.path,n.ref.body,n.ref.tags))add(n.id,n.kind,n.label,n.ref,n.source);
   for(const e of noteNetworkState.links)if(byID.has(e.from)&&byID.has(e.to))links.push(e);
  }
- return typeof extendDocumentConnections==='function'?extendDocumentConnections({nodes,links},rs):{nodes,links};
+ const model=typeof extendDocumentConnections==='function'?extendDocumentConnections({nodes,links},rs):{nodes,links};
+ return tab==='map'?mergeMapDocuments(model,representatives):model;
 }
 function documentConnectionsHtml(model){
  const byID=new Map(model.nodes.map(n=>[n.id,n])),short=s=>esc(s.length>25?s.slice(0,24)+'…':s);
@@ -406,7 +410,7 @@ async function loadMapMedia(force=false){
  if(tab==='map')render();
 }
 function invalidateMapMedia(){mapMedia.loaded=false;if(tab==='map')loadMapMedia()}
-function selectMapMedia(id,page=1){networkSelection=null;mapMediaSelected=id;mapMediaPage=page;mapMediaEdge=null;renderDetail()}
+function selectMapMedia(id,page=1){if(tab==='map'){if(!mapSelection)mapSelection='m:'+id;mapOpenItem='m:'+id}networkSelection=null;mapMediaSelected=id;mapMediaPage=page;mapMediaEdge=null;renderDetail()}
 function renderMapMediaDetail(){
  const doc=mapMedia.docs.find(d=>d.id===mapMediaSelected),edge=mapMediaEdge;
  const preview=(id,page)=>`/api/rag/page?doc=${encodeURIComponent(id)}&page=${page}`;
@@ -423,6 +427,83 @@ function renderMapMediaDetail(){
  $$('[data-map-source]').forEach(b=>b.onclick=()=>selectMapMedia(b.dataset.mapSource,+b.dataset.page));
  $$('[data-map-evidence]').forEach(b=>b.onclick=()=>{mapMediaEdge=mapMedia.links[+b.dataset.mapEvidence];renderDetail()});
 }
+// Map identity is shared content, while source records and their evidence remain unchanged.
+let mapCatalogCache=null;
+function mapCatalog(){
+ const source=state.snapshot.catalog,flags=JSON.stringify(networkSources),cached=mapCatalogCache;
+ if(cached&&cached.source===source&&cached.imports===importedReports&&cached.hidden===hiddenReports&&cached.flags===flags)return cached.catalog;
+ const all=[...source.reports,...importedReports.filter(r=>reportSource(r)==='daily'),...importedReports.filter(r=>reportSource(r)==='outlook')],groups=new Map();
+ for(const r of all){const key=reportIdentity(r);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r)}
+ const visible=new Map(visibleCatalog({...source,reports:all}).reports.map(r=>[r.id,r])),members=new Map(),aliases=new Map(),reports=[];
+ for(const group of groups.values()){
+  if(group.some(r=>hiddenReports.has(r.id)))continue;
+  const enabled=group.filter(r=>visible.has(r.id)&&networkSources[reportSource(r)]).map(r=>visible.get(r.id));
+  if(!enabled.length)continue;
+  const representative=enabled[0];reports.push(representative);members.set(representative.id,enabled);
+  for(const r of enabled)aliases.set(r.id,representative.id);
+ }
+ // Published assertions are retained only when their published report is visible.
+ const catalog=visibleCatalog({...source,reports});
+ mapCatalogCache={source,imports:importedReports,hidden:hiddenReports,flags,catalog,members,aliases};return catalog;
+}
+function mapReportMembers(r){mapCatalog();return mapCatalogCache.members.get(r.id)||[r]}
+function mapReportCompanies(r){return [...new Set(mapReportMembers(r).flatMap(realCompanies))]}
+function mapReportTags(r){return [...new Set(mapReportMembers(r).flatMap(r=>r.tags))]}
+function mapReportSources(r){return [...new Set(mapReportMembers(r).map(r=>reportSource(r)==='daily'?'데일리':'Outlook'))].join(' · ')}
+function mergeMapDocuments(model,reports){
+ const canonical=id=>id.startsWith('r:')?'r:'+(mapCatalogCache.aliases.get(id.slice(2))||id.slice(2)):id;
+ const nodes=[...reports.map(r=>({id:'r:'+r.id,kind:'report',label:r.title,ref:r,source:reportSource(r)})),...model.nodes.filter(n=>n.kind!=='report')];
+ const ids=new Set(nodes.map(n=>n.id)),seen=new Set(),links=[];
+ for(const edge of model.links){
+  const from=canonical(edge.from),to=canonical(edge.to),key=JSON.stringify([from,to,edge.label]);
+  if(from===to||!ids.has(from)||!ids.has(to)||seen.has(key))continue;
+  seen.add(key);links.push({...edge,from,to,source_report_id:edge.report_id,report_id:mapCatalogCache.aliases.get(edge.report_id)||edge.report_id});
+ }
+ return {nodes,links};
+}
+let mapSelection='',mapOpenItem='',mapListLimit=40,mapListScroll=0,mapDetailRendering=false,mapGraph={nodes:[],links:[]};
+function resetMapSelection(){mapSelection='';mapOpenItem='';mapListLimit=40;mapListScroll=0}
+function updateMapGraph(nodes,links){
+ mapGraph={nodes,links};
+ if(!nodes.some(n=>n.id===mapSelection))resetMapSelection();
+ if(!nodes.some(n=>n.id===mapOpenItem))mapOpenItem='';
+}
+const mapItemDate=n=>String(n.ref.date||n.ref.received||n.ref.modified||n.ref.added||'').slice(0,10);
+const mapItemKind=n=>({report:'리포트',mail:'원본 메일',pdf:'PDF',media:'색인 자료',note:'노트',company:'기업',tag:'분류'}[n.kind]||'자료');
+function mapSelectionItems(node){
+ const ids=new Set(['company','tag'].includes(node.kind)?[]:[node.id]);
+ for(const edge of mapGraph.links){if(edge.a.id===node.id)ids.add(edge.b.id);if(edge.b.id===node.id)ids.add(edge.a.id)}
+ return mapGraph.nodes.filter(n=>ids.has(n.id)&&!['company','tag'].includes(n.kind)).sort((a,b)=>mapItemDate(b).localeCompare(mapItemDate(a))||a.label.localeCompare(b.label));
+}
+function selectMapNode(id){
+ mapSelection=id;mapOpenItem=mapGraph.nodes.find(n=>n.id===id)?.kind==='note'?id:'';mapListLimit=40;mapListScroll=0;
+ networkSelection=null;mapMediaSelected='';mapMediaEdge=null;selectedRelation='';linkedReport='';
+ renderDetail();$('#detail').scrollTop=0;
+}
+function renderMapExplorer(){
+ if(mapDetailRendering||networkSelection?.kind==='link'||mapMediaEdge)return false;
+ const node=mapGraph.nodes.find(n=>n.id===mapSelection),detail=$('#detail');
+ if(!node){detail.innerHTML='<div class="empty">지도에서 기업·분류·자료를 선택하면<br>연결된 자료 목록이 여기에 표시됩니다.</div>';return true}
+ const items=mapSelectionItems(node),opened=mapGraph.nodes.find(n=>n.id===mapOpenItem);
+ if(opened){
+  networkSelection=null;mapMediaSelected='';mapMediaEdge=null;
+  if(opened.kind==='report'){selected=opened.ref.id;linkedReport='';selectedRelation=''}
+  else if(opened.kind==='media')mapMediaSelected=opened.ref.id;
+  else networkSelection={kind:'node',id:opened.id};
+  mapDetailRendering=true;
+  try{renderDetail()}finally{mapDetailRendering=false}
+  detail.insertAdjacentHTML('afterbegin','<button type="button" class="map-list-back" id="map-list-back">← 관련 자료 목록</button>');
+  const openReport=id=>{if(!mapGraph.nodes.some(n=>n.id==='r:'+id))return;mapOpenItem='r:'+id;networkSelection=null;renderDetail();markReportRead(id);detail.scrollTop=0;$('#map-list-back')?.focus({preventScroll:true})};
+  detail.querySelectorAll('[data-related]').forEach(b=>b.onclick=()=>openReport(b.dataset.related));
+  $('#map-list-back').onclick=()=>{mapOpenItem='';networkSelection=null;mapMediaSelected='';renderDetail();detail.scrollTop=mapListScroll;[...detail.querySelectorAll('[data-map-open]')].find(b=>b.dataset.mapOpen===opened.id)?.focus({preventScroll:true})};
+  return true;
+ }
+ mapOpenItem='';networkSelection=null;mapMediaSelected='';
+ detail.innerHTML=`<div class="eyebrow">지도에서 선택한 ${mapItemKind(node)}</div><h2>${esc(node.label)}</h2>${node.kind==='report'?`<p class="small-note">${esc(node.ref.date)} · ${esc(mapReportSources(node.ref))}</p><p class="map-report-summary">${esc(node.ref.summary)}</p>`:''}<p class="small-note" role="status">관련 자료 ${items.length}개 · 최신순</p><div class="map-related-list">${items.slice(0,mapListLimit).map(n=>`<button type="button" class="map-related-item" data-map-open="${esc(n.id)}"><span class="map-item-meta">${esc(mapItemKind(n))} · ${esc(mapItemDate(n))}${n.kind==='report'?' · '+esc(mapReportSources(n.ref)):''}</span><strong>${esc(n.label)}</strong>${n.kind==='report'?`<span>${esc(n.ref.summary)}</span>`:''}</button>`).join('')||'<p class="small-note">현재 검색 조건에서 연결된 자료가 없습니다.</p>'}</div>${items.length>mapListLimit?'<button type="button" id="map-list-more">자료 더 보기</button>':''}`;
+ detail.querySelectorAll('[data-map-open]').forEach(b=>b.onclick=()=>{mapListScroll=detail.scrollTop;mapOpenItem=b.dataset.mapOpen;renderDetail();if(mapOpenItem.startsWith('r:'))markReportRead(mapOpenItem.slice(2));detail.scrollTop=0;$('#map-list-back')?.focus({preventScroll:true})});
+ if($('#map-list-more'))$('#map-list-more').onclick=()=>{const firstNew=items[mapListLimit]?.id,scroll=detail.scrollTop;mapListLimit+=40;renderDetail();detail.scrollTop=scroll;[...detail.querySelectorAll('[data-map-open]')].find(b=>b.dataset.mapOpen===firstNew)?.focus({preventScroll:true})};
+ return true;
+}
 // Force-directed map: reports, companies, tags and explicitly indexed local media.
 let mapSim=null;const mapPos={};
 function renderMap(rs){
@@ -433,7 +514,7 @@ function renderMap(rs){
  let nodes=[],links=[],idx={};
  const add=(id,kind,label,ref)=>{if(idx[id]!==undefined)return nodes[idx[id]];idx[id]=nodes.length;let p=mapPos[id]||{x:(Math.random()-.5)*300,y:(Math.random()-.5)*300};let n={id,kind,label,ref,x:p.x,y:p.y,vx:0,vy:0,deg:0,fixed:false};nodes.push(n);return n};
  const link=(a,b,kind,evidence=null)=>{if(a===b)return;links.push({a,b,kind,evidence});a.deg++;b.deg++};
- for(let r of rs){let n=add('r:'+r.id,'report',r.title,r);n.source=reportSource(r);for(let c of realCompanies(r))link(n,add('c:'+c,'company',c,c),'company');for(let t of r.tags)link(n,add('t:'+t,'tag',t,t),'tag')}
+ for(let r of rs){let n=add('r:'+r.id,'report',r.title,r);n.source=reportSource(r);for(let c of mapReportCompanies(r))link(n,add('c:'+c,'company',c,c),'company');for(let t of mapReportTags(r))link(n,add('t:'+t,'tag',t,t),'tag')}
  for(let x of catalog().related){let a=idx['r:'+x.from],b=idx['r:'+x.to];if(a!==undefined&&b!==undefined)link(nodes[a],nodes[b],'related')}
  for(const d of currentDocuments.nodes)if(d.kind!=='report')add(d.id,d.kind,d.label,d.ref).source=d.source;
  for(const e of currentDocuments.links)link(nodes[idx[e.from]],nodes[idx[e.to]],'reference',e);
@@ -444,15 +525,16 @@ function renderMap(rs){
  for(const d of mediaDocs)add('m:'+d.id,'media',d.name,d).source='local';
  for(const e of mapMedia.links){const a=idx['m:'+e.from],b=idx['m:'+e.to];if(a!==undefined&&b!==undefined)link(nodes[a],nodes[b],'similarity',e)}
  $('#result-count').textContent=`${rs.length}개 리포트 · 색인 자료 ${mediaDocs.length}개 · 보관 PDF ${nodes.filter(n=>n.kind==='pdf').length}개 · 메일 ${nodes.filter(n=>n.kind==='mail').length}개 · 노트 ${nodes.filter(n=>n.kind==='note').length}개`;
+ updateMapGraph(nodes,links);
  const adj=new Map(nodes.map(n=>[n,new Set()]));links.forEach(l=>{adj.get(l.a).add(l.b);adj.get(l.b).add(l.a)});
  const W=1000,H=700;
  const edgeDescription=l=>l.kind==='similarity'?`${l.a.label} p.${l.evidence.from_page} ↔ ${l.b.label} p.${l.evidence.to_page} · 유사도 ${l.evidence.similarity.toFixed(4)}`:l.kind==='reference'?`${l.a.label} → ${l.b.label} · ${l.evidence.label}`:`${l.a.label} · ${l.b.label}`;
- $('#results').innerHTML=`<p class="small-note">자료를 누르면 원문을 확인할 수 있습니다. 파란 점선은 노트 링크·원본 메일·직접 연결·확정한 추천, 주황색 점선은 페이지 이미지의 유사도입니다. 기업·분류 선은 리포트의 태그이며 확인된 사실 관계는 관계 그래프에서 봅니다.</p>${noteNetworkStatusHTML()}<div class="form-actions" ${networkSources.local?'':'hidden'}><span class="small-note">${mapMedia.loading?'색인 자료 확인 중…':mapMedia.ok?'보관 PDF와 색인 자료는 별도로 표시됩니다.':'검색 서비스를 켜면 색인 자료도 표시됩니다. 보관 PDF는 서비스 없이 표시됩니다.'}</span><button class="text-button" id="map-media-refresh" ${mapMedia.loading?'disabled':''}>색인 자료 새로고침</button></div>`+(nodes.length?`<div class="map"><div class="map-controls" role="group" aria-label="지도 보기"><button type="button" id="map-zoom-in" aria-label="지도 확대">+ 확대</button><button type="button" id="map-zoom-out" aria-label="지도 축소">− 축소</button><button type="button" id="map-nearby">선택 주변</button><button type="button" id="map-overview">전체 보기</button><button type="button" id="map-wide" aria-pressed="false">넓게 보기</button></div><svg viewBox="${-W/2} ${-H/2} ${W} ${H}" role="img" aria-label="노트·리포트·기업·분류·색인 자료 연결 지도"><g class="viewport"><g class="links">${links.map((l,i)=>`<line class="ml ${l.kind}" data-l="${i}" ${l.evidence?`tabindex="0" role="button" aria-label="${esc(edgeDescription(l))}"`:''}><title>${esc(edgeDescription(l))}</title></line>`).join('')}</g><g class="nodes">${nodes.map((n,i)=>`<g class="mn ${n.kind} ${n.source==='outlook'?'outlook ':''}${n.kind==='report'&&!networkSelection&&!mapMediaSelected&&selected===n.ref.id||n.kind==='media'&&mapMediaSelected===n.ref.id||networkSelection?.kind==='node'&&networkSelection.id===n.id?'selected':''}" data-n="${i}" data-item-id="${esc(n.id)}" data-source="${n.source||'metadata'}" tabindex="0" role="button" aria-label="${esc(n.label)}"><circle r="${n.kind==='company'||n.kind==='tag'?5+Math.min(n.deg,14)*.9:7+Math.min(n.deg,10)*.6}"/><title>${esc(n.label)}${n.source?' · '+sourceLabel(n.source):''}</title><text y="22" text-anchor="middle">${esc(n.label.length>24?n.label.slice(0,23)+'…':n.label)}</text></g>`).join('')}</g></g></svg><p class="map-caption"></p><div class="legend"><span><i class="dot report"></i>데일리 리포트</span><span><i class="dot outlook"></i>Outlook</span><span><i class="dot note"></i>내 노트</span><span><i class="dot pdf"></i>보관 PDF</span><span><i class="dot media"></i>색인 자료</span><span><i class="dot company"></i>기업</span><span><i class="dot tag"></i>분류</span><span><i class="lg reference"></i>노트 링크·원본·직접 연결</span><span><i class="lg related"></i>연결된 이슈</span><span><i class="lg similarity"></i>임베딩 유사도</span><button class="text-button" id="map-reset">배치 다시</button></div></div>`:`<div class="empty">${Object.values(networkSources).some(Boolean)?'표시할 자료가 없습니다. 검색 조건을 확인하세요.':'표시할 자료를 위에서 켜 주세요.'}</div>`);
+ $('#results').innerHTML=`<p class="small-note">점을 선택하면 우측에서 관련 자료를 확인할 수 있습니다. 같은 보고일·본문의 리포트는 하나로 표시합니다. 파란 점선은 노트 링크·원본 메일·직접 연결·확정한 추천, 주황색 점선은 페이지 이미지의 유사도입니다. 기업·분류 선은 리포트의 태그이며 확인된 사실 관계는 관계 그래프에서 봅니다.</p>${noteNetworkStatusHTML()}<div class="form-actions" ${networkSources.local?'':'hidden'}><span class="small-note">${mapMedia.loading?'색인 자료 확인 중…':mapMedia.ok?'보관 PDF와 색인 자료는 별도로 표시됩니다.':'검색 서비스를 켜면 색인 자료도 표시됩니다. 보관 PDF는 서비스 없이 표시됩니다.'}</span><button class="text-button" id="map-media-refresh" ${mapMedia.loading?'disabled':''}>색인 자료 새로고침</button></div>`+(nodes.length?`<div class="map"><div class="map-controls" role="group" aria-label="지도 보기"><button type="button" id="map-zoom-in" aria-label="지도 확대">+ 확대</button><button type="button" id="map-zoom-out" aria-label="지도 축소">− 축소</button><button type="button" id="map-nearby">선택 주변</button><button type="button" id="map-overview">전체 보기</button><button type="button" id="map-wide" aria-pressed="false">넓게 보기</button></div><svg viewBox="${-W/2} ${-H/2} ${W} ${H}" role="img" aria-label="노트·리포트·기업·분류·색인 자료 연결 지도"><g class="viewport"><g class="links">${links.map((l,i)=>`<line class="ml ${l.kind}" data-l="${i}" ${l.evidence?`tabindex="0" role="button" aria-label="${esc(edgeDescription(l))}"`:''}><title>${esc(edgeDescription(l))}</title></line>`).join('')}</g><g class="nodes">${nodes.map((n,i)=>`<g class="mn ${n.kind} ${n.source==='outlook'?'outlook ':''}${mapSelection===n.id?'selected':''}" aria-pressed="${mapSelection===n.id}" data-n="${i}" data-item-id="${esc(n.id)}" data-source="${n.source||'metadata'}" tabindex="0" role="button" aria-label="${esc(n.label)}"><circle r="${n.kind==='company'||n.kind==='tag'?5+Math.min(n.deg,14)*.9:7+Math.min(n.deg,10)*.6}"/><title>${esc(n.label)}${n.kind==='report'?' · '+mapReportSources(n.ref):n.source?' · '+sourceLabel(n.source):''}</title><text y="22" text-anchor="middle">${esc(n.label.length>24?n.label.slice(0,23)+'…':n.label)}</text></g>`).join('')}</g></g></svg><p class="map-caption"></p><div class="legend"><span><i class="dot report"></i>데일리 리포트</span><span><i class="dot outlook"></i>Outlook</span><span><i class="dot note"></i>내 노트</span><span><i class="dot pdf"></i>보관 PDF</span><span><i class="dot media"></i>색인 자료</span><span><i class="dot company"></i>기업</span><span><i class="dot tag"></i>분류</span><span><i class="lg reference"></i>노트 링크·원본·직접 연결</span><span><i class="lg related"></i>연결된 이슈</span><span><i class="lg similarity"></i>임베딩 유사도</span><button class="text-button" id="map-reset">배치 다시</button></div></div>`:`<div class="empty">${Object.values(networkSources).some(Boolean)?'표시할 자료가 없습니다. 검색 조건을 확인하세요.':'표시할 자료를 위에서 켜 주세요.'}</div>`);
  $('#map-media-refresh').onclick=()=>loadMapMedia(true);bindNetworkItems();
  if(!nodes.length)return;
  const svg=$('#results svg'),L=$$('#results .ml'),N=$$('#results .mn');
  const camera=window.AVMapViewport?.({svg,nodes,links,adj,N});
- L.forEach((el,i)=>{if(!links[i].evidence)return;const choose=()=>{if(links[i].kind==='reference')return selectNetwork('link',links[i].evidence.id);networkSelection=null;mapMediaEdge=links[i].evidence;mapMediaSelected='';renderDetail()};el.onclick=choose;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}}});
+ L.forEach((el,i)=>{if(!links[i].evidence)return;const choose=()=>{resetMapSelection();if(links[i].kind==='reference')return selectNetwork('link',links[i].evidence.id);networkSelection=null;mapMediaEdge=links[i].evidence;mapMediaSelected='';renderDetail()};el.onclick=choose;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}}});
  const draw=()=>{links.forEach((l,i)=>{let e=L[i];e.setAttribute('x1',l.a.x);e.setAttribute('y1',l.a.y);e.setAttribute('x2',l.b.x);e.setAttribute('y2',l.b.y)});nodes.forEach((n,i)=>{N[i].setAttribute('transform',`translate(${n.x} ${n.y})`);mapPos[n.id]={x:n.x,y:n.y}});camera?.update()};
  // Layout runs off the UI thread; draw at most once per animation frame.
  let worker=null,raf=0;
@@ -468,9 +550,9 @@ function renderMap(rs){
   worker.postMessage({type:'init',nodes:nodes.map(n=>({x:n.x,y:n.y,vx:0,vy:0,fixed:false})),links:links.map(l=>({a:idx[l.a.id],b:idx[l.b.id],kind:l.kind}))});
  }
  // Hover: keep the neighbourhood, dim the rest.
- const focus=n=>{svg.classList.toggle('focus',!!n);N.forEach((el,i)=>el.classList.toggle('on',!!n&&(nodes[i]===n||adj.get(n).has(nodes[i]))));L.forEach((el,i)=>el.classList.toggle('on',!!n&&(links[i].a===n||links[i].b===n)));camera?.focus(n)};
+ const focus=n=>{n=n||nodes.find(n=>n.id===mapSelection);svg.classList.toggle('focus',!!n);N.forEach((el,i)=>el.classList.toggle('on',!!n&&(nodes[i]===n||adj.get(n).has(nodes[i]))));L.forEach((el,i)=>el.classList.toggle('on',!!n&&(links[i].a===n||links[i].b===n)));camera?.focus(n)};
  N.forEach((el,i)=>{const n=nodes[i];el.onmouseenter=()=>focus(n);el.onmouseleave=()=>focus(null);el.onfocus=()=>{camera?.reveal(n);focus(n)};el.onblur=()=>focus(null);
-  const act=()=>{if(n.kind==='media'){selectMapMedia(n.ref.id);N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n))}else if(n.kind==='mail'||n.kind==='pdf'||n.kind==='note'){selectNetwork('node',n.id);N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n))}else if(n.kind==='report'){networkSelection=null;mapMediaSelected='';mapMediaEdge=null;selected=n.ref.id;selectedRelation='';N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n));renderDetail();markReportRead(selected)}else{let sel=$(n.kind==='company'?'#company':'#category');sel.value=sel.value===n.ref?'':n.ref;render()}};
+  const act=()=>{selectMapNode(n.id);N.forEach((x,j)=>{x.classList.toggle('selected',nodes[j]===n);x.setAttribute('aria-pressed',String(nodes[j]===n))});focus(n)};
   const pick=()=>{act();camera?.select()};
   let moved=false;el.onpointerdown=e=>{e.stopPropagation();moved=false;n.fixed=true;el.setPointerCapture(e.pointerId);let sx=e.clientX,sy=e.clientY,ox=n.x,oy=n.y;const scale=()=>camera?.dragScale()||1;
    el.onpointermove=ev=>{if(!(ev.buttons&1))return;let s=scale();n.x=ox+(ev.clientX-sx)*s;n.y=oy+(ev.clientY-sy)*s;if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>3)moved=true;worker?.postMessage({type:'drag',index:i,x:n.x,y:n.y,fixed:true});draw()};
@@ -495,7 +577,7 @@ function markdown(text){
   if(l.trim())out.push(`<p>${inline(l)}</p>`)}
  return out.join('');
 }
-function renderDetail(){if(tab==='local')return renderLocalDetail();if(tab==='rag')return renderRagDetail();if(networkView()&&renderNetworkDetail())return;if(tab==='map'&&networkSources.local&&(mapMediaEdge||mapMedia.docs.some(d=>d.id===mapMediaSelected)))return renderMapMediaDetail();let r=linkedReport===selected?reportOf(selected):catalog().reports.find(r=>r.id===selected);if(tab==='outlook'&&r&&reportSource(r)!=='outlook'&&linkedReport!==selected)r=null;if(networkView()&&r&&!filtered().some(x=>x.id===r.id))r=null;if(!r){delete $('#detail').dataset.reportKey;reportReaderOpen=false;updateReportReader();$('#detail').innerHTML=tab==='outlook'?'<div class="empty">가져온 Outlook 리포트를 선택하면<br>본문과 원본 메일을 확인할 수 있습니다.</div>':'<div class="empty">리포트나 그래프의 연결을 선택하면<br>본문과 관련 내용을 볼 수 있습니다.</div>';return}
+function renderDetail(){if(tab==='map'&&renderMapExplorer())return;if(tab==='local')return renderLocalDetail();if(tab==='rag')return renderRagDetail();if(networkView()&&renderNetworkDetail())return;if(tab==='map'&&networkSources.local&&(mapMediaEdge||mapMedia.docs.some(d=>d.id===mapMediaSelected)))return renderMapMediaDetail();let r=linkedReport===selected?reportOf(selected):catalog().reports.find(r=>r.id===selected);if(tab==='outlook'&&r&&reportSource(r)!=='outlook'&&linkedReport!==selected)r=null;if(networkView()&&r&&!filtered().some(x=>x.id===r.id))r=null;if(!r){delete $('#detail').dataset.reportKey;reportReaderOpen=false;updateReportReader();$('#detail').innerHTML=tab==='outlook'?'<div class="empty">가져온 Outlook 리포트를 선택하면<br>본문과 원본 메일을 확인할 수 있습니다.</div>':'<div class="empty">리포트나 그래프의 연결을 선택하면<br>본문과 관련 내용을 볼 수 있습니다.</div>';return}
  const detail=$('#detail'),reportKey=`${tab}:${r.id}:${selectedRelation}`,changed=detail.dataset.reportKey!==reportKey;
  detail.dataset.reportKey=reportKey;
  let rel=catalog().relations.find(x=>x.id===selectedRelation);let related=catalog().related.filter(x=>x.from===r.id||x.to===r.id).map(x=>({r:catalog().reports.find(z=>z.id===(x.from===r.id?x.to:x.from)),reason:x.reason})).filter(x=>x.r);
@@ -590,7 +672,7 @@ async function refresh(force=false){
 }
 // Tab is mirrored in the URL hash (#timeline, #graph, #map) so a view can be bookmarked or reloaded.
 document.addEventListener('focusin',e=>{if(e.target!==document.body)reportDetailHadFocus=$('#detail').contains(e.target)});
-function setTab(t,reportID='',notesReady=false){if(tab==='notes'&&t!=='notes'&&!notesReady&&window.AVNotes?.hasPending()){window.AVNotes.flush().then(ok=>{if(ok)setTab(t,reportID,true)});return}let b=$(`[data-tab="${t}"]`);if(!b)return;if(tab!==t)delete $('#detail').dataset.reportKey;tab=t;reportReaderOpen=!!reportID&&narrowReportLayout.matches&&reportListView();reportListScroll=0;reportListFocus=null;networkSelection=null;linkedReport=reportID;$('#visibility-menu').open=false;history.replaceState(null,'',t==='search'?location.pathname:'#'+t);if(t==='map')mapMedia.loaded=false;if(networkView())invalidateNoteNetwork();updateCatalogView();if(reportID)markReportRead(reportID);if(reportReaderOpen){window.scrollTo({top:0,behavior:'instant'});focusReportTitle()}}
+function setTab(t,reportID='',notesReady=false){if(tab==='notes'&&t!=='notes'&&!notesReady&&window.AVNotes?.hasPending()){window.AVNotes.flush().then(ok=>{if(ok)setTab(t,reportID,true)});return}let b=$(`[data-tab="${t}"]`);if(!b)return;if(tab!==t)delete $('#detail').dataset.reportKey;resetMapSelection();tab=t;reportReaderOpen=!!reportID&&narrowReportLayout.matches&&reportListView();reportListScroll=0;reportListFocus=null;networkSelection=null;linkedReport=reportID;$('#visibility-menu').open=false;history.replaceState(null,'',t==='search'?location.pathname:'#'+t);if(t==='map')mapMedia.loaded=false;if(networkView())invalidateNoteNetwork();updateCatalogView();if(reportID)markReportRead(reportID);if(reportReaderOpen){window.scrollTo({top:0,behavior:'instant'});focusReportTitle()}}
 $$('[data-tab]').forEach((b,i)=>{b.onclick=()=>setTab(b.dataset.tab);b.onkeydown=e=>{const tabs=$$('[data-tab]');let next;if(e.key==='ArrowDown')next=(i+1)%tabs.length;else if(e.key==='ArrowUp')next=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;else return;e.preventDefault();setTab(tabs[next].dataset.tab);tabs[next].focus()}});
 $('#filter-toggle').onclick=()=>{const panel=$('#filter-panel');panel.hidden=!panel.hidden;$('#filter-toggle').setAttribute('aria-expanded',String(!panel.hidden))};
 $('#filter-panel').onkeydown=e=>{if(e.key==='Escape'){$('#filter-panel').hidden=true;$('#filter-toggle').setAttribute('aria-expanded','false');$('#filter-toggle').focus()}};
@@ -620,7 +702,7 @@ $('#outlook-clear').onclick=()=>{$('#outlook-query').value='';render();$('#outlo
 for(const key of Object.keys(networkSources))$('#source-'+key).onchange=e=>{
  networkSources[key]=e.target.checked;if(key==='notes'&&e.target.checked)invalidateNoteNetwork();
  try{localStorage.setItem('av_network_sources',JSON.stringify(networkSources))}catch(x){}
- networkSelection=null;mapMediaSelected='';mapMediaEdge=null;selected='';selectedRelation='';render();
+ resetMapSelection();networkSelection=null;mapMediaSelected='';mapMediaEdge=null;selected='';selectedRelation='';render();
 };
 $('#sync').onclick=async()=>{if(['offline','auto_disabled','unconfigured'].includes(lastSyncState)){setTab('settings');$('#tab-settings').focus();return}try{await api('/api/sync',{});toast('GitHub 연결과 최신 자료를 다시 확인합니다.');setTimeout(()=>refresh(),400)}catch(e){toast(e.message)}};
 $('#exit').onclick=async()=>{if(window.AVNotes&&!await window.AVNotes.flush())return;if(!confirm('프로그램을 종료할까요? 다음 실행 전까지 자동 갱신이 멈춥니다.'))return;try{await api('/api/exit',{});document.body.innerHTML='<main class="empty"><h1>AV 리포트를 종료했습니다.</h1><p>이 브라우저 창을 닫아도 됩니다.</p></main>'}catch(e){toast(e.message)}};

@@ -29,7 +29,7 @@ window.AVMapViewport=function({svg,nodes,links,adj,N}){
  const texts=N.map(el=>el.querySelector('text')),circles=N.map(el=>el.querySelector('circle'));
  const radii=circles.map(el=>+el.getAttribute('r'));
  // Start with all sources visible, including notes without a report link.
- // Selecting a node still zooms to its neighbourhood.
+ // Selection preserves the camera; the nearby button explicitly zooms in.
  let width=1,height=520,view={x:0,y:0,k:1},manual=false,overview=true,highlight=null,disposed=false;
  const selected=()=>nodes[N.findIndex(el=>el.classList.contains('selected'))];
  const caption=host.querySelector('.map-caption');
@@ -104,7 +104,7 @@ window.AVMapViewport=function({svg,nodes,links,adj,N}){
   focus(n){if(disposed)return;highlight=n;labels()},
   reveal(n){const x=n.x*view.k+view.x,y=n.y*view.k+view.y;if(Math.abs(x)>width/2-32||Math.abs(y)>height/2-32){manual=true;view.x=-n.x*view.k;view.y=-n.y*view.k;paint()}},
   dragScale(){manual=true;return 1/view.k},
-  select(){if(disposed)return;overview=false;manual=false;if(viewer.classList.contains('map-expanded'))button('map-wide').click();fit()},
+  select(){if(disposed)return;manual=true;if(viewer.classList.contains('map-expanded'))button('map-wide').click();paint()},
   reset(){manual=false;overview=false;fit()},
   stop(){disposed=true;observer.disconnect();document.fonts?.removeEventListener('loadingdone',resize)}
  };

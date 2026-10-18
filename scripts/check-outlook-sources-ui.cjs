@@ -154,6 +154,7 @@ async function fits(){assert.equal(await page.evaluate(()=>document.documentElem
  assert.equal(await page.locator('#results .ml.similarity').count(),1);
  await fits();await capture('outlook-sources-map');
  await page.locator('#results .mn.pdf').press('Enter');
+ await page.locator('[data-map-open="pdf:'+pdf.id+'"]').click();
  assert.match(await page.locator('#detail').innerText(),/PDF 원문 보기/);
  await page.locator('#source-local').uncheck();
  assert.equal(await page.locator('#results [data-source="local"]').count(),0);

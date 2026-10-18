@@ -53,10 +53,13 @@ for(const strict of [true,false])for(const tab of ['search','timeline']){
  get('#query').value='';get('#company').value='';get('#category').value='';
 }
 get('#strict').checked=true;
-for(const tab of ['graph','map','outlook']){
+for(const tab of ['graph','outlook']){
  evaluate('tab='+JSON.stringify(tab));get('#query').value='매일 보고';
  assert.deepEqual(plain(evaluate('filtered().map(r=>r.id)')),[context.duplicate.id],'source views must retain the matching original ID');
 }
+evaluate('tab="map"');
+assert.deepEqual(plain(evaluate('filtered().map(r=>r.id)')),[report.id],'map search resolves matching original metadata to the shared report');
+assert.ok(plain(evaluate('mapReportMembers(filtered()[0]).map(r=>r.id)')).includes(context.duplicate.id),'map keeps the matching source record');
 get('#query').value='';
 assert.equal(JSON.stringify(context.raw),originalSnapshot,'search must not alter published evidence');
 assert.equal(JSON.stringify(context.duplicate),originalImport,'search must not alter imported metadata');

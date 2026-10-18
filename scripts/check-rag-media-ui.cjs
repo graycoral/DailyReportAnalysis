@@ -4,7 +4,7 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const app=fs.readFileSync(path.join(__dirname,'../internal/hub/web/app.js'),'utf8');
 const html=fs.readFileSync(path.join(__dirname,'../internal/hub/web/index.html'),'utf8');
 const elements=new Map(),lists=new Map(),calls=[],messages=[];
-function element(){return {value:'',checked:false,innerHTML:'',textContent:'',dataset:{},setAttribute(){},setCustomValidity(){},addEventListener(){},classList:{toggle(){}},querySelector(){return element()},querySelectorAll(){return []}}}
+function element(){return {value:'',checked:false,innerHTML:'',textContent:'',dataset:{},setAttribute(){},setCustomValidity(){},addEventListener(){},insertAdjacentHTML(_position,html){this.innerHTML=html+this.innerHTML},classList:{toggle(){}},querySelector(){return element()},querySelectorAll(){return []}}}
 function get(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector)}
 function all(selector){
  const pattern=selector==='#results .ml'?/class="ml /g:selector==='#results .mn'?/class="mn /g:null;
@@ -36,11 +36,15 @@ get('#sort').value='desc';
  // Keyboard selection must open source pages, not treat a file as a category filter.
  lists.get('#results .mn')[1].onkeydown({key:'Enter',preventDefault(){}});
  assert.match(get('#detail').innerHTML,/한글 사진.png/);
+ assert.match(get('#detail').innerHTML,/data-map-open="m:a"/);
+ evaluate('mapOpenItem="m:a";renderDetail()');
  assert.match(get('#detail').innerHTML,/doc=a&amp;page=1|doc=a&amppage=1|doc=a&page=1/);
  lists.get('#results .ml')[0].onkeydown({key:'Enter',preventDefault(){}});
  assert.match(get('#detail').innerHTML,/유사도 0.8500/);
  assert.match(get('#detail').innerHTML,/doc=b&page=2/);
  assert.match(get('#detail').innerHTML,/사실 관계를 뜻하지 않습니다/);
+ evaluate('selectMapMedia("b",2)');
+ assert.match(get('#detail').innerHTML,/doc=b&page=2/,'a similarity edge can still open its source page');
  get('#query').value='한글';evaluate('render()');
  assert.equal((get('#results').innerHTML.match(/class="mn media /g)||[]).length,1);
  assert.doesNotMatch(get('#results').innerHTML,/class="ml similarity"/);

@@ -5,7 +5,7 @@
  const chosen = new Map(); let scope = tab, busy = false, scheduled = false;
  const key = x => x.kind + ':' + x.id;
  const mailID = m => JSON.stringify([m.store_id || '', m.path || '', m.entry_id]);
- const report = id => { const r = reportOf(id); const ids=['search','timeline'].includes(tab)?[...dailyRepresentatives].filter(([,representative])=>representative===id).map(([member])=>member):[id]; return r && {kind:'report',id,ids:ids.length?ids:[id],title:r.title}; };
+ const report = id => { const r = reportOf(id); const ids=tab==='map'&&r?mapReportMembers(r).map(member=>member.id):['search','timeline'].includes(tab)?[...dailyRepresentatives].filter(([,representative])=>representative===id).map(([member])=>member):[id]; return r && {kind:'report',id,ids:ids.length?ids:[id],title:r.title}; };
  const pdf = id => { const f = local.files.find(f => f.id === id); return f && {kind:'pdf',id,title:f.name}; };
  const media = id => { const d = (rag.status?.docs || []).find(d => d.id === id) || mapMedia.docs.find(d => d.id === id); return d && {kind:'rag',id,title:d.name}; };
  const mail = m => m && {kind:'mail',id:mailID(m),title:m.subject || '(제목 없음)',mail:m};
@@ -76,7 +76,7 @@
  const editing = target => !!target?.closest('input:not([type="checkbox"]):not([type="radio"]),textarea,select,[contenteditable]:not([contenteditable="false"]),.cm-editor,[role="textbox"]');
  document.addEventListener('keydown', e => {
   if (e.defaultPrevented || e.repeat || e.isComposing || e.altKey || editing(e.target) || document.querySelector('dialog[open]')) return;
-  if((e.key==='Enter'||e.key===' ')&&e.target.closest('#results svg')){const el=e.target.closest(selector),x=el&&item(el);if(x){pick(x,e.ctrlKey||e.metaKey);if(e.ctrlKey||e.metaKey){e.preventDefault();e.stopImmediatePropagation()}}}
+  if((e.key==='Enter'||e.key===' ')&&e.target.closest('#results svg')){const el=e.target.closest(selector),x=el&&item(el);if(x){pick(x,e.ctrlKey||e.metaKey);if(e.ctrlKey||e.metaKey){e.preventDefault();e.stopImmediatePropagation()}}else if(el){chosen.clear();paint()}}
   if(e.key==='Delete'&&tab==='settings'&&restoreSelection.size&&!busy){e.preventDefault();remove([...restoreSelection].map(id=>report(id)||{kind:'report',id,title:id}),true);return;}
   if (e.key === 'Delete' && chosen.size && scope === tab && !busy) {
    e.preventDefault(); e.stopPropagation(); remove([...chosen.values()],e.shiftKey);

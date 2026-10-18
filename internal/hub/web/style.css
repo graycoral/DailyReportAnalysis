@@ -207,8 +207,10 @@ h1{font-size:22px;margin:0 0 3px;letter-spacing:-.5px;font-weight:700}
 .report-card.selected:before{background:var(--accent)}
 .report-card-shell{position:relative;margin-bottom:10px;background:var(--surface);border:1px solid transparent;border-radius:var(--r);box-shadow:var(--shadow)}
 .report-card-shell:hover{background:var(--surface-2);border-color:var(--line)}
-.report-card-shell:has(>.report-card.selected){background:var(--selected-bg);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.report-card-shell:has(>.report-card.selected):before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;background:var(--accent)}
+.report-card-shell:has(>.report-card.selected){background:var(--selected-bg);border-color:var(--accent)}
+/* Keyboard focus surrounds the complete card, including its filter chips. */
+.report-card-shell:has(>.report-card:focus-visible){outline:2px solid var(--accent);outline-offset:3px}
+.report-card-shell>.report-card:focus-visible{outline:0}
 .report-card-shell>.report-card{margin-bottom:0;background:transparent;border:0;box-shadow:none;padding-bottom:0;overflow:visible}
 .report-card-shell>.report-card:before{display:none}
 .report-card-shell>.chips{padding:0 18px 16px}
@@ -594,3 +596,11 @@ mark.rag-text-match{background:var(--rag-highlight);color:var(--rag-highlight-in
 #report-import-panel{flex-shrink:0}#report-import-button{font-size:13px;border-radius:10px;padding:10px 14px;white-space:nowrap}
 #report-import-status{margin:0 24px 12px;white-space:pre-wrap;font-size:12px;max-height:80px;overflow:auto;flex-shrink:0}#report-import-status:empty{display:none}
 .outlook-folders{max-height:360px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:12px}
+/* The map keeps its position while the adjacent list opens a source. */
+.map-related-list{display:grid;gap:10px;margin:16px 0}
+.map-related-item{display:grid;gap:8px;width:100%;padding:16px;border-radius:10px;text-align:left;white-space:normal;overflow-wrap:anywhere}
+.map-related-item strong{font-size:15px;line-height:1.5}
+.map-related-item>span:last-child:not(.map-item-meta){font-weight:400;line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.map-item-meta{font-size:12px;font-weight:400;line-height:1.6;color:var(--ink-2)}
+.map-list-back{margin-bottom:20px;min-height:44px}
+.map-report-summary{line-height:1.7;overflow-wrap:anywhere}

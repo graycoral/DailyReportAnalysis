@@ -87,7 +87,10 @@ async function stop(){if(viewer&&viewer.exitCode===null){const done=new Promise(
  await require('./ui-catalog-fixture.cjs')(reopened);await reopened.goto(restarted.address+'/open?key='+restarted.key);
  await reopened.waitForFunction(()=>typeof reportReading!=='undefined'&&reportReading.ready);
  assert.equal(await reopened.locator('#report-unread-count').innerText(),'1','new process and port retain unread state');
- await reopened.locator(`[data-report="${ids[1]}"]`).click();
+ await reopened.locator('#tab-map').click();
+ await reopened.locator(`[data-item-id="r:${ids[1]}"]`).press('Enter');
+ assert.equal(await reopened.locator('#report-unread-count').innerText(),'1','opening a related-source list does not mark the report read');
+ await reopened.locator(`[data-map-open="r:${ids[1]}"]`).click();
  await reopened.locator('#report-unread-count').waitFor({state:'hidden'});
  await reopened.reload();await reopened.waitForFunction(()=>typeof reportReading!=='undefined'&&reportReading.ready);
  assert.equal(await reopened.locator('#report-unread-count').isVisible(),false,'zero count has no badge');
