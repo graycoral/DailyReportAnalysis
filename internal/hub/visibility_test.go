@@ -14,7 +14,7 @@ import (
 
 func visibilityApp(t *testing.T) *App {
 	t.Helper()
-	return &App{dir: t.TempDir(), secret: strings.Repeat("a", 64), address: "http://127.0.0.1:9000", config: defaultConfig(), snapshot: Snapshot{Catalog: seedCatalog(t)}}
+	return githubSettingsApp(t)
 }
 
 func visibilityRequest(a *App, method, path, body string) *httptest.ResponseRecorder {

@@ -11,6 +11,7 @@ const slot = {innerHTML:''};
 let environment = {state:'missing',supported:true,message:'환경 설정이 필요합니다.'};
 let service = false, renders = 0, posts = 0, release;
 const ctx = vm.createContext({
+  window: {},
   rag:{status:{ok:false}}, tab:'rag',
   esc:s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),
   $:selector=>selector==='#rag-environment'?slot:null,

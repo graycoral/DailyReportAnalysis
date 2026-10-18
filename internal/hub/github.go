@@ -19,6 +19,17 @@ import (
 
 var errNoAttachment = errors.New("첨부파일이 없습니다.")
 
+// Only connection/access failures disable integration; invalid content and local
+// storage failures must not silently change the user's connection preference.
+type githubUnavailableError struct{ message string }
+
+func (e *githubUnavailableError) Error() string { return e.message }
+func githubUnavailable(message string) error    { return &githubUnavailableError{message} }
+func isGitHubUnavailable(err error) bool {
+	var unavailable *githubUnavailableError
+	return errors.As(err, &unavailable)
+}
+
 type githubClient struct {
 	config Config
 	token  string
@@ -38,12 +49,18 @@ func newGitHub(c Config, token string) *githubClient {
 
 var apiBase = "https://api.github.com" // overridden in tests
 
-// Caller holds mu. A failed update remains retryable, including after a network change.
+// Caller holds mu. Automatic disablement survives restarts until explicitly enabled.
 func (a *App) syncAvailability() string {
+	if a.githubChoiceRequired() {
+		return "choice_required"
+	}
 	if a.syncing {
 		return "checking"
 	}
 	if a.config.Offline {
+		if a.config.OfflineReason == "connection_failed" {
+			return "auto_disabled"
+		}
 		return "offline"
 	}
 	if !a.config.Configured {
@@ -76,7 +93,7 @@ func (g *githubClient) getETag(ctx context.Context, path, accept, etag string, l
 	resp, e := g.client.Do(req)
 	if e != nil {
 		log.Printf("github %s: %v", path, e)
-		return nil, "", errors.New("GitHub에 연결할 수 없습니다. 인터넷·회사 프록시·인증서를 확인하세요.")
+		return nil, "", githubUnavailable("GitHub에 연결할 수 없습니다. 인터넷·회사 프록시·인증서를 확인하세요.")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == 304 && etag != "" {
@@ -86,17 +103,17 @@ func (g *githubClient) getETag(ctx context.Context, path, accept, etag string, l
 		log.Printf("github %s: status %d", path, resp.StatusCode)
 		switch resp.StatusCode {
 		case 401:
-			return nil, "", errors.New("GitHub 인증 정보가 만료되었거나 잘못되었습니다.")
+			return nil, "", githubUnavailable("GitHub 인증 정보가 만료되었거나 잘못되었습니다.")
 		case 403:
-			return nil, "", errors.New("GitHub 접근 권한 또는 API 사용량을 확인하세요.")
+			return nil, "", githubUnavailable("GitHub 접근 권한 또는 API 사용량을 확인하세요.")
 		case 404:
-			return nil, "", errors.New("저장소·브랜치·데이터 파일이 없거나 읽기 권한이 없습니다.")
+			return nil, "", githubUnavailable("저장소·브랜치·데이터 파일이 없거나 읽기 권한이 없습니다.")
 		}
-		return nil, "", fmt.Errorf("GitHub 응답 오류 (%d)", resp.StatusCode)
+		return nil, "", githubUnavailable(fmt.Sprintf("GitHub 응답 오류 (%d)", resp.StatusCode))
 	}
 	b, e := io.ReadAll(io.LimitReader(resp.Body, limit+1))
 	if e != nil {
-		return nil, "", e
+		return nil, "", githubUnavailable("GitHub 자료를 받는 중 연결이 끊겼습니다.")
 	}
 	if int64(len(b)) > limit {
 		return nil, "", errors.New("데이터 크기가 허용 범위를 초과했습니다.")
@@ -160,6 +177,10 @@ func (a *App) syncData() {
 	a.mu.Lock()
 	cfg := a.config
 	old := a.snapshot
+	if !cfg.githubEnabled() {
+		a.mu.Unlock()
+		return
+	}
 	a.syncing = true
 	a.status = "최신 자료 확인 중"
 	a.mu.Unlock()
@@ -172,14 +193,19 @@ func (a *App) syncData() {
 			log.Printf("sync failed: %v", err)
 			a.status = err.Error()
 			a.syncState = "unavailable"
+			if isGitHubUnavailable(err) {
+				a.config.Offline = true
+				a.config.OfflineReason = "connection_failed"
+				a.status += " GitHub 자료 연동이 자동으로 꺼졌습니다. 설정에서 다시 켤 수 있습니다."
+				if e := writeJSON(filepath.Join(a.dir, "config.json"), a.config); e != nil {
+					log.Printf("persist disabled GitHub integration: %v", e)
+					a.status += " 꺼짐 상태를 저장하지 못했습니다."
+				}
+			}
 		} else {
 			a.syncState = "ready"
 		}
 	}()
-	if !cfg.Configured || cfg.Offline {
-		err = errors.New("GitHub 연결을 먼저 설정하세요. 현재는 포함된 자료를 보여줍니다.")
-		return
-	}
 	token, e := a.readToken()
 	if e != nil {
 		err = e
@@ -294,7 +320,7 @@ func (a *App) ensureDatabase(ctx context.Context, snap Snapshot, g *githubClient
 }
 func (a *App) attachment(ctx context.Context, rid string, index int) ([]byte, string, error) {
 	a.mu.RLock()
-	snap := a.snapshot
+	snap := a.githubSnapshot()
 	cfg := a.config
 	a.mu.RUnlock()
 	var att Attachment
@@ -314,11 +340,11 @@ func (a *App) attachment(ctx context.Context, rid string, index int) ([]byte, st
 	if b, e := os.ReadFile(cache); e == nil && check(b) {
 		return b, att.Name, nil
 	}
-	// Starter attachments are embedded; fresh downloads always use the same published commit.
+	// Reuse matching embedded files only for an enabled, synced catalog.
 	if b, e := assets.ReadFile("seed/" + filepath.Base(att.Path)); e == nil && check(b) {
 		return b, att.Name, nil
 	}
-	if snap.Commit == "" || cfg.Offline || snap.Origin != cfg.Owner+"/"+cfg.Repo {
+	if snap.Commit == "" || !cfg.githubEnabled() || snap.Origin != cfg.Owner+"/"+cfg.Repo {
 		return nil, "", errors.New("이 첨부는 GitHub 연결 후 받을 수 있습니다.")
 	}
 	token, e := a.readToken()

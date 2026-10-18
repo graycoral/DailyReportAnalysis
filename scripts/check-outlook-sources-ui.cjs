@@ -4,23 +4,25 @@ const {spawn}=require('node:child_process'),{chromium}=require('playwright');
 const root=path.resolve(__dirname,'..'),dir=fs.mkdtempSync(path.join(os.tmpdir(),'avhub-outlook-sources-'));
 const catalog=JSON.parse(fs.readFileSync(path.join(root,'data/catalog.json'),'utf8')),published=catalog.reports[0];
 const mail={entry_id:'AABB',store_id:'CCDD',subject:'Outlook 원본 리포트',sender:'테스트 분석팀',folder:'리포트',received:'2026-10-14T10:00:00+09:00'};
-const imported={...published,id:'local-'+published.date,title:'Outlook에서 가져온 리포트',origin:'outlook-report',attachments:[],mail};
+const imported={...published,id:'local-'+published.date,origin:'outlook-report',tags:[...published.tags,'임원보고'],attachments:[],mail};
 const pdf={id:'test-pdf',name:'직접 연결한 참고자료.pdf',size:1024,added:'2026-10-14',reports:[published.id]};
 const store={name:'테스트 메일함',store_id:'CCDD'},folder={...store,name:'테스트 메일함/리포트',folder_id:'EEFF',folder_name:'리포트'};
-let viewer,browser,page,sources=[],reports=[imported],storeCalls=0,mapCalls=0,importCalls=0,opened;
+let viewer,browser,page,sources=[],reports=[imported],storeCalls=0,mapCalls=0,importCalls=0,opened,linked;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function capture(name){await page.screenshot({path:path.join(root,'build',name+'.png'),fullPage:false})}
 async function fits(){assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'viewport overflow')}
 (async()=>{
- fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',configured:true,offline:true,sync_time:'08:00'}));
+ fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',configured:true,offline:true,github_choice_version:fs.readFileSync(path.join(__dirname,'../internal/hub/model.go'),'utf8').match(/\bVersion\s*=\s*"([^"]+)"/)[1],sync_time:'08:00'}));
  viewer=spawn(process.env.AV_NAV_VIEWER||path.join(root,'build/navigation-viewer.exe'),['--no-browser','--data-dir',dir],{windowsHide:true,stdio:'ignore'});
  const file=path.join(dir,'instance-viewer.json');for(let i=0;i<100&&!fs.existsSync(file);i++)await wait(100);
  const instance=JSON.parse(fs.readFileSync(file,'utf8'));
  browser=await chromium.launch({channel:'msedge',headless:true});
  page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await require('./ui-catalog-fixture.cjs')(page);
  await page.route('**/api/local',r=>r.fulfill({json:{available:true,files:[pdf],mails:[{...mail,entry_id:'1122',subject:'직접 연결한 메일',report:published.id}],sources}}));
  await page.route('**/api/local/reports',r=>r.fulfill({json:{reports,revision:'fixture'}}));
+ await page.route('**/api/local/link',r=>{linked=r.request().postDataJSON();pdf.reports=linked.remove?pdf.reports.filter(id=>id!==linked.report):[...pdf.reports,linked.report];return r.fulfill({json:{ok:true}})});
  await page.route('**/api/outlook/import',r=>{importCalls++;return r.fulfill({json:{ok:true}})});
  await page.route('**/api/outlook/stores',r=>{storeCalls++;return r.fulfill({json:{stores:[store]}})});
  await page.route('**/api/outlook/folders',r=>r.fulfill({json:{folders:[folder]}}));
@@ -32,6 +34,29 @@ async function fits(){assert.equal(await page.evaluate(()=>document.documentElem
  await page.locator('#results [data-report]').first().waitFor();
  assert.equal(await page.locator('#results [data-report="'+published.id+'"]').count(),1);
  assert.equal(await page.locator('#results [data-report="'+imported.id+'"]').count(),0,'duplicate Outlook content must not be added to the daily list');
+ await page.locator('#query').fill(mail.subject);
+ assert.deepEqual(await page.locator('#results [data-report]').evaluateAll(nodes=>nodes.map(n=>n.dataset.report)),[published.id],'mail subject finds the single published representative');
+ await page.locator('#filter-toggle').click();await page.locator('#category').selectOption('임원보고');
+ assert.equal(await page.locator('#results [data-report="'+published.id+'"]').count(),1,'duplicate folder category and mail subject remain searchable together');
+ await page.locator('#query').fill('');await page.locator('#category').selectOption('');await page.locator('#filter-toggle').click();
+ // Identical dates/titles remain distinct, readable PDF targets with original IDs.
+ const sameMD={...published,id:'manual-same',origin:'markdown',attachments:[]};
+ reports=[imported,sameMD];pdf.reports=[];await page.evaluate(async()=>{await refresh(true);await loadLocal()});
+ await page.locator('#tab-local').click();await page.locator('[data-local="'+pdf.id+'"]').click();
+ await page.locator('[data-local-links="'+pdf.id+'"]').click();
+ for(const selector of ['#pdf-target','#pdf-dialog-target']){
+  for(const [report,label] of [[published,'게시 리포트'],[imported,'Outlook'],[sameMD,'직접 가져온 MD']]){
+   assert.equal(await page.locator(selector+' option[value="'+report.id+'"]').innerText(),`${label} · ${published.date} · ${published.title}`);
+  }
+ }
+ await page.locator('#pdf-dialog-target').selectOption(imported.id);await page.locator('#pdf-links-form button').click();
+ await page.waitForFunction(id=>local.files[0].reports.includes(id),imported.id);
+ assert.deepEqual(linked,{id:pdf.id,report:imported.id,remove:false},'dialog saves the chosen Outlook original');
+ assert.equal(await page.locator('#pdf-dialog-target option[value="'+imported.id+'"]').count(),0);
+ await page.locator('#pdf-links-close').click();await page.locator('#pdf-target').selectOption(sameMD.id);await page.locator('#pdf-link').click();
+ await page.waitForFunction(id=>local.files[0].reports.includes(id),sameMD.id);
+ assert.deepEqual(linked,{id:pdf.id,report:sameMD.id},'detail saves the chosen MD original');
+ reports=[imported];pdf.reports=[published.id];await page.evaluate(async()=>{await refresh(true);await loadLocal()});await page.locator('#tab-search').click();
  const fresh={...imported,id:'outlook-new',date:'2026-10-20',title:'새 Outlook 데일리',body_markdown:imported.body_markdown+'\n새 업데이트'};
  reports=[imported,fresh];await page.evaluate(()=>refresh(true));
  assert.equal(await page.locator('#results [data-report="outlook-new"]').count(),1,'new valid Outlook content belongs in the daily list');
@@ -93,7 +118,7 @@ async function fits(){assert.equal(await page.evaluate(()=>document.documentElem
  assert.equal(await page.locator('#results [data-local]').count(),1);
 
  await page.getByRole('tab',{name:'관계 그래프',exact:true}).click();
- assert.equal(await page.getByRole('switch').count(),3);
+ assert.equal(await page.getByRole('switch').count(),4);
  assert.equal(await page.locator('#results [data-reference]').count(),3);
  assert.ok(await page.locator('#results [data-relation]').count()>0);
  await page.locator('[data-reference="origin:'+imported.id+'"]').click();
@@ -107,6 +132,7 @@ async function fits(){assert.equal(await page.evaluate(()=>document.documentElem
  assert.equal(await page.locator('#results [data-reference]').count(),0);
  assert.ok(await page.locator('#results [data-relation]').count()>0,'same-date published facts must survive Outlook disabled');
  await page.locator('#source-daily').uncheck();
+ await page.locator('#source-notes').uncheck();
  assert.match(await page.locator('#results').innerText(),/표시할 자료를 위에서 켜/);
 
  await page.getByRole('tab',{name:'전체 지도',exact:true}).click();
@@ -115,6 +141,7 @@ async function fits(){assert.equal(await page.evaluate(()=>document.documentElem
  await page.reload();await page.locator('#source-local').waitFor();
  assert.equal(await page.locator('#source-local').isChecked(),false);
  assert.equal(await page.locator('#source-outlook').isChecked(),false);
+ assert.equal(await page.locator('#source-notes').isChecked(),false);
  assert.equal(await page.locator('#results .mn').count(),0);
  await page.locator('#source-outlook').check();
  assert.equal(await page.locator('#results [data-source="daily"]').count(),0);
@@ -147,7 +174,7 @@ async function fits(){assert.equal(await page.evaluate(()=>document.documentElem
   await page.getByRole('tab',{name:'관계 그래프',exact:true}).click();
  }
  assert.deepEqual(errors,[]);
- console.log('PASS: separate Outlook tab/connect/folder flow, independent search, three source switches, provenance selection, all-off/reload, original facts, PDF/mail/map layers, evidence details and responsive layout');
+ console.log('PASS: separate Outlook tab/connect/folder flow, independent search, four source switches, provenance selection, all-off/reload, original facts, PDF/mail/map layers, evidence details and responsive layout');
 })().catch(async error=>{if(page)await capture('outlook-sources-failure').catch(()=>{});console.error(String(error.stack||error).replace(/([?&]key=)[a-f0-9]+/g,'$1[redacted]'));process.exitCode=1}).finally(async()=>{
  if(browser)await browser.close();if(viewer&&viewer.exitCode===null){const done=new Promise(r=>viewer.once('exit',r));viewer.kill();await done}
  const relative=path.relative(os.tmpdir(),dir);if(relative&&!relative.startsWith('..')&&!path.isAbsolute(relative)&&path.basename(dir).startsWith('avhub-outlook-sources-'))fs.rmSync(dir,{recursive:true,force:true});

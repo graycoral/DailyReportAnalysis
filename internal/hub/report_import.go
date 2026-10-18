@@ -192,7 +192,7 @@ func (a *App) knownCompanies() []string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	out := []string{}
-	for _, r := range a.snapshot.Catalog.Reports {
+	for _, r := range a.githubSnapshot().Catalog.Reports {
 		out = append(out, r.Companies...)
 	}
 	return out
@@ -208,6 +208,7 @@ type importedReport struct {
 type outlookCursor struct {
 	Time string   `json:"time"`
 	IDs  []string `json:"ids"`
+	ReaderVersion int `json:"reader_version,omitempty"`
 }
 type reportArchive struct {
 	Reports []importedReport         `json:"reports"`

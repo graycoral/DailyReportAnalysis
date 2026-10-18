@@ -1,18 +1,37 @@
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 let state, tab='search', selected='', selectedRelation='', formBusy=false;
+const narrowReportLayout=matchMedia('(max-width:850px)'),expandedLocalLinks=new Set();
+let reportReaderOpen=false,reportListScroll=0,reportListFocus=null,reportDetailHadFocus=false;
 let importedReports=[],localReportsRevision='',importError='',mergedSource=null,mergedCatalog=null,lastSyncState='',outlookImportState={};
-let mergedImports=null,mergedVisibility=null,dailyRepresentatives=new Map(),dailyStatuses=new Map();
+let mergedImports=null,mergedVisibility=null,dailyRepresentatives=new Map(),dailyStatuses=new Map(),dailySearchMembers=new Map();
 let local={available:false,reason:'',files:[],mails:[],sources:[]},localSel='',outlookStores=null,outlookFolders=null,linkedReport='';
-let networkSources={outlook:true,daily:true,local:true},networkSelection=null,currentDocuments={nodes:[],links:[]};
+let networkSources={outlook:true,daily:true,local:true,notes:true},networkSelection=null,currentDocuments={nodes:[],links:[]};
+let noteNetworkState={loaded:false,loading:false,nodes:[],links:[],warnings:[],signature:'',error:''},noteNetworkRequest=0;
 let localPDFPreview=null,dialogPDFPreview=null;
 let pdfLinksID='',pdfLinkBusy=false;const deletingPDFs=new Set();
 try{const saved=JSON.parse(localStorage.getItem('av_network_sources')||'null');for(const key of Object.keys(networkSources))if(typeof saved?.[key]==='boolean')networkSources[key]=saved[key]}catch(e){}
 const networkView=()=>tab==='graph'||tab==='map';
 const reportSource=r=>r.origin==='outlook-report'?'outlook':'daily';
-const sourceLabel=source=>({outlook:'Outlook',daily:'데일리 리포트',local:'내 자료'}[source]);
+const reportOriginLabel=r=>r.origin==='outlook-report'?'Outlook':r.origin==='markdown'?'직접 가져온 MD':'게시 리포트';
+const reportLinkOption=r=>`<option value="${esc(r.id)}">${esc(reportOriginLabel(r))} · ${esc(r.date)} · ${esc(r.title)}</option>`;
+const sourceLabel=source=>({outlook:'Outlook',daily:'데일리 리포트',local:'내 자료',notes:'내 노트'}[source]);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeURL=s=>{try{let u=new URL(s);return ['https:','http:'].includes(u.protocol)?u.href:''}catch{return ''}};
+const uiIconPaths={
+ company:'M4 21V3h16v18M2 21h20M8 7h2m4 0h2M8 11h2m4 0h2M8 15h2m4 0h2M10 21v-3h4v3',
+ person:'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21v-2a8 8 0 0 1 16 0v2',
+ pin:'M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 0 1 16 0ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+ file:'M14 3H5v18h14V8l-5-5ZM14 3v6h5M8 13h8M8 17h6',
+ lock:'M6 10h12v11H6ZM8 10V7a4 4 0 0 1 8 0v3M12 14v3',
+ mail:'M3 5h18v14H3ZM3 6l9 7 9-7',
+ image:'M3 3h18v18H3ZM3 17l6-6 4 4 3-3 5 5M9 7h.01',
+ flask:'M9 3h6M10 3v6L4 19q-1 2 2 2h12q3 0 2-2L14 9V3M8 14h8'
+};
+const uiIcon=(name,inGraph=false)=>{
+ const shape=`<path d="${uiIconPaths[name]||uiIconPaths.file}"/>`;
+ return inGraph?`<g class="ui-icon" transform="translate(-12 -12)" aria-hidden="true">${shape}</g>`:`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${shape}</svg>`;
+};
 // kind 'company'|'tag' makes the chip a filter shortcut (see bindChips).
 const chip=(s,c='',kind='')=>`<span class="chip ${c}${kind&&activeFilter(kind)===s?' active':''}"${kind?` data-${kind}="${esc(s)}" role="button" tabindex="0" title="이 ${kind==='company'?'기업':'분류'}로 필터"`:''}>${esc(s)}</span>`;
 const activeFilter=kind=>$(kind==='company'?'#company':'#category').value;
@@ -87,8 +106,8 @@ function dailyCatalog(){
  if(mergedSource!==source||mergedImports!==importedReports||mergedVisibility!==hiddenReports){
   // Imported MD/mail have already passed REPORT_FORMAT validation. Identical content appears once,
   // preferring published evidence. A hidden member hides its daily group even after sync changes its ID.
-  const groups=new Map();
-  for(const r of [...source.reports,...importedReports.filter(r=>reportSource(r)==='daily'),...importedReports.filter(r=>reportSource(r)==='outlook')]){
+  const groups=new Map(),allReports=[...source.reports,...importedReports.filter(r=>reportSource(r)==='daily'),...importedReports.filter(r=>reportSource(r)==='outlook')];
+  for(const r of allReports){
    const key=importedReports.length?reportIdentity(r):r.id;let group=groups.get(key);
    if(!group){group={report:r,ids:[],hidden:false};groups.set(key,group)}
    group.ids.push(r.id);group.hidden=group.hidden||hiddenReports.has(r.id);
@@ -103,6 +122,9 @@ function dailyCatalog(){
    if(visible)dailyRepresentatives.set(id,group.report.id);
    dailyStatuses.set(id,visible?(id===group.report.id?'데일리에 추가됨':'중복 · 데일리에 있음'):'데일리 목록에서 숨김');
   }
+  // Search the visible originals without merging their metadata into published evidence.
+  dailySearchMembers=new Map(mergedCatalog.reports.map(r=>[r.id,[]]));
+  for(const r of visibleCatalog({...source,reports:allReports}).reports)dailySearchMembers.get(dailyRepresentatives.get(r.id))?.push(r);
   mergedSource=source;mergedImports=importedReports;mergedVisibility=hiddenReports;
  }
  return mergedCatalog;
@@ -139,19 +161,55 @@ function substantive(r){if(subCache[r.id]&&subCache[r.id].src===r.body_markdown)
 function searchText(r){return strict()?[r.title,...(r.origin?[...r.tags,r.mail?.subject||'']:[]),substantive(r)].join('\n').toLocaleLowerCase():[r.title,r.summary,r.body_markdown,...r.companies,...r.tags,r.mail?.subject||''].join(' ').toLocaleLowerCase()}
 function mentions(r,co){if(r.origin)return r.companies.includes(co);return !strict()||r.title.toLocaleLowerCase().includes(co.toLocaleLowerCase())||substantive(r).includes(co.toLocaleLowerCase())}
 const realCompanies=r=>r.companies.filter(c=>mentions(r,c));
-function filtered(){let q=$('#query').value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean),co=$('#company').value,cat=$('#category').value,from=$('#from').value,to=$('#to').value;return catalog().reports.filter(r=>(!co||((r.companies||[]).includes(co)&&mentions(r,co)))&&(!cat||(r.tags||[]).includes(cat))&&(!from||r.date>=from)&&(!to||r.date<=to)&&q.every(t=>searchText(r).includes(t))).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date))}
+function filtered(){
+ const q=$('#query').value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean),co=$('#company').value,cat=$('#category').value,from=$('#from').value,to=$('#to').value,c=catalog();
+ const match=r=>(!co||((r.companies||[]).includes(co)&&mentions(r,co)))&&(!cat||(r.tags||[]).includes(cat))&&(!from||r.date>=from)&&(!to||r.date<=to)&&q.every(t=>searchText(r).includes(t));
+ return c.reports.filter(r=>(c===mergedCatalog?dailySearchMembers.get(r.id)||[r]:[r]).some(match)).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date));
+}
 const deleteIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>';
-function reportCard(r,i=0){return `<div class="report-card-shell"><button class="report-card ${selected===r.id?'selected':''}" data-report="${esc(r.id)}" style="--i:${i}"><div class="card-head"><span class="report-date">${esc(r.date)}</span><span class="card-meta">${tab==='outlook'?outlookDailyStatus(r):r.origin==='outlook-report'?'Outlook':r.attachments.length?'MD · PPTX':''}</span></div><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p><div class="chips">${r.companies.map(s=>mentions(r,s)?chip(s,'teal','company'):chip(s,'teal faint','company').replace('title="','title="점검 결과 ‘없음’으로만 언급 · ')).join('')}${r.tags.map(s=>chip(s,'','tag')).join('')}</div></button><button type="button" class="list-delete" data-hide-report="${esc(r.id)}" aria-label="${esc(r.title)} 목록에서 삭제" title="목록·관계·지도에서 숨기기 · 원본 보관 · 설정에서 복원">${deleteIcon}<span>삭제</span></button></div>`}
+function reportCard(r,i=0){return `<div class="report-card-shell"><button class="report-card ${selected===r.id?'selected':''}" data-report="${esc(r.id)}" data-list-index="${i}"><div class="card-head"><span class="report-date">${esc(r.date)}</span><span class="card-meta">${tab==='outlook'?outlookDailyStatus(r):r.origin==='outlook-report'?'Outlook':r.attachments.length?'MD · PPTX':''}</span></div><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p><div class="chips">${r.companies.map(s=>mentions(r,s)?chip(s,'teal','company'):chip(s,'teal faint','company').replace('title="','title="점검 결과 ‘없음’으로만 언급 · ')).join('')}${r.tags.map(s=>chip(s,'','tag')).join('')}</div></button><button type="button" class="list-delete" data-hide-report="${esc(r.id)}" aria-label="${esc(r.title)} 목록에서 삭제" title="목록·관계·지도에서 숨기기 · 원본 보관 · 설정에서 복원">${deleteIcon}<span>삭제</span></button></div>`}
 function renderStats(rs){let c=catalog(),ids=new Set(rs.map(r=>r.id));let cos=new Set(rs.flatMap(realCompanies));let ev=c.events.filter(e=>ids.has(e.report_id)).length,rel=c.relations.filter(r=>ids.has(r.report_id)).length;
  $('#stats').innerHTML=[['리포트',rs.length,c.reports.length],['기업',cos.size,null],['사건',ev,null],['관계',rel,null]].map(([k,v,t])=>`<span class="stat"><span>${k}</span><b>${v}${t!=null&&t!==v?` <em>/ ${t}</em>`:''}</b></span>`).join('')}
 function saveStrict(){try{localStorage.setItem('av_strict',$('#strict').checked?'1':'0')}catch(e){}}
+const reportListView=()=>['search','timeline','outlook'].includes(tab);
+function updateReportReader(){
+ $('#viewer').classList.toggle('report-reading',narrowReportLayout.matches&&reportListView()&&reportReaderOpen&&!!selected);
+}
+function focusReportTitle(){$('#report-title')?.focus({preventScroll:true})}
+function selectReport(id,{fromDetail=false,exactSource=false}={}){
+ const openReader=narrowReportLayout.matches&&reportListView();
+ if(openReader&&!reportReaderOpen){reportListScroll=scrollY;reportListFocus=document.activeElement}
+ selected=id;selectedRelation='';linkedReport=exactSource?id:'';networkSelection=null;
+ if(openReader)reportReaderOpen=true;
+ updateReportReader();
+ // Keep list nodes mounted so focus and the list's scroll position survive selection.
+ $$('[data-report]').forEach(b=>{const active=b.dataset.report===selected;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active))});
+ renderDetail();renderVisibilityControls();
+ if(openReader){window.scrollTo({top:0,behavior:'instant'});focusReportTitle()}
+ else if(fromDetail)focusReportTitle();
+}
+function returnToReportList(){
+ reportReaderOpen=false;updateReportReader();
+ window.scrollTo({top:reportListScroll,behavior:'instant'});
+ const target=reportListFocus?.isConnected&&$('#results').contains(reportListFocus)?reportListFocus:$$('#results [data-report]').find(b=>b.dataset.report===selected);
+ (target||$('#view-panel')).focus({preventScroll:true});
+}
+narrowReportLayout.addEventListener('change',()=>{
+ const wasReading=reportReaderOpen;reportReaderOpen=false;updateReportReader();
+ if(!reportListView())return;
+ // CSS can hide the focused reader before this media-query callback fires.
+ const readerFocused=$('#detail').contains(document.activeElement)||(document.activeElement===document.body&&reportDetailHadFocus);
+ if(narrowReportLayout.matches&&readerFocused)returnToReportList();
+ else if(!narrowReportLayout.matches&&wasReading)focusReportTitle();
+});
 function renderSearchContext(){
- const settings=tab==='settings',reports=!settings&&tab!=='local'&&tab!=='rag'&&tab!=='outlook';
+ const notesView=tab==='notes',settings=tab==='settings',reports=!notesView&&!settings&&tab!=='local'&&tab!=='rag'&&tab!=='outlook';
  $('#viewer').setAttribute('data-view',tab);
+ updateReportReader();
  $('#view-panel').setAttribute('aria-labelledby','tab-'+tab);
  $$('[data-tab]').forEach(b=>{const active=b.dataset.tab===tab;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1});
- $('#settings-page').hidden=!settings;$('.workspace').hidden=settings;
- $('#search-toolbar').hidden=settings||tab==='rag';$('#report-import-panel').hidden=settings||tab==='rag'||tab==='outlook';$('#report-import-status').hidden=settings||tab==='rag'||tab==='outlook';
+ $('#settings-page').hidden=!settings;$('.workspace').hidden=settings||notesView;if(!notesView)window.AVNotes?.hide();
+ $('#search-toolbar').hidden=notesView||settings||tab==='rag';$('#report-import-panel').hidden=settings||tab==='rag'||tab==='outlook';$('#report-import-status').hidden=notesView||settings||tab==='rag'||tab==='outlook';
  $('#report-query').hidden=!reports;$('#local-query-bar').hidden=tab!=='local';$('#outlook-query-bar').hidden=tab!=='outlook';
  $('#report-filters').hidden=!reports;$('#stats').hidden=!reports;$('#visibility-menu').hidden=!reports&&tab!=='outlook';
  $('#sort').hidden=tab!=='search'&&tab!=='timeline';$('#filter-scope').hidden=!networkView();
@@ -163,16 +221,47 @@ function renderSearchContext(){
  $('#active-filters').innerHTML=filters.map(([id,label])=>`<button type="button" class="active-filter" data-clear-filter="${id}" aria-label="${esc(label)} 해제">${esc(label)}<span aria-hidden="true">×</span></button>`).join('');
  $('#active-filters').querySelectorAll('[data-clear-filter]').forEach(b=>b.onclick=()=>{const id=b.dataset.clearFilter;if(id==='strict'){$('#strict').checked=false;saveStrict()}else $('#'+id).value='';render();$('#filter-toggle').focus()});
 }
-function render(){if(!state)return;renderSearchContext();
+function render(){if(!state)return;renderSearchContext();if(tab==='notes'){window.AVNotes?.show();return}
  if(tab!=='map'&&mapSim)mapSim.stop();
  if(tab!=='local'&&localPDFPreview){localPDFPreview.dispose();localPDFPreview=null}
  if(tab==='settings'){if(!state.setup&&!$('#settings-slot').querySelector('form'))mountForm('#settings-slot');renderRestoreList();return}
  let rs=filtered(),ids=new Set(rs.map(r=>r.id));$('#view-title').textContent={search:'데일리리포트',timeline:'이슈의 흐름',graph:'기업·사건과 자료의 연결',map:'리포트·자료 전체 지도',outlook:'Outlook',local:'내 자료 · 이 PC 전용',rag:'AI 검색 · 실험 기능'}[tab];$('#result-count').textContent=`${rs.length}개 리포트 · 원문 및 사전 분석 데이터`;if(tab!=='local'&&tab!=='rag'&&tab!=='outlook'){renderStats(rs);renderTagCloud()}
- if(tab==='search')$('#results').innerHTML=rs.map(reportCard).join('')||'<div class="empty">검색 결과가 없습니다.<br>검색어나 기간을 바꿔 보세요.</div>';
- if(tab==='timeline'){let es=catalog().events.filter(e=>ids.has(e.report_id)&&matches(e.title,e.detail,e.status,e.companies)).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date));let month='';$('#results').innerHTML='<p class="small-note">사건 날짜와 보관 기록을 표시합니다. ‘보고일’은 사건 발생일이 아니며, 계획은 완료 사실과 구분합니다.</p><div class="timeline">'+es.map((e,i)=>{let m=e.date.slice(0,7),head=m!==month?`<div class="month">${esc(m.replace('-','년 '))}월</div>`:'';month=m;return head+`<div class="event ${e.status==='계획'?'plan':''}" style="--i:${i}"><button class="report-card ${selected===e.report_id?'selected':''}" data-report="${esc(e.report_id)}"><div class="card-head"><span class="report-date">${esc(e.date)}</span>${chip(e.status,e.status==='계획'?'amber':'teal')}</div><h3>${esc(e.title)}</h3><p>${esc(e.detail)}</p><div class="chips">${e.companies.map(c=>chip(c,'','company')).join('')}</div></button></div>`}).join('')+'</div>'+(es.length?'':'<div class="empty">이 조건에 미리 정리된 사건이 없습니다.</div>')}
+ if(tab==='search')$('#results').innerHTML=rs.map(reportCard).join('')||`<div class="empty">${catalog().reports.length?'검색 결과가 없습니다.<br>검색어나 기간을 바꿔 보세요.':state.syncing?'GitHub 리포트를 가져오고 있습니다…':state.snapshot.commit?'아직 표시할 리포트가 없습니다.':'표시할 리포트가 없습니다.<br>설정에서 GitHub 자료 연동을 켜거나<br>Outlook·MD 리포트를 가져오세요.'}</div>`;
+ if(tab==='timeline'){let es=catalog().events.filter(e=>ids.has(e.report_id)&&matches(e.title,e.detail,e.status,e.companies)).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date));let month='';$('#results').innerHTML='<p class="small-note">사건 날짜와 보관 기록을 표시합니다. ‘보고일’은 사건 발생일이 아니며, 계획은 완료 사실과 구분합니다.</p><div class="timeline">'+es.map((e,i)=>{let m=e.date.slice(0,7),head=m!==month?`<div class="month">${esc(m.replace('-','년 '))}월</div>`:'';month=m;return head+`<div class="event ${e.status==='계획'?'plan':''}" data-list-index="${i}"><button class="report-card ${selected===e.report_id?'selected':''}" data-report="${esc(e.report_id)}"><div class="card-head"><span class="report-date">${esc(e.date)}</span>${chip(e.status,e.status==='계획'?'amber':'teal')}</div><h3>${esc(e.title)}</h3><p>${esc(e.detail)}</p><div class="chips">${e.companies.map(c=>chip(c,'','company')).join('')}</div></button></div>`}).join('')+'</div>'+(es.length?'':'<div class="empty">이 조건에 미리 정리된 사건이 없습니다.</div>')}
  if(tab==='graph')renderGraph(ids);else if(tab==='map')renderMap(rs);else if(tab==='local')renderLocal();else if(tab==='outlook')renderOutlook();else if(tab==='rag')renderRag();else highlight($('#results'));
  bindChips($('#results'));
- $$('[data-report]').forEach(b=>b.onclick=()=>{selected=b.dataset.report;selectedRelation='';linkedReport='';networkSelection=null;render()});renderDetail();renderVisibilityControls();if(pdfLinksID)renderPDFLinksDialog();
+ $$('[data-report]').forEach(b=>{b.setAttribute('aria-pressed',String(b.dataset.report===selected));b.onclick=()=>selectReport(b.dataset.report)});renderDetail();renderVisibilityControls();if(pdfLinksID)renderPDFLinksDialog();
+}
+function invalidateNoteNetwork(){++noteNetworkRequest;noteNetworkState.loaded=false;noteNetworkState.loading=false}
+async function loadNoteNetwork(force=false){
+ if(!networkSources.notes||noteNetworkState.loading||noteNetworkState.loaded&&!force||!window.AVNotes)return;
+ const request=++noteNetworkRequest,wasLoaded=noteNetworkState.loaded,oldError=noteNetworkState.error;
+ noteNetworkState.loading=true;
+ let changed=false;
+ try{
+  const model=await window.AVNotes.network();if(request!==noteNetworkRequest)return;
+  const signature=JSON.stringify([model.nodes.map(n=>[n.id,n.ref.version,n.ref.path,n.ref.modified]),model.warnings]);
+  changed=signature!==noteNetworkState.signature||!!oldError;
+  noteNetworkState={...model,signature,error:'',loaded:true,loading:false};
+ }catch(e){
+  if(request!==noteNetworkRequest)return;
+  changed=oldError!==e.message||noteNetworkState.nodes.length>0;
+  noteNetworkState={loaded:true,loading:false,nodes:[],links:[],warnings:[],signature:'',error:e.message};
+ }
+ if(networkView()&&networkSources.notes&&(changed||!wasLoaded))render();
+}
+function noteNetworkStatusHTML(){
+ if(!networkSources.notes)return '';
+ const n=noteNetworkState;
+ if(n.error)return `<p class="small-note error" role="status">노트를 불러오지 못했습니다: ${esc(n.error)} <button type="button" data-note-network-refresh>다시 시도</button></p>`;
+ if(!n.loaded)return '<p class="small-note" role="status">노트 파일을 읽고 있습니다…</p>';
+ return n.warnings.length?`<p class="small-note error" role="status">${esc(n.warnings.join(' / '))}</p>`:'';
+}
+function networkItemButton(n){return `<button class="related-card" data-network-node="${esc(n.id)}"><small>${esc(sourceLabel(n.source))}</small> ${esc(n.label)}</button>`}
+function bindNetworkItems(){
+ $$('[data-note-network-refresh]').forEach(b=>b.onclick=()=>loadNoteNetwork(true));
+ $$('[data-network-node]').forEach(b=>b.onclick=()=>{const n=currentDocuments.nodes.find(n=>n.id===b.dataset.networkNode);if(!n)return;if(n.kind==='report'){networkSelection=null;selected=n.ref.id;selectedRelation='';renderDetail()}else selectNetwork('node',n.id)});
+ $$('[data-edit-network-note]').forEach(b=>b.onclick=()=>window.AVNotes.open(b.dataset.editNetworkNote).catch(e=>toast(e.message)));
 }
 // Saved source/reference edges are distinct from published company/event assertions.
 function buildDocumentNetwork(rs){
@@ -189,33 +278,47 @@ function buildDocumentNetwork(rs){
   const node=add('pdf:'+f.id,'pdf',f.name,f,'local');
   for(const report of f.reports||[])link('pdf-link:'+f.id+':'+report,node,report,'직접 연결','사용자가 내 자료에서 이 PDF와 리포트를 연결한 기록입니다. 원문을 열어 근거를 확인할 수 있습니다.');
  }
- return {nodes,links};
+ if(networkSources.notes){
+  for(const n of noteNetworkState.nodes)if(matches(n.label,n.ref.path,n.ref.body,n.ref.tags))add(n.id,n.kind,n.label,n.ref,n.source);
+  for(const e of noteNetworkState.links)if(byID.has(e.from)&&byID.has(e.to))links.push(e);
+ }
+ return typeof extendDocumentConnections==='function'?extendDocumentConnections({nodes,links},rs):{nodes,links};
 }
 function documentConnectionsHtml(model){
  const byID=new Map(model.nodes.map(n=>[n.id,n])),short=s=>esc(s.length>25?s.slice(0,24)+'…':s);
- const unlinked=model.nodes.filter(n=>n.kind!=='report'&&!model.links.some(l=>l.from===n.id||l.to===n.id)).length;
- const diagram=model.links.length?`<div class="reference-graph"><svg viewBox="0 0 760 ${model.links.length*90+20}" role="img" aria-label="원본 메일과 직접 연결한 자료"><g>${model.links.map((l,i)=>{const a=byID.get(l.from),b=byID.get(l.to),y=i*90+10;return `<g class="reference-row" data-reference="${esc(l.id)}" role="button" tabindex="0" aria-label="${esc(a.label)} → ${esc(b.label)} · ${l.label}"><title>${esc(a.label)} → ${esc(b.label)} · ${l.label}</title><rect x="12" y="${y}" width="292" height="66" rx="10"/><rect x="456" y="${y}" width="292" height="66" rx="10"/><path d="M304 ${y+34}H446m-7-5 7 5-7 5"/><text x="380" y="${y+22}" text-anchor="middle">${l.label}</text><text class="reference-kind" x="26" y="${y+22}">${esc(sourceLabel(a.source))} · ${a.kind==='pdf'?'PDF':'메일'}</text><text x="26" y="${y+47}">${short(a.label)}</text><text class="reference-kind" x="470" y="${y+22}">${esc(sourceLabel(b.source))} · ${esc(b.ref.date)}</text><text x="470" y="${y+47}">${short(b.label)}</text></g>`}).join('')}</g></svg></div>`:'<p class="small-note">선택한 자료에 원본 메일·직접 연결 기록이 없습니다. PDF나 메일을 리포트에 연결하면 여기에 표시됩니다.</p>';
- return `<section class="document-connections"><h2>자료 연결 <span>${model.links.length}</span></h2><p class="small-note">가져온 원본 메일과 사용자가 직접 연결한 자료입니다. 연결을 누르면 출처와 연결 근거가 열립니다.</p>${diagram}${unlinked?`<p class="small-note">연결되지 않은 자료 ${unlinked}개는 전체 지도에서 볼 수 있습니다.</p>`:''}</section>`;
+ const unlinked=model.nodes.filter(n=>n.kind!=='report'&&!model.links.some(l=>l.from===n.id||l.to===n.id)),unlinkedNotes=unlinked.filter(n=>n.kind==='note');
+ const diagram=model.links.length?`<div class="reference-graph"><svg viewBox="0 0 760 ${model.links.length*90+20}" role="img" aria-label="노트 링크와 직접 연결한 자료"><g>${model.links.map((l,i)=>{const a=byID.get(l.from),b=byID.get(l.to),y=i*90+10;return `<g class="reference-row" data-reference="${esc(l.id)}" role="button" tabindex="0" aria-label="${esc(a.label)} → ${esc(b.label)} · ${l.label}"><title>${esc(a.label)} → ${esc(b.label)} · ${l.label}</title><rect x="12" y="${y}" width="292" height="66" rx="10"/><rect x="456" y="${y}" width="292" height="66" rx="10"/><path d="M304 ${y+34}H446m-7-5 7 5-7 5"/><text x="380" y="${y+22}" text-anchor="middle">${l.label}</text><text class="reference-kind" x="26" y="${y+22}">${esc(sourceLabel(a.source))} · ${a.kind==='pdf'?'PDF':a.kind==='mail'?'메일':a.kind==='note'?'노트':'리포트'}</text><text x="26" y="${y+47}">${short(a.label)}</text><text class="reference-kind" x="470" y="${y+22}">${esc(sourceLabel(b.source))} · ${esc(b.ref.date||(b.ref.received||b.ref.added||b.ref.modified||'').slice(0,10))}</text><text x="470" y="${y+47}">${short(b.label)}</text></g>`}).join('')}</g></svg></div>`:'<p class="small-note">현재 조건에 표시할 연결이 없습니다. 노트에 [[노트 이름]]을 쓰거나 노트·PDF·메일을 리포트에 연결하면 여기에 표시됩니다.</p>';
+ return `<section class="document-connections"><h2>자료 연결 <span>${model.links.length}</span></h2><p class="small-note">노트 본문 링크, 원본 메일, 직접 연결하거나 추천에서 확정한 자료입니다. 연결을 누르면 출처와 연결 근거가 열립니다.</p>${noteNetworkStatusHTML()}${diagram}${unlinkedNotes.length?`<h3>연결 없는 노트 · ${unlinkedNotes.length}개</h3><div class="unlinked-notes">${unlinkedNotes.map(networkItemButton).join('')}</div>`:''}${unlinked.length?`<p class="small-note">현재 조건에서 연결이 없는 자료 ${unlinked.length}개도 전체 지도에 표시됩니다.</p>`:''}</section>`;
 }
 function selectNetwork(kind,id){networkSelection={kind,id};mapMediaSelected='';mapMediaEdge=null;selectedRelation='';renderDetail()}
 function bindDocumentConnections(){
  $$('[data-reference]').forEach(b=>{const pick=()=>selectNetwork('link',b.dataset.reference);b.onclick=pick;b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}}});
+ bindNetworkItems();
 }
 function renderNetworkDetail(){
  if(!networkSelection)return false;
  const {kind,id}=networkSelection,link=kind==='link'?currentDocuments.links.find(l=>l.id===id):null;
- const node=currentDocuments.nodes.find(n=>n.id===(link?link.from:id)),report=link?currentDocuments.nodes.find(n=>n.id===link.to)?.ref:null;
+ if(typeof renderConnectionNetworkDetail==='function'&&renderConnectionNetworkDetail(link))return true;
+ const node=currentDocuments.nodes.find(n=>n.id===(link?link.from:id)),target=link?currentDocuments.nodes.find(n=>n.id===link.to):null;
  if(!node||kind==='link'&&!link){networkSelection=null;return false}
  const item=node.ref;
  let body='';
  if(node.kind==='pdf')body=`<p class="small-note">PDF · ${fmtSize(item.size)} · ${esc((item.added||'').slice(0,10))} 추가</p><div class="downloads"><a href="/api/local/file?id=${encodeURIComponent(item.id)}&view=1" target="_blank" rel="noopener">PDF 원문 보기</a><a href="/api/local/file?id=${encodeURIComponent(item.id)}">다운로드</a></div>`;
  if(node.kind==='mail'){mailPool[item.entry_id]=item;body=`<p class="small-note">${esc(item.sender)} · ${esc(item.received)}<br>${esc(item.folder)}</p><button type="button" data-mail-open="${esc(item.entry_id)}">Outlook 원문 열기</button>`}
- $('#detail').innerHTML=`<div class="eyebrow">${esc(sourceLabel(node.source))} · ${link?'자료 연결 근거':'원본 자료'}</div><h2>${esc(node.label)}</h2>${link?`<div class="summary"><b>${link.label}</b><p>${esc(link.evidence)}</p></div>`:''}${body}${report?`<h3>연결된 리포트 · ${esc(sourceLabel(reportSource(report)))}</h3><button class="related-card" id="network-report">${esc(report.date)} · ${esc(report.title)}</button>${sources(report.sources)}`:''}`;
- if(report)$('#network-report').onclick=()=>{networkSelection=null;selected=report.id;selectedRelation='';renderDetail()};
+ if(node.kind==='note'){
+  const related=new Set(currentDocuments.links.filter(e=>e.from===node.id||e.to===node.id).map(e=>e.from===node.id?e.to:e.from));
+  body=`<p class="small-note">${esc(item.path)} · 수정 ${esc(item.modified.slice(0,10))}</p><button type="button" data-edit-network-note="${esc(item.id)}">노트 열기 · 편집</button><article class="markdown network-note-preview">${window.AVNotes.preview(item,noteNetworkState.nodes.map(n=>n.ref))}</article>`;
+  if(!link)body+=`<h3>연결된 자료</h3>${currentDocuments.nodes.filter(n=>related.has(n.id)).map(networkItemButton).join('')||'<p class="small-note">아직 표시할 연결이 없습니다. 본문에 [[노트 이름]]을 쓰거나 노트 아래에서 리포트를 연결하세요. 연결된 자료의 표시 스위치와 검색 조건도 확인할 수 있습니다.</p>'}`;
+ }
+ delete $('#detail').dataset.reportKey;
+ $('#detail').innerHTML=`<div class="eyebrow">${esc(sourceLabel(node.source))} · ${link?'자료 연결 근거':'원본 자료'}</div><h2>${esc(node.label)}</h2>${link?`<div class="summary"><b>${esc(link.label)}</b><p>${esc(link.evidence)}</p></div>`:''}${body}${target?`<h3>연결된 ${target.kind==='note'?'노트':'리포트'}</h3>${networkItemButton(target)}${target.kind==='report'?sources(target.ref.sources):''}`:''}`;
+ bindNetworkItems();
+ if(node.kind==='note')$('#detail').querySelectorAll('[data-note-link]').forEach(b=>b.onclick=e=>{e.preventDefault();window.AVNotes.open(item.id,b.dataset.noteLink).catch(e=>toast(e.message))});
  return true;
 }
 // Entities on a circle, edges as curved arrows; hovering or selecting a node/edge dims the rest.
 function renderGraph(ids){const label=id=>catalog().entities.find(n=>n.id===id)?.label||id;
+ loadNoteNetwork();
  currentDocuments=buildDocumentNetwork(catalog().reports.filter(r=>ids.has(r.id)));
  if(!Object.values(networkSources).some(Boolean)){$('#results').innerHTML='<div class="empty">표시할 자료를 위에서 켜 주세요.</div>';$('#result-count').textContent='표시할 자료 없음';return}
  let rel=catalog().relations.filter(r=>ids.has(r.report_id)&&matches(label(r.from),label(r.to),r.label,r.evidence,r.status));let nodeIDs=new Set(rel.flatMap(r=>[r.from,r.to]));let ns=catalog().entities.filter(e=>nodeIDs.has(e.id));
@@ -223,10 +326,10 @@ function renderGraph(ids){const label=id=>catalog().entities.find(n=>n.id===id)?
  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="근거가 연결된 관계 그래프"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z"/></marker></defs>`;
  for(let r of rel){let a=positions[r.from],b=positions[r.to],dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;let x1=a.x+ux*34,y1=a.y+uy*34,x2=b.x-ux*36,y2=b.y-uy*36;let bend=Math.min(70,d*.18);let mx=(x1+x2)/2-uy*bend,my=(y1+y2)/2+ux*bend;let lx=(x1+2*mx+x2)/4,ly=(y1+2*my+y2)/4;
   svg+=`<g class="edge ${r.status==='계획'?'planned':''} ${selectedRelation===r.id?'selected':''}" data-edge="${esc(r.id)}" data-from="${esc(r.from)}" data-to="${esc(r.to)}" tabindex="0" role="button" aria-label="${esc(label(r.from))} → ${esc(label(r.to))}: ${esc(r.label)}"><path class="hit" d="M${x1} ${y1}Q${mx} ${my} ${x2} ${y2}"/><path class="line" d="M${x1} ${y1}Q${mx} ${my} ${x2} ${y2}" marker-end="url(#arrow)"/><rect class="label-bg" x="${lx-r.label.length*5.6-7}" y="${ly-10}" width="${r.label.length*11.2+14}" height="20" rx="10"/><text class="graph-label" text-anchor="middle" x="${lx}" y="${ly+4}">${esc(r.label)}</text></g>`}
- for(let n of ns){let p=positions[n.id];svg+=`<g class="node kind-${esc(n.kind)}" data-node="${esc(n.id)}" tabindex="0" role="button" aria-label="${esc(n.label)}" transform="translate(${p.x} ${p.y})"><circle r="30"/><text class="icon" text-anchor="middle" y="5">${n.kind==='인물'?'👤':n.kind==='지역'?'📍':'🏢'}</text><text class="name" text-anchor="middle" y="48">${esc(n.label)}</text><text class="kind" text-anchor="middle" y="62">${esc(n.kind)}</text></g>`}svg+='</svg>';
- $('#results').innerHTML=`<p class="small-note">${terms().length?`검색어 <b>${esc(terms().join(' '))}</b>와 일치하는 관계만 표시합니다. `:'공통 기업명만으로 관계를 만들지 않습니다. '}노드나 연결을 가리키면 관련 항목만 강조되고, 선택하면 오른쪽에 근거가 열립니다.</p>`+(ns.length?`<div class="graph">${svg}<div class="legend"><span><i class="lg solid"></i>확인된 관계</span><span><i class="lg dashed"></i>발표된 계획</span><span>🏢 기업 · 👤 인물 · 📍 지역</span></div></div><div class="relation-list">${rel.map(r=>`<button class="related-card ${selectedRelation===r.id?'selected':''}" data-relation="${esc(r.id)}"><span class="rel-path">${esc(label(r.from))} <i>→</i> ${esc(label(r.to))}</span><small>${esc(r.label)} · ${chip(r.status,r.status==='계획'?'amber':'teal')}</small></button>`).join('')}</div>`:`<div class="empty">${terms().length?'검색어와 일치하는 관계가 없습니다.<br>검색어를 지우면 현재 필터의 모든 관계를 봅니다.':'이 조건에 근거가 확인된 관계가 없습니다.'}</div>`);
+ for(let n of ns){let p=positions[n.id];svg+=`<g class="node kind-${esc(n.kind)}" data-node="${esc(n.id)}" tabindex="0" role="button" aria-label="${esc(n.label)}" transform="translate(${p.x} ${p.y})"><circle r="30"/>${uiIcon(n.kind==='인물'?'person':n.kind==='지역'?'pin':'company',true)}<text class="name" text-anchor="middle" y="48">${esc(n.label)}</text><text class="kind" text-anchor="middle" y="62">${esc(n.kind)}</text></g>`}svg+='</svg>';
+ $('#results').innerHTML=`<p class="small-note">${terms().length?`검색어 <b>${esc(terms().join(' '))}</b>와 일치하는 관계만 표시합니다. `:'공통 기업명만으로 관계를 만들지 않습니다. '}노드나 연결을 가리키면 관련 항목만 강조되고, 선택하면 오른쪽에 근거가 열립니다.</p>`+(ns.length?`<div class="graph">${svg}<div class="legend"><span><i class="lg solid"></i>확인된 관계</span><span><i class="lg dashed"></i>발표된 계획</span><span>${uiIcon('company')} 기업</span><span>${uiIcon('person')} 인물</span><span>${uiIcon('pin')} 지역</span></div></div><div class="relation-list">${rel.map(r=>`<button class="related-card ${selectedRelation===r.id?'selected':''}" data-relation="${esc(r.id)}"><span class="rel-path">${esc(label(r.from))} <i>→</i> ${esc(label(r.to))}</span><small>${esc(r.label)} · ${chip(r.status,r.status==='계획'?'amber':'teal')}</small></button>`).join('')}</div>`:`<div class="empty">${terms().length?'검색어와 일치하는 관계가 없습니다.<br>검색어를 지우면 현재 필터의 모든 관계를 봅니다.':currentDocuments.links.length||currentDocuments.nodes.some(n=>n.kind==='note')?'현재 리포트에 확인된 기업·사건 관계가 없습니다.<br>노트와 자료 연결은 아래에서 확인하세요.':'이 조건에 근거가 확인된 관계가 없습니다.'}</div>`);
  $('#results').innerHTML+=documentConnectionsHtml(currentDocuments);bindDocumentConnections();
- $('#result-count').textContent=`확인된 사실·계획 ${rel.length}개 · 자료 연결 ${currentDocuments.links.length}개`;
+ $('#result-count').textContent=`확인된 사실·계획 ${rel.length}개 · 자료 연결 ${currentDocuments.links.length}개 · 노트 ${currentDocuments.nodes.filter(n=>n.kind==='note').length}개`;
  const g=$('#results .graph svg');const focus=(nodes,edges)=>{if(!g)return;g.classList.toggle('focus',!!nodes);g.querySelectorAll('[data-node]').forEach(n=>n.classList.toggle('on',!!nodes&&nodes.has(n.dataset.node)));g.querySelectorAll('[data-edge]').forEach(e=>e.classList.toggle('on',!!edges&&edges.has(e.dataset.edge)))};
  const pickRel=id=>{networkSelection=null;selectedRelation=id;selected=catalog().relations.find(r=>r.id===id).report_id;$$('[data-relation],[data-edge]').forEach(b=>b.classList.toggle('selected',b.dataset.relation===id||b.dataset.edge===id));renderDetail()};
  $$('[data-relation]').forEach(b=>{b.onclick=()=>pickRel(b.dataset.relation);b.onmouseenter=()=>{let r=rel.find(x=>x.id===b.dataset.relation);focus(new Set([r.from,r.to]),new Set([r.id]))};b.onmouseleave=()=>focus(null)});
@@ -277,6 +380,7 @@ function renderMapMediaDetail(){
 // Force-directed map: reports, companies, tags and explicitly indexed local media.
 let mapSim=null;const mapPos={};
 function renderMap(rs){
+ loadNoteNetwork();
  if(networkSources.local&&!mapMedia.loaded)loadMapMedia();
  if(mapSim)mapSim.stop();
  currentDocuments=buildDocumentNetwork(rs);
@@ -293,22 +397,20 @@ function renderMap(rs){
  if(mapMediaEdge&&(!mediaIDs.has(mapMediaEdge.from)||!mediaIDs.has(mapMediaEdge.to)))mapMediaEdge=null;
  for(const d of mediaDocs)add('m:'+d.id,'media',d.name,d).source='local';
  for(const e of mapMedia.links){const a=idx['m:'+e.from],b=idx['m:'+e.to];if(a!==undefined&&b!==undefined)link(nodes[a],nodes[b],'similarity',e)}
- $('#result-count').textContent=`${rs.length}개 리포트 · 색인 자료 ${mediaDocs.length}개 · 보관 PDF ${nodes.filter(n=>n.kind==='pdf').length}개 · 메일 ${nodes.filter(n=>n.kind==='mail').length}개`;
+ $('#result-count').textContent=`${rs.length}개 리포트 · 색인 자료 ${mediaDocs.length}개 · 보관 PDF ${nodes.filter(n=>n.kind==='pdf').length}개 · 메일 ${nodes.filter(n=>n.kind==='mail').length}개 · 노트 ${nodes.filter(n=>n.kind==='note').length}개`;
  const adj=new Map(nodes.map(n=>[n,new Set()]));links.forEach(l=>{adj.get(l.a).add(l.b);adj.get(l.b).add(l.a)});
  const W=1000,H=700;
  const edgeDescription=l=>l.kind==='similarity'?`${l.a.label} p.${l.evidence.from_page} ↔ ${l.b.label} p.${l.evidence.to_page} · 유사도 ${l.evidence.similarity.toFixed(4)}`:l.kind==='reference'?`${l.a.label} → ${l.b.label} · ${l.evidence.label}`:`${l.a.label} · ${l.b.label}`;
- $('#results').innerHTML=`<p class="small-note">자료를 누르면 원문을 확인할 수 있습니다. 파란 점선은 원본 메일·직접 연결, 주황색 점선은 페이지 이미지의 유사도입니다. 기업·분류 선은 리포트의 태그이며 확인된 사실 관계는 관계 그래프에서 봅니다.</p><div class="form-actions" ${networkSources.local?'':'hidden'}><span class="small-note">${mapMedia.loading?'색인 자료 확인 중…':mapMedia.ok?'보관 PDF와 색인 자료는 별도로 표시됩니다.':'검색 서비스를 켜면 색인 자료도 표시됩니다. 보관 PDF는 서비스 없이 표시됩니다.'}</span><button class="text-button" id="map-media-refresh" ${mapMedia.loading?'disabled':''}>색인 자료 새로고침</button></div>`+(nodes.length?`<div class="map"><svg viewBox="${-W/2} ${-H/2} ${W} ${H}" role="img" aria-label="리포트·기업·분류·색인 자료 연결 지도"><g class="viewport"><g class="links">${links.map((l,i)=>`<line class="ml ${l.kind}" data-l="${i}" ${l.evidence?`tabindex="0" role="button" aria-label="${esc(edgeDescription(l))}"`:''}><title>${esc(edgeDescription(l))}</title></line>`).join('')}</g><g class="nodes">${nodes.map((n,i)=>`<g class="mn ${n.kind} ${n.source==='outlook'?'outlook ':''}${n.kind==='report'&&!networkSelection&&!mapMediaSelected&&selected===n.ref.id||n.kind==='media'&&mapMediaSelected===n.ref.id||networkSelection?.kind==='node'&&networkSelection.id===n.id?'selected':''}" data-n="${i}" data-item-id="${esc(n.id)}" data-source="${n.source||'metadata'}" tabindex="0" role="button" aria-label="${esc(n.label)}"><circle r="${n.kind==='company'||n.kind==='tag'?5+Math.min(n.deg,14)*.9:7+Math.min(n.deg,10)*.6}"/><title>${esc(n.label)}${n.source?' · '+sourceLabel(n.source):''}</title><text y="22" text-anchor="middle">${esc(n.label.length>24?n.label.slice(0,23)+'…':n.label)}</text></g>`).join('')}</g></g></svg><div class="legend"><span><i class="dot report"></i>데일리 리포트</span><span><i class="dot outlook"></i>Outlook</span><span><i class="dot pdf"></i>보관 PDF</span><span><i class="dot media"></i>색인 자료</span><span><i class="dot company"></i>기업</span><span><i class="dot tag"></i>분류</span><span><i class="lg reference"></i>원본·직접 연결</span><span><i class="lg related"></i>연결된 이슈</span><span><i class="lg similarity"></i>임베딩 유사도</span><button class="text-button" id="map-reset">배치 다시</button></div></div>`:`<div class="empty">${Object.values(networkSources).some(Boolean)?'표시할 자료가 없습니다. 검색 조건을 확인하세요.':'표시할 자료를 위에서 켜 주세요.'}</div>`);
- $('#map-media-refresh').onclick=()=>loadMapMedia(true);
+ $('#results').innerHTML=`<p class="small-note">자료를 누르면 원문을 확인할 수 있습니다. 파란 점선은 노트 링크·원본 메일·직접 연결·확정한 추천, 주황색 점선은 페이지 이미지의 유사도입니다. 기업·분류 선은 리포트의 태그이며 확인된 사실 관계는 관계 그래프에서 봅니다.</p>${noteNetworkStatusHTML()}<div class="form-actions" ${networkSources.local?'':'hidden'}><span class="small-note">${mapMedia.loading?'색인 자료 확인 중…':mapMedia.ok?'보관 PDF와 색인 자료는 별도로 표시됩니다.':'검색 서비스를 켜면 색인 자료도 표시됩니다. 보관 PDF는 서비스 없이 표시됩니다.'}</span><button class="text-button" id="map-media-refresh" ${mapMedia.loading?'disabled':''}>색인 자료 새로고침</button></div>`+(nodes.length?`<div class="map"><div class="map-controls" role="group" aria-label="지도 보기"><button type="button" id="map-zoom-in" aria-label="지도 확대">+ 확대</button><button type="button" id="map-zoom-out" aria-label="지도 축소">− 축소</button><button type="button" id="map-nearby">선택 주변</button><button type="button" id="map-overview">전체 보기</button><button type="button" id="map-wide" aria-pressed="false">넓게 보기</button></div><svg viewBox="${-W/2} ${-H/2} ${W} ${H}" role="img" aria-label="노트·리포트·기업·분류·색인 자료 연결 지도"><g class="viewport"><g class="links">${links.map((l,i)=>`<line class="ml ${l.kind}" data-l="${i}" ${l.evidence?`tabindex="0" role="button" aria-label="${esc(edgeDescription(l))}"`:''}><title>${esc(edgeDescription(l))}</title></line>`).join('')}</g><g class="nodes">${nodes.map((n,i)=>`<g class="mn ${n.kind} ${n.source==='outlook'?'outlook ':''}${n.kind==='report'&&!networkSelection&&!mapMediaSelected&&selected===n.ref.id||n.kind==='media'&&mapMediaSelected===n.ref.id||networkSelection?.kind==='node'&&networkSelection.id===n.id?'selected':''}" data-n="${i}" data-item-id="${esc(n.id)}" data-source="${n.source||'metadata'}" tabindex="0" role="button" aria-label="${esc(n.label)}"><circle r="${n.kind==='company'||n.kind==='tag'?5+Math.min(n.deg,14)*.9:7+Math.min(n.deg,10)*.6}"/><title>${esc(n.label)}${n.source?' · '+sourceLabel(n.source):''}</title><text y="22" text-anchor="middle">${esc(n.label.length>24?n.label.slice(0,23)+'…':n.label)}</text></g>`).join('')}</g></g></svg><p class="map-caption"></p><div class="legend"><span><i class="dot report"></i>데일리 리포트</span><span><i class="dot outlook"></i>Outlook</span><span><i class="dot note"></i>내 노트</span><span><i class="dot pdf"></i>보관 PDF</span><span><i class="dot media"></i>색인 자료</span><span><i class="dot company"></i>기업</span><span><i class="dot tag"></i>분류</span><span><i class="lg reference"></i>노트 링크·원본·직접 연결</span><span><i class="lg related"></i>연결된 이슈</span><span><i class="lg similarity"></i>임베딩 유사도</span><button class="text-button" id="map-reset">배치 다시</button></div></div>`:`<div class="empty">${Object.values(networkSources).some(Boolean)?'표시할 자료가 없습니다. 검색 조건을 확인하세요.':'표시할 자료를 위에서 켜 주세요.'}</div>`);
+ $('#map-media-refresh').onclick=()=>loadMapMedia(true);bindNetworkItems();
  if(!nodes.length)return;
- const svg=$('#results svg'),vp=svg.querySelector('.viewport'),L=$$('#results .ml'),N=$$('#results .mn');
+ const svg=$('#results svg'),L=$$('#results .ml'),N=$$('#results .mn');
+ const camera=window.AVMapViewport?.({svg,nodes,links,adj,N});
  L.forEach((el,i)=>{if(!links[i].evidence)return;const choose=()=>{if(links[i].kind==='reference')return selectNetwork('link',links[i].evidence.id);networkSelection=null;mapMediaEdge=links[i].evidence;mapMediaSelected='';renderDetail()};el.onclick=choose;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}}});
- let view={x:0,y:0,k:1},userView=false;const setView=()=>vp.setAttribute('transform',`translate(${view.x} ${view.y}) scale(${view.k})`);
- // Keep the whole graph in frame while it settles, until the user zooms or pans.
- const fit=()=>{let xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y),minx=Math.min(...xs)-60,maxx=Math.max(...xs)+60,miny=Math.min(...ys)-40,maxy=Math.max(...ys)+50;let k=Math.min(1.3,W/(maxx-minx),H/(maxy-miny));view={k,x:-(minx+maxx)/2*k,y:-(miny+maxy)/2*k};setView()};
- const draw=()=>{links.forEach((l,i)=>{let e=L[i];e.setAttribute('x1',l.a.x);e.setAttribute('y1',l.a.y);e.setAttribute('x2',l.b.x);e.setAttribute('y2',l.b.y)});nodes.forEach((n,i)=>{N[i].setAttribute('transform',`translate(${n.x} ${n.y})`);mapPos[n.id]={x:n.x,y:n.y}});if(!userView)fit()};
+ const draw=()=>{links.forEach((l,i)=>{let e=L[i];e.setAttribute('x1',l.a.x);e.setAttribute('y1',l.a.y);e.setAttribute('x2',l.b.x);e.setAttribute('y2',l.b.y)});nodes.forEach((n,i)=>{N[i].setAttribute('transform',`translate(${n.x} ${n.y})`);mapPos[n.id]={x:n.x,y:n.y}});camera?.update()};
  // Layout runs off the UI thread; draw at most once per animation frame.
  let worker=null,raf=0;
- const stop=()=>{worker?.terminate();worker=null;cancelAnimationFrame(raf);raf=0};
+ const stop=()=>{worker?.terminate();worker=null;cancelAnimationFrame(raf);raf=0;camera?.stop()};
  mapSim={stop};draw();
  if(typeof Worker!=='undefined'){
   worker=new Worker('/map-layout.js');
@@ -316,20 +418,20 @@ function renderMap(rs){
    nodes.forEach((n,i)=>{if(!n.fixed){n.x=data[i*2];n.y=data[i*2+1]}});
    if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw()});
   };
-  worker.onerror=stop;
+  worker.onerror=()=>{worker?.terminate();worker=null};
   worker.postMessage({type:'init',nodes:nodes.map(n=>({x:n.x,y:n.y,vx:0,vy:0,fixed:false})),links:links.map(l=>({a:idx[l.a.id],b:idx[l.b.id],kind:l.kind}))});
  }
  // Hover: keep the neighbourhood, dim the rest.
- const focus=n=>{svg.classList.toggle('focus',!!n);N.forEach((el,i)=>el.classList.toggle('on',!!n&&(nodes[i]===n||adj.get(n).has(nodes[i]))));L.forEach((el,i)=>el.classList.toggle('on',!!n&&(links[i].a===n||links[i].b===n)))};
- N.forEach((el,i)=>{const n=nodes[i];el.onmouseenter=()=>focus(n);el.onmouseleave=()=>focus(null);
-  const act=()=>{if(n.kind==='media'){selectMapMedia(n.ref.id);N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n))}else if(n.kind==='mail'||n.kind==='pdf'){selectNetwork('node',n.id);N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n))}else if(n.kind==='report'){networkSelection=null;mapMediaSelected='';mapMediaEdge=null;selected=n.ref.id;selectedRelation='';N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n));renderDetail()}else{let sel=$(n.kind==='company'?'#company':'#category');sel.value=sel.value===n.ref?'':n.ref;render()}};
-  let moved=false;el.onpointerdown=e=>{e.stopPropagation();moved=false;n.fixed=true;el.setPointerCapture(e.pointerId);let sx=e.clientX,sy=e.clientY,ox=n.x,oy=n.y;const pt=svg.createSVGPoint();const scale=()=>{let r=svg.getBoundingClientRect();return W/r.width/view.k};
+ const focus=n=>{svg.classList.toggle('focus',!!n);N.forEach((el,i)=>el.classList.toggle('on',!!n&&(nodes[i]===n||adj.get(n).has(nodes[i]))));L.forEach((el,i)=>el.classList.toggle('on',!!n&&(links[i].a===n||links[i].b===n)));camera?.focus(n)};
+ N.forEach((el,i)=>{const n=nodes[i];el.onmouseenter=()=>focus(n);el.onmouseleave=()=>focus(null);el.onfocus=()=>{camera?.reveal(n);focus(n)};el.onblur=()=>focus(null);
+  const act=()=>{if(n.kind==='media'){selectMapMedia(n.ref.id);N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n))}else if(n.kind==='mail'||n.kind==='pdf'||n.kind==='note'){selectNetwork('node',n.id);N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n))}else if(n.kind==='report'){networkSelection=null;mapMediaSelected='';mapMediaEdge=null;selected=n.ref.id;selectedRelation='';N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n));renderDetail()}else{let sel=$(n.kind==='company'?'#company':'#category');sel.value=sel.value===n.ref?'':n.ref;render()}};
+  const pick=()=>{act();camera?.select()};
+  let moved=false;el.onpointerdown=e=>{e.stopPropagation();moved=false;n.fixed=true;el.setPointerCapture(e.pointerId);let sx=e.clientX,sy=e.clientY,ox=n.x,oy=n.y;const scale=()=>camera?.dragScale()||1;
    el.onpointermove=ev=>{if(!(ev.buttons&1))return;let s=scale();n.x=ox+(ev.clientX-sx)*s;n.y=oy+(ev.clientY-sy)*s;if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>3)moved=true;worker?.postMessage({type:'drag',index:i,x:n.x,y:n.y,fixed:true});draw()};
-   el.onpointerup=()=>{el.onpointermove=null;n.fixed=false;worker?.postMessage({type:'drag',index:i,x:n.x,y:n.y,fixed:false});if(!moved)act()}};
-  el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();act()}}});
- svg.onwheel=e=>{e.preventDefault();userView=true;let r=svg.getBoundingClientRect(),mx=(e.clientX-r.left)/r.width*W-W/2,my=(e.clientY-r.top)/r.height*H-H/2;let k=Math.min(4,Math.max(.3,view.k*(e.deltaY<0?1.15:1/1.15)));view.x=mx-(mx-view.x)*k/view.k;view.y=my-(my-view.y)*k/view.k;view.k=k;setView()};
- svg.onpointerdown=e=>{if(e.target!==svg&&!e.target.classList.contains('viewport'))return;svg.setPointerCapture(e.pointerId);userView=true;let sx=e.clientX,sy=e.clientY,ox=view.x,oy=view.y,r=svg.getBoundingClientRect();svg.onpointermove=ev=>{if(!(ev.buttons&1))return;view.x=ox+(ev.clientX-sx)*W/r.width;view.y=oy+(ev.clientY-sy)*W/r.width;setView()};svg.onpointerup=()=>svg.onpointermove=null};
- $('#map-reset').onclick=()=>{nodes.forEach(n=>{n.x=(Math.random()-.5)*300;n.y=(Math.random()-.5)*300;n.vx=n.vy=0});userView=false;worker?.postMessage({type:'reset'});draw()};
+   el.onpointerup=()=>{el.onpointermove=null;n.fixed=false;worker?.postMessage({type:'drag',index:i,x:n.x,y:n.y,fixed:false});if(!moved)pick()};
+   el.onpointercancel=()=>{el.onpointermove=null;n.fixed=false;worker?.postMessage({type:'drag',index:i,x:n.x,y:n.y,fixed:false})}};
+  el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();pick()}}});
+ $('#map-reset').onclick=()=>{nodes.forEach(n=>{n.x=(Math.random()-.5)*300;n.y=(Math.random()-.5)*300;n.vx=n.vy=0});camera?.reset();worker?.postMessage({type:'reset'});draw()};
 }
 function markdown(text){
  text=String(text||'').replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/,'').replace(/<!--[\s\S]*?-->/g,'');let refs={};text=text.replace(/^\[([^\]]+)\]:\s*(https?:\/\/\S+)\s*$/gm,(_,id,u)=>{refs[id]=u;return ''});
@@ -347,11 +449,14 @@ function markdown(text){
   if(l.trim())out.push(`<p>${inline(l)}</p>`)}
  return out.join('');
 }
-function renderDetail(){if(tab==='local')return renderLocalDetail();if(tab==='rag')return renderRagDetail();if(networkView()&&renderNetworkDetail())return;if(tab==='map'&&networkSources.local&&(mapMediaEdge||mapMedia.docs.some(d=>d.id===mapMediaSelected)))return renderMapMediaDetail();let r=linkedReport===selected?reportOf(selected):catalog().reports.find(r=>r.id===selected);if(tab==='outlook'&&r&&reportSource(r)!=='outlook'&&linkedReport!==selected)r=null;if(networkView()&&r&&!filtered().some(x=>x.id===r.id))r=null;if(!r){$('#detail').innerHTML=tab==='outlook'?'<div class="empty">가져온 Outlook 리포트를 선택하면<br>본문과 원본 메일을 확인할 수 있습니다.</div>':'<div class="empty">리포트나 그래프의 연결을 선택하면<br>본문과 관련 내용을 볼 수 있습니다.</div>';return}
+function renderDetail(){if(tab==='local')return renderLocalDetail();if(tab==='rag')return renderRagDetail();if(networkView()&&renderNetworkDetail())return;if(tab==='map'&&networkSources.local&&(mapMediaEdge||mapMedia.docs.some(d=>d.id===mapMediaSelected)))return renderMapMediaDetail();let r=linkedReport===selected?reportOf(selected):catalog().reports.find(r=>r.id===selected);if(tab==='outlook'&&r&&reportSource(r)!=='outlook'&&linkedReport!==selected)r=null;if(networkView()&&r&&!filtered().some(x=>x.id===r.id))r=null;if(!r){delete $('#detail').dataset.reportKey;reportReaderOpen=false;updateReportReader();$('#detail').innerHTML=tab==='outlook'?'<div class="empty">가져온 Outlook 리포트를 선택하면<br>본문과 원본 메일을 확인할 수 있습니다.</div>':'<div class="empty">리포트나 그래프의 연결을 선택하면<br>본문과 관련 내용을 볼 수 있습니다.</div>';return}
+ const detail=$('#detail'),reportKey=`${tab}:${r.id}:${selectedRelation}`,changed=detail.dataset.reportKey!==reportKey;
+ detail.dataset.reportKey=reportKey;
  let rel=catalog().relations.find(x=>x.id===selectedRelation);let related=catalog().related.filter(x=>x.from===r.id||x.to===r.id).map(x=>({r:catalog().reports.find(z=>z.id===(x.from===r.id?x.to:x.from)),reason:x.reason})).filter(x=>x.r);
  let same=catalog().reports.filter(x=>x.id!==r.id&&!related.some(t=>t.r.id===x.id)&&x.companies.some(c=>r.companies.includes(c))).slice(0,4);
  // Body first and fully expanded; linked issues follow as title-only cards (reason shown on hover).
- $('#detail').innerHTML=(rel?`<div class="eyebrow">선택한 관계 · ${esc(rel.status)}</div><h2>${esc(rel.label)}</h2><div class="summary">${esc(rel.evidence)}</div>${sources(rel.sources)}<hr>`:'')+`<div class="report-actions"><span class="report-date">${esc(r.date)}</span><button type="button" class="text-button" id="hide-report" title="이 PC의 내 화면에서만 숨깁니다. 원본은 보관되며 전체 복원할 수 있습니다." ${visibilityBusy||visibilityError?'disabled':''}>내 화면에서 숨기기</button></div><h2>${esc(r.title)}</h2><div class="chips">${r.companies.map(s=>chip(s,'teal')).join('')}</div><div class="downloads">${r.attachments.map((a,i)=>`<a href="/api/download?id=${encodeURIComponent(r.id)}&index=${i}">${esc(a.name.endsWith('.md')?'MD 다운로드':a.name.endsWith('.pptx')?'PPTX 다운로드':a.name)}</a>`).join('')}</div><article class="markdown">${markdown(r.body_markdown)}</article><hr><h3>연결된 이슈</h3>${related.length?related.map(x=>`<button class="related-card" data-related="${esc(x.r.id)}" title="${esc(x.reason)}"><span class="report-date">${esc(x.r.date)}</span> ${esc(x.r.title)}</button>`).join(''):'<p class="small-note">게시자가 확인한 후속 연결이 아직 없습니다.</p>'}${same.length?'<h3>같은 기업이 등장한 리포트</h3>'+same.map(x=>`<button class="related-card" data-related="${esc(x.id)}" title="기업 태그가 같은 자료입니다. 같은 사건을 뜻하지 않습니다."><span class="report-date">${esc(x.date)}</span> ${esc(x.title)}</button>`).join(''):''}<h3>원문 출처</h3>${sources(r.sources)}`;
+ $('#detail').innerHTML=(reportListView()?'<div class="report-reader-bar"><button type="button" id="report-back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>목록으로</button></div>':'')+(rel?`<div class="eyebrow">선택한 관계 · ${esc(rel.status)}</div><h2>${esc(rel.label)}</h2><div class="summary">${esc(rel.evidence)}</div>${sources(rel.sources)}<hr>`:'')+`<div class="report-actions"><span class="report-date">${esc(r.date)}</span><button type="button" class="text-button" id="hide-report" title="이 PC의 내 화면에서만 숨깁니다. 원본은 보관되며 전체 복원할 수 있습니다." ${visibilityBusy||visibilityError?'disabled':''}>내 화면에서 숨기기</button></div><h2 id="report-title" tabindex="-1">${esc(r.title)}</h2><div class="chips">${r.companies.map(s=>chip(s,'teal')).join('')}</div><div class="downloads">${r.attachments.map((a,i)=>`<a href="/api/download?id=${encodeURIComponent(r.id)}&index=${i}">${esc(a.name.endsWith('.md')?'MD 다운로드':a.name.endsWith('.pptx')?'PPTX 다운로드':a.name)}</a>`).join('')}</div><article class="markdown">${markdown(r.body_markdown)}</article><hr><h3>연결된 이슈</h3>${related.length?related.map(x=>`<button class="related-card" data-related="${esc(x.r.id)}" title="${esc(x.reason)}"><span class="report-date">${esc(x.r.date)}</span> ${esc(x.r.title)}</button>`).join(''):'<p class="small-note">게시자가 확인한 후속 연결이 아직 없습니다.</p>'}${same.length?'<h3>같은 기업이 등장한 리포트</h3>'+same.map(x=>`<button class="related-card" data-related="${esc(x.id)}" title="기업 태그가 같은 자료입니다. 같은 사건을 뜻하지 않습니다."><span class="report-date">${esc(x.date)}</span> ${esc(x.title)}</button>`).join(''):''}<h3>원문 출처</h3>${sources(r.sources)}`;
+ if($('#report-back'))$('#report-back').onclick=returnToReportList;
  $('#hide-report').onclick=()=>changeReportVisibility('hide',r.id);
  if(r.origin){
   const downloads=$('#detail .downloads');
@@ -359,32 +464,46 @@ function renderDetail(){if(tab==='local')return renderLocalDetail();if(tab==='ra
   if(r.body_markdown)downloads.insertAdjacentHTML('beforeend',`<a href="/api/local/reports/download?id=${encodeURIComponent(r.id)}">MD 다운로드</a>`);
   if(r.mail){mailPool[r.mail.entry_id]=r.mail;downloads.insertAdjacentHTML('beforeend',`<button type="button" data-mail-open="${esc(r.mail.entry_id)}">Outlook 원문 열기</button>`)}
  }
- highlight($('#detail'));renderReportLocal(r);
- $$('[data-related]').forEach(b=>b.onclick=()=>{selected=b.dataset.related;selectedRelation='';render()});
+ highlight($('#detail'));renderReportLocal(r);window.AVNotes?.attachReport(r,$('#detail'));
+ if(changed)detail.scrollTop=0;
+ $$('[data-related]').forEach(b=>b.onclick=()=>selectReport(b.dataset.related,{fromDetail:true}));
 }
-function mountForm(target){let host=$(target);host.replaceChildren($('#settings-form').content.cloneNode(true));let f=host.querySelector('form');for(let k of ['owner','repo','branch','sync_time'])f.elements[k].value=state.config[k];f.elements.offline.checked=state.config.offline;f.querySelector('#data-location').textContent='자료 저장 위치: '+state.data_dir;f.querySelector('.save-settings').textContent=state.setup?'검사하고 설치':'검사하고 저장';
- const input=()=>({owner:f.elements.owner.value.trim(),repo:f.elements.repo.value.trim(),branch:f.elements.branch.value.trim(),sync_time:f.elements.sync_time.value,token:f.elements.token.value,clear_token:f.elements.clear_token.checked,offline:f.elements.offline.checked});
- async function run(path){if(formBusy)return;formBusy=true;let box=f.querySelector('.checks');box.classList.remove('error');box.textContent='환경을 확인하고 있습니다…';f.querySelectorAll('button').forEach(b=>b.disabled=true);try{let v=await api(path,input());box.textContent=(v.checks||[]).map(s=>'✓ '+s).join('\n');if(!v.ok){box.classList.add('error');box.textContent+='\n'+(v.error||'설정을 확인하세요.')}else if(path==='/api/install'){f.elements.token.value='';f.elements.clear_token.checked=false;if(state.setup){f.querySelector('.launch').hidden=false;box.textContent+='\n설치 완료. 리포트 시작 버튼을 누르세요.'}else{toast('설정이 저장되었습니다.');await refresh(true)}}}catch(e){box.classList.add('error');box.textContent=e.message}finally{formBusy=false;f.querySelectorAll('button').forEach(b=>b.disabled=false)}}
+function syncGitHubSettings(config,force=false){
+ if(typeof config?.offline!=='boolean')return;
+ if(state)Object.assign(state.config,{offline:config.offline,offline_reason:config.offline_reason||''});
+ $$('.settings-form').forEach(f=>{
+  const saved=JSON.stringify([config.offline,config.offline_reason||'']);
+  if(force||f.dataset.connection!==saved){f.elements.github_enabled.checked=!config.offline;f.dataset.connection=saved}
+  f.querySelector('.github-state').textContent=state?.github_choice_required?'이 버전의 GitHub 연동 여부를 선택하고 저장하세요. 선택 전에는 연결을 보류합니다.':f.elements.github_enabled.checked===config.offline?'연동 설정 변경됨 · 아래 저장 버튼을 눌러 적용하세요.':config.offline_reason==='connection_failed'?'연결 실패로 자동 꺼짐 · 다시 켠 뒤 저장하면 연결을 확인합니다.':config.offline?'연동 꺼짐 · GitHub 리포트는 표시하지 않습니다. Outlook·직접 가져온 자료는 계속 사용할 수 있습니다.':'연동 켜짐 · 시작할 때와 설정한 시각에 자료를 확인합니다.';
+ });
+}
+function mountForm(target){let host=$(target);host.replaceChildren($('#settings-form').content.cloneNode(true));let f=host.querySelector('form');for(let k of ['owner','repo','branch','sync_time'])f.elements[k].value=state.config[k];syncGitHubSettings(state.config);f.querySelector('#data-location').textContent='자료 저장 위치: '+state.data_dir;f.querySelector('.save-settings').textContent=state.setup?'검사하고 설치':'검사하고 저장';
+ const input=()=>({owner:f.elements.owner.value.trim(),repo:f.elements.repo.value.trim(),branch:f.elements.branch.value.trim(),sync_time:f.elements.sync_time.value,token:f.elements.token.value,clear_token:f.elements.clear_token.checked,offline:!f.elements.github_enabled.checked});
+ f.elements.github_enabled.onchange=()=>syncGitHubSettings(state.config);
+ async function run(path){if(formBusy)return;formBusy=true;let box=f.querySelector('.checks');box.classList.remove('error');box.textContent='환경을 확인하고 있습니다…';f.querySelectorAll('button').forEach(b=>b.disabled=true);try{let v=await api(path,input());box.textContent=(v.checks||[]).map(s=>'✓ '+s).join('\n');if(!v.ok){box.classList.add('error');box.textContent+='\n'+(v.error||'설정을 확인하세요.')}else if(path==='/api/install'){syncGitHubSettings(v.config,true);f.elements.token.value='';f.elements.clear_token.checked=false;if(state.setup){f.querySelector('.launch').hidden=false;box.textContent+='\n설치 완료. 리포트 시작 버튼을 누르세요.'}else{toast('설정이 저장되었습니다.');await refresh(true)}}}catch(e){box.classList.add('error');box.textContent=e.message}finally{formBusy=false;f.querySelectorAll('button').forEach(b=>b.disabled=false)}}
  f.querySelector('.check-env').onclick=()=>{if(f.reportValidity())run('/api/check')};f.onsubmit=e=>{e.preventDefault();run('/api/install')};f.querySelector('.launch').onclick=async()=>{try{await api('/api/launch',{});f.querySelector('.checks').textContent='리포트가 열렸습니다. 이 설정 창은 닫아도 됩니다.'}catch(e){toast(e.message)}};
 }
 function showStatus(s){
  lastSyncState=s.sync_state||'';
- const unavailable=['unavailable','offline','unconfigured'].includes(lastSyncState),button=$('#sync');
- button.disabled=s.syncing||s.setup;
+ if(typeof updateGitHubChoice==='function')updateGitHubChoice(s);
+ syncGitHubSettings(s.config||s);
+ const disabled=['offline','auto_disabled','choice_required'].includes(lastSyncState),unavailable=['unavailable','offline','auto_disabled','choice_required','unconfigured'].includes(lastSyncState),button=$('#sync');
+ button.disabled=!!(s.syncing||s.setup||disabled);
  button.textContent=s.syncing?'확인 중…':'↻ 지금 업데이트';
- button.title=lastSyncState==='offline'?'오프라인 설정입니다. 눌러서 연결 설정을 변경하세요.':lastSyncState==='unconfigured'?'GitHub 연결 설정이 필요합니다.':unavailable?`${s.status||'GitHub 연결 불가'} · 눌러서 다시 확인`:'GitHub의 최신 자료를 확인합니다.';
- const signal=s.syncing?'checking':lastSyncState==='ready'?'ready':lastSyncState==='unavailable'?'error':'idle';
- const message=s.syncing?'최신 자료 확인 중…':lastSyncState==='offline'?'오프라인 모드':lastSyncState==='unconfigured'?'GitHub 연결 미설정':signal==='error'?'최신 자료 확인 실패':signal==='ready'?'최신 자료 확인 완료':'업데이트 확인 대기';
+ button.title=disabled?'설정에서 GitHub 자료 연동을 켜고 저장하세요.':lastSyncState==='unconfigured'?'GitHub 연결 설정이 필요합니다.':unavailable?`${s.status||'GitHub 연결 불가'} · 눌러서 다시 확인`:'GitHub의 최신 자료를 확인합니다.';
+ const signal=s.syncing?'checking':lastSyncState==='ready'?'ready':['unavailable','auto_disabled'].includes(lastSyncState)?'error':'idle';
+ const message=s.syncing?'최신 자료 확인 중…':lastSyncState==='choice_required'?'GitHub 연동 선택 대기':lastSyncState==='auto_disabled'?'GitHub 연동 자동 꺼짐':lastSyncState==='offline'?'GitHub 연동 꺼짐':lastSyncState==='unconfigured'?'GitHub 연결 미설정':signal==='error'?'최신 자료 확인 실패':signal==='ready'?'최신 자료 확인 완료':'업데이트 확인 대기';
  const stamp=s.synced_at?new Date(s.synced_at):null,valid=stamp&&!Number.isNaN(stamp.getTime());
- const time=valid?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(stamp):'확인 기록 없음 · 기본 자료';
+ const time=valid?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(stamp):'GitHub 확인 기록 없음';
  $('#sync-indicator').setAttribute('data-state',signal);$('#sync-symbol').textContent={checking:'↻',ready:'✓',error:'!',idle:'−'}[signal];
  $('#sync-status').textContent=message;$('#sync-message').textContent=message;
  $('#sync-summary').title=message+' · 눌러서 자세히 보기';
  $('#sync-time').textContent=time;$('#sync-time').setAttribute('datetime',valid?stamp.toISOString():'');
  $('#sync-time').title='마지막으로 GitHub 자료 확인에 성공한 시간입니다. 자료 변경이 없어도 갱신됩니다.';
- $('#sync-detail').textContent=signal==='error'?s.status||'연결을 확인한 뒤 지금 업데이트를 눌러 다시 시도하세요.':lastSyncState==='offline'?'설정에서 오프라인 모드를 해제하면 최신 자료를 확인할 수 있습니다.':lastSyncState==='unconfigured'?'왼쪽 설정 탭에서 GitHub 연결을 설정하세요.':signal==='checking'?'GitHub의 최신 자료를 확인하고 있습니다.':signal==='ready'?'GitHub의 최신 게시 자료와 일치합니다.':s.status||'보관한 자료를 표시하고 있습니다.';
- $('#published').textContent='마지막 GitHub 확인: '+time+' (한국시간)';
+ $('#sync-detail').textContent=lastSyncState==='auto_disabled'?'GitHub 연결 실패로 연동을 자동으로 껐습니다. GitHub 리포트는 표시하지 않습니다. Outlook·직접 가져온 자료는 계속 사용할 수 있습니다. 설정에서 GitHub 자료 연동을 켜고 저장하면 다시 연결합니다.':lastSyncState==='offline'?'GitHub 자료 연동이 꺼져 있습니다. 설정에서 켜고 저장하면 최신 자료를 확인할 수 있습니다.':signal==='error'?s.status||'연결을 확인한 뒤 지금 업데이트를 눌러 다시 시도하세요.':lastSyncState==='unconfigured'?'왼쪽 설정 탭에서 GitHub 연결을 설정하세요.':signal==='checking'?'GitHub의 최신 자료를 확인하고 있습니다.':signal==='ready'?'GitHub의 최신 게시 자료와 일치합니다.':s.status||'보관한 자료를 표시하고 있습니다.';
  if(s.outlook_import)outlookImportState=s.outlook_import;
+ if(typeof checkDocumentConnections==='function')checkDocumentConnections(s.outlook_import);
+ if(lastSyncState==='choice_required')$('#sync-detail').textContent='이 버전에서 GitHub 자료 연동 여부를 선택해 주세요. 설정에서 연동을 켜거나 끄고 저장할 수도 있습니다. 선택 전에는 GitHub 리포트를 표시하지 않습니다. Outlook·직접 가져온 자료는 계속 사용할 수 있습니다.';
  updateOutlookImportStatus();
 }
 function updateOutlookImportStatus(){
@@ -396,6 +515,7 @@ async function loadImportedReports(){
  catch(e){importError=e.message}
  mergedSource=null;catalogViews=new WeakMap();
  const note=$('#report-import-status');if(note&&importError)note.textContent=importError;
+ if(typeof invalidateDocumentConnections==='function')invalidateDocumentConnections();
 }
 function updateCatalogView(){
  const options=visibleCatalog({...state.snapshot.catalog,reports:[...state.snapshot.catalog.reports,...importedReports]}).reports;
@@ -422,12 +542,14 @@ async function refresh(force=false){
  state=next;if(!state.setup)await loadImportedReports();if(request!==refreshRequest)return;applyReportVisibility(state.report_visibility);showStatus({...state,synced_at:state.snapshot.synced_at});updateCatalogView();
 }
 // Tab is mirrored in the URL hash (#timeline, #graph, #map) so a view can be bookmarked or reloaded.
-function setTab(t,reportID=''){let b=$(`[data-tab="${t}"]`);if(!b)return;tab=t;networkSelection=null;linkedReport=reportID;$('#visibility-menu').open=false;history.replaceState(null,'',t==='search'?location.pathname:'#'+t);if(t==='map')mapMedia.loaded=false;updateCatalogView()}
+document.addEventListener('focusin',e=>{if(e.target!==document.body)reportDetailHadFocus=$('#detail').contains(e.target)});
+function setTab(t,reportID='',notesReady=false){if(tab==='notes'&&t!=='notes'&&!notesReady&&window.AVNotes?.hasPending()){window.AVNotes.flush().then(ok=>{if(ok)setTab(t,reportID,true)});return}let b=$(`[data-tab="${t}"]`);if(!b)return;if(tab!==t)delete $('#detail').dataset.reportKey;tab=t;reportReaderOpen=!!reportID&&narrowReportLayout.matches&&reportListView();reportListScroll=0;reportListFocus=null;networkSelection=null;linkedReport=reportID;$('#visibility-menu').open=false;history.replaceState(null,'',t==='search'?location.pathname:'#'+t);if(t==='map')mapMedia.loaded=false;if(networkView())invalidateNoteNetwork();updateCatalogView();if(reportReaderOpen){window.scrollTo({top:0,behavior:'instant'});focusReportTitle()}}
 $$('[data-tab]').forEach((b,i)=>{b.onclick=()=>setTab(b.dataset.tab);b.onkeydown=e=>{const tabs=$$('[data-tab]');let next;if(e.key==='ArrowDown')next=(i+1)%tabs.length;else if(e.key==='ArrowUp')next=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;else return;e.preventDefault();setTab(tabs[next].dataset.tab);tabs[next].focus()}});
 $('#filter-toggle').onclick=()=>{const panel=$('#filter-panel');panel.hidden=!panel.hidden;$('#filter-toggle').setAttribute('aria-expanded',String(!panel.hidden))};
 $('#filter-panel').onkeydown=e=>{if(e.key==='Escape'){$('#filter-panel').hidden=true;$('#filter-toggle').setAttribute('aria-expanded','false');$('#filter-toggle').focus()}};
 $('#visibility-menu').onkeydown=e=>{if(e.key==='Escape'){$('#visibility-menu').open=false;$('#visibility-label').focus()}};
-$('#help').onclick=()=>$('#help-dialog').showModal();$('#close-help').onclick=()=>$('#help-dialog').close();
+$('#help').onclick=()=>{$('#help-details').href='/help.html#'+tab;$('#help-dialog').showModal()};
+$('#close-help').onclick=()=>$('#help-dialog').close();
 $('#sync-indicator').onkeydown=e=>{if(e.key==='Escape'){$('#sync-indicator').open=false;$('#sync-summary').focus()}};
 // Theme: applied early by theme.js; settings changes and remembers it (per browser, never synced).
 $('#theme').value=document.documentElement.dataset.theme||'apple';
@@ -440,25 +562,25 @@ $('#clear').onclick=()=>{$('#query').value='';render();$('#query').focus()};$('#
 $('#local-query').oninput=render;$('#local-clear').onclick=()=>{$('#local-query').value='';render();$('#local-query').focus()};
 $('#outlook-query').oninput=render;$('#outlook-clear').onclick=()=>{$('#outlook-query').value='';render();$('#outlook-query').focus()};
 for(const key of Object.keys(networkSources))$('#source-'+key).onchange=e=>{
- networkSources[key]=e.target.checked;
+ networkSources[key]=e.target.checked;if(key==='notes'&&e.target.checked)invalidateNoteNetwork();
  try{localStorage.setItem('av_network_sources',JSON.stringify(networkSources))}catch(x){}
  networkSelection=null;mapMediaSelected='';mapMediaEdge=null;selected='';selectedRelation='';render();
 };
-$('#sync').onclick=async()=>{if(['offline','unconfigured'].includes(lastSyncState)){setTab('settings');$('#tab-settings').focus();return}try{await api('/api/sync',{});toast('GitHub 연결과 최신 자료를 다시 확인합니다.');setTimeout(()=>refresh(),400)}catch(e){toast(e.message)}};
-$('#exit').onclick=async()=>{if(!confirm('프로그램을 종료할까요? 다음 실행 전까지 자동 갱신이 멈춥니다.'))return;try{await api('/api/exit',{});document.body.innerHTML='<main class="empty"><h1>AV 리포트를 종료했습니다.</h1><p>이 브라우저 창을 닫아도 됩니다.</p></main>'}catch(e){toast(e.message)}};
-(async()=>{try{await refresh(true);await loadLocal();if(state.setup){$('#viewer').hidden=true;$('#setup-home').hidden=false;mountForm('#setup-slot');await autoInstall()}else if(!state.config.configured){setTab('settings')}setInterval(()=>refresh().catch(()=>{}),4000)}catch(e){toast(e.message)}})();
+$('#sync').onclick=async()=>{if(['offline','auto_disabled','unconfigured'].includes(lastSyncState)){setTab('settings');$('#tab-settings').focus();return}try{await api('/api/sync',{});toast('GitHub 연결과 최신 자료를 다시 확인합니다.');setTimeout(()=>refresh(),400)}catch(e){toast(e.message)}};
+$('#exit').onclick=async()=>{if(window.AVNotes&&!await window.AVNotes.flush())return;if(!confirm('프로그램을 종료할까요? 다음 실행 전까지 자동 갱신이 멈춥니다.'))return;try{await api('/api/exit',{});document.body.innerHTML='<main class="empty"><h1>AV 리포트를 종료했습니다.</h1><p>이 브라우저 창을 닫아도 됩니다.</p></main>'}catch(e){toast(e.message)}};
+(async()=>{try{await refresh(true);await loadLocal();if(state.setup){$('#viewer').hidden=true;$('#setup-home').hidden=false;mountForm('#setup-slot');await autoInstall()}else if(!state.config.configured){setTab('settings')}setInterval(()=>{refresh().catch(()=>{});if(networkView()&&!document.hidden)loadNoteNetwork(true)},4000)}catch(e){toast(e.message)}})();
 
 async function autoInstall(){
  const slot=$('#setup-slot');slot.hidden=true;const status=document.createElement('p');status.className='checks';status.setAttribute('role','status');slot.before(status);
- status.textContent='환경 검사 · 실행 파일 · 기본 DB · 바로가기를 자동으로 준비합니다…';
- try{const result=await api('/api/install',{...state.config,automatic:true,token:''});if(!result.ok)throw Error(result.error);status.textContent=result.checks.join('\n')+'\n설치 완료. 리포트를 자동으로 엽니다…';await api('/api/launch',{});status.textContent='설치가 끝났습니다. 리포트가 새 탭에서 열렸고 바탕화면에 AV Report Hub 바로가기가 생겼습니다.\n이 탭은 닫아도 됩니다.';}catch(e){status.textContent='자동 준비를 완료하지 못했습니다: '+e.message+'\n아래에서 설정을 확인한 뒤 다시 시도하거나, 「지금은 오프라인으로 시작」을 선택하세요.';slot.hidden=false;}
+ status.textContent='환경 검사 · 실행 파일 · 바로가기를 자동으로 준비합니다…';
+ try{const result=await api('/api/install',{...state.config,automatic:true,token:''});if(!result.ok)throw Error(result.error);status.textContent=result.checks.join('\n')+'\n설치 완료. 리포트를 자동으로 엽니다…';await api('/api/launch',{});status.textContent='설치가 끝났습니다. 리포트가 새 탭에서 열렸고 바탕화면에 AV Report Hub 바로가기가 생겼습니다.\n이 탭은 닫아도 됩니다.';}catch(e){status.textContent='자동 준비를 완료하지 못했습니다: '+e.message+'\n아래에서 설정을 확인한 뒤 다시 시도하거나, 「GitHub 자료 연동」을 끄고 설치하세요.';slot.hidden=false;}
 }
 
 // 내 자료: PDFs and Outlook links stay on this PC (the server DPAPI-encrypts them; nothing goes to GitHub).
 // Ordinary mail keeps metadata only; selected daily reports use a separate encrypted archive.
 const mailCache={},mailPool={};
 const fmtSize=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
-async function loadLocal(){if(!state||state.setup)return;try{let v=await api('/api/local');local={available:v.available,reason:v.reason||'',files:v.files||[],mails:v.mails||[],sources:v.sources||[]}}catch(e){local={...local,available:false,reason:e.message}}render()}
+async function loadLocal(){if(!state||state.setup)return;try{let v=await api('/api/local');local={available:v.available,reason:v.reason||'',files:v.files||[],mails:v.mails||[],sources:v.sources||[]}}catch(e){local={...local,available:false,reason:e.message}}if(typeof invalidateDocumentConnections==='function')invalidateDocumentConnections();render()}
 async function localDo(path,body,msg){try{let v=await api(path,body);if(msg)toast(msg);await loadLocal();return v}catch(e){toast(e.message)}}
 async function addFiles(list){if(!local.available)return toast(local.reason||'내 자료를 사용할 수 없습니다.');let ok=0,msgs=[];
  for(let f of list){if(/\.(pst|ost|nst|msg|olm)$/i.test(f.name)){msgs.push(`${f.name}: 아웃룩 데이터는 복사하지 않습니다. Outlook 탭의 ‘Outlook 연동’에서 위치를 지정하세요.`);continue}
@@ -466,12 +588,12 @@ async function addFiles(list){if(!local.available)return toast(local.reason||'�
   if(f.size>50*1048576){msgs.push(`${f.name}: 50MB를 넘습니다.`);continue}
   try{let r=await fetch('/api/local/add?name='+encodeURIComponent(f.name),{method:'POST',headers:{'X-AV-Request':'1','Content-Type':'application/pdf'},body:f});if(!r.ok)throw Error(await r.text());localSel=(await r.json()).id;ok++}catch(e){msgs.push(`${f.name}: ${e.message}`)}}
  await loadLocal();if(ok)setTab('local');toast([ok?`PDF ${ok}개를 이 PC에만 보관했습니다.`:'',...msgs].filter(Boolean).join('\n'))}
-const mailRow=(m,act='')=>(mailPool[m.entry_id]=m,`<div class="mail-row"><button class="mail-open" data-mail-open="${esc(m.entry_id)}" title="Outlook에서 열기"><b>✉ ${esc(m.subject||'(제목 없음)')}</b><small>${esc(m.sender)} · ${esc((m.received||'').slice(0,10))} · ${esc(m.folder)}</small></button>${act}</div>`);
+const mailRow=(m,act='')=>(mailPool[m.entry_id]=m,`<div class="mail-row"><button class="mail-open" data-mail-open="${esc(m.entry_id)}" title="Outlook에서 열기"><b>${uiIcon('mail')} ${esc(m.subject||'(제목 없음)')}</b><small>${esc(m.sender)} · ${esc((m.received||'').slice(0,10))} · ${esc(m.folder)}</small></button>${act}</div>`);
 function renderLocal(){$('#result-count').textContent=`PDF ${local.files.length}개 · 이 PC에만 보관`;
  if(!local.available){$('#results').innerHTML=`<div class="empty">${esc(local.reason||'내 자료를 불러오는 중입니다.')}</div>`;return}
  let q=$('#local-query').value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean),fs=local.files.filter(f=>q.every(t=>f.name.toLocaleLowerCase().includes(t))).sort((a,b)=>b.added.localeCompare(a.added));
  $('#result-count').textContent=`PDF ${fs.length}${fs.length!==local.files.length?' / '+local.files.length:''}개 · 이 PC에만 보관`;
- $('#results').innerHTML=`<p class="local-note">🔒 PDF를 이 PC의 현재 Windows 계정으로 암호화해 보관합니다. 리포트에 직접 연결하면 관계 그래프와 전체 지도에도 표시됩니다.</p>
+ $('#results').innerHTML=`<p class="local-note">${uiIcon('lock')} PDF를 이 PC의 현재 Windows 계정으로 암호화해 보관합니다. 리포트에 직접 연결하면 관계 그래프와 전체 지도에도 표시됩니다.</p>
  <div class="dropzone compact-dropzone" id="dropzone" tabindex="0" role="button" aria-label="PDF 추가"><b>＋ PDF 추가</b><span>파일 선택 또는 끌어다 놓기 · 최대 50MB</span></div>
  <div class="pdf-list">${fs.length?`<table class="pdf-table" aria-label="보관한 PDF 파일"><thead><tr><th scope="col">이름</th><th scope="col" class="pdf-date">추가일</th><th scope="col" class="pdf-size">크기</th><th scope="col" class="pdf-links-cell">연결</th><th scope="col" class="pdf-actions-cell"><span class="sr-only">삭제</span></th></tr></thead><tbody>${fs.map(f=>`<tr class="pdf-list-row ${localSel===f.id?'selected':''}"><td><button type="button" class="pdf-file" data-local="${esc(f.id)}" title="${esc(f.name)} · ${esc(f.added.slice(0,10))} 추가 · ${fmtSize(f.size)} · PDF 미리보기" aria-pressed="${localSel===f.id}"><span class="pdf-file-icon" aria-hidden="true">PDF</span><span class="pdf-file-text"><b>${esc(f.name)}</b></span></button></td><td class="pdf-date">${esc(f.added.slice(0,10))}</td><td class="pdf-size">${fmtSize(f.size)}</td><td class="pdf-links-cell"><button type="button" class="pdf-links-button" data-local-links="${esc(f.id)}" aria-label="${esc(f.name)} 연결 리포트" title="연결 리포트 보기"><span>${f.reports.filter(id=>!hiddenReports.has(id)).length}</span></button></td><td class="pdf-actions-cell"><button type="button" class="list-delete" data-delete-pdf="${esc(f.id)}" aria-label="${esc(f.name)} 이 PC에서 삭제" title="이 PC에 보관한 PDF 실제 삭제 · 되돌릴 수 없습니다" ${deletingPDFs.has(f.id)?'disabled':''}>${deleteIcon}</button></td></tr>`).join('')}</tbody></table>`:`<p class="small-note">${local.files.length?'파일명과 일치하는 PDF가 없습니다.':'아직 추가한 PDF가 없습니다.'}</p>`}</div>`;
  const dz=$('#dropzone');dz.onclick=()=>$('#local-input').click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();dz.click()}};
@@ -490,7 +612,7 @@ function renderPDFLinksDialog(){
  const f=local.files.find(x=>x.id===pdfLinksID),host=$('#pdf-links-content');if(!f){$('#pdf-links-dialog').close();return}
  const linked=f.reports.filter(id=>!hiddenReports.has(id)),choices=catalog().reports.filter(r=>!f.reports.includes(r.id));
  $('#pdf-links-name').textContent=f.name;
- host.innerHTML=`<div class="pdf-linked-list">${linked.map(id=>`<div class="pdf-linked-row"><span><b>${esc(reportOf(id)?.title||id)}</b><small>${esc(reportOf(id)?.date||'')}</small></span><button type="button" data-dialog-unlink="${esc(id)}" aria-label="${esc(reportOf(id)?.title||id)} 연결 해제">해제</button></div>`).join('')||'<p class="small-note">연결된 리포트가 없습니다.</p>'}</div>${f.reports.length>linked.length?'<p class="note">목록에서 숨긴 연결 리포트는 설정에서 복원할 수 있습니다.</p>':''}<form id="pdf-links-form" class="link-form"><select id="pdf-dialog-target" aria-label="연결할 리포트" required><option value="">리포트 선택…</option>${choices.map(r=>`<option value="${esc(r.id)}">${esc(r.date)} · ${esc(r.title)}</option>`).join('')}</select><button class="primary" ${choices.length?'':'disabled'}>연결</button></form><p id="pdf-links-feedback" class="small-note" role="status"></p>`;
+ host.innerHTML=`<div class="pdf-linked-list">${linked.map(id=>`<div class="pdf-linked-row"><span><b>${esc(reportOf(id)?.title||id)}</b><small>${esc(reportOf(id)?.date||'')}</small></span><button type="button" data-dialog-unlink="${esc(id)}" aria-label="${esc(reportOf(id)?.title||id)} 연결 해제">해제</button></div>`).join('')||'<p class="small-note">연결된 리포트가 없습니다.</p>'}</div>${f.reports.length>linked.length?'<p class="note">목록에서 숨긴 연결 리포트는 설정에서 복원할 수 있습니다.</p>':''}<form id="pdf-links-form" class="link-form"><select id="pdf-dialog-target" aria-label="연결할 리포트" required><option value="">리포트 선택…</option>${choices.map(reportLinkOption).join('')}</select><button class="primary" ${choices.length?'':'disabled'}>연결</button></form><p id="pdf-links-feedback" class="small-note" role="status"></p>`;
  async function save(report,remove=false){if(pdfLinkBusy)return;pdfLinkBusy=true;host.querySelectorAll('button,select').forEach(b=>b.disabled=true);try{await api('/api/local/link',{id:f.id,report,remove});await loadLocal();if(pdfLinksID===f.id)$('#pdf-links-feedback').textContent=remove?'연결을 해제했습니다.':'리포트에 연결했습니다.'}catch(e){if(pdfLinksID===f.id)$('#pdf-links-feedback').textContent=e.message}finally{pdfLinkBusy=false;host.querySelectorAll('button,select').forEach(b=>b.disabled=false)}}
  $('#pdf-links-form').onsubmit=e=>{e.preventDefault();const id=$('#pdf-dialog-target').value;if(id)save(id)};
  host.querySelectorAll('[data-dialog-unlink]').forEach(b=>b.onclick=()=>save(b.dataset.dialogUnlink,true));
@@ -507,8 +629,8 @@ function renderOutlook(){
  if(!local.available){$('#results').innerHTML=`<div class="empty">${esc(local.reason||'Outlook 연결 정보를 불러오는 중입니다.')}</div>`;return}
  const has=s=>local.sources.some(x=>(x.folder_id||'')===(s.folder_id||'')&&((s.store_id&&x.store_id===s.store_id)||(s.path&&x.path&&x.path.toLowerCase()===s.path.toLowerCase())));
  $('#results').innerHTML=`<section class="outlook-import-area"><div class="outlook-import-bar"><button type="button" class="filter-toggle" id="outlook-import-toggle" aria-expanded="${outlookConnectOpen}" aria-controls="outlook-connection-panel">메일함에서 리포트 가져오기 <span aria-hidden="true">⌄</span></button><span class="outlook-folder-count">연결 폴더 ${local.sources.filter(s=>s.folder_id).length}개</span><button id="outlook-import-now" ${local.sources.some(s=>s.folder_id)?'':'disabled'}>지금 가져오기</button></div><p id="outlook-import-status" class="small-note" role="status"></p>
- <section id="outlook-connection-panel" class="outlook-connection-panel" ${outlookConnectOpen?'':'hidden'}><p class="small-note">클래식 Outlook의 선택한 폴더만 5분마다 확인합니다. 데일리리포트 형식의 본문·MD 첨부만 가져오며 일반 메일은 저장하지 않습니다. 자료는 이 PC에 암호화해 보관합니다.</p><h3>연결된 메일함·폴더</h3>
- ${local.sources.map((s,i)=>`<div class="mail-row"><span class="source-name">📬 <b>${esc(s.name)}</b><small>${s.folder_id?'자동 가져오기 · 태그: '+esc(s.folder_name):'메일 검색 연결 · 자동 가져오기는 폴더 선택 필요'}</small>${s.path?`<small>${esc(s.path)}</small>`:''}</span>${!s.folder_id?`<button class="text-button" data-source-folders="${i}">폴더 선택</button>`:''}<button class="text-button" data-src-remove="${i}">연결 해제</button></div>`).join('')||'<p class="small-note">지정된 메일 자료가 없습니다. 아래에서 메일함을 불러오거나 PST·OST 경로를 추가하세요.</p>'}
+ <section id="outlook-connection-panel" class="outlook-connection-panel" ${outlookConnectOpen?'':'hidden'}><p class="small-note">클래식 Outlook의 선택한 폴더만 5분마다 확인합니다. 데일리리포트 형식의 본문·MD 첨부를 가져옵니다. 일반 메일은 자료 연결 추천을 위해 제목·발신자·날짜·대화 ID와 문서 첨부의 이름·지문만 보관합니다. 자료는 이 PC에 암호화해 보관합니다.</p><h3>연결된 메일함·폴더</h3>
+ ${local.sources.map((s,i)=>`<div class="mail-row"><span class="source-name">${uiIcon('mail')} <b>${esc(s.name)}</b><small>${s.folder_id?'자동 가져오기 · 태그: '+esc(s.folder_name):'메일 검색 연결 · 자동 가져오기는 폴더 선택 필요'}</small>${s.path?`<small>${esc(s.path)}</small>`:''}</span>${!s.folder_id?`<button class="text-button" data-source-folders="${i}">폴더 선택</button>`:''}<button class="text-button" data-src-remove="${i}">연결 해제</button></div>`).join('')||'<p class="small-note">지정된 메일 자료가 없습니다. 아래에서 메일함을 불러오거나 PST·OST 경로를 추가하세요.</p>'}
  <h3>연결할 메일함·파일 선택</h3><p class="small-note">아래는 연결 가능한 후보입니다. 연결을 해제해도 Outlook 원본과 이미 가져온 리포트는 보관되며, 메일함은 후보 목록에 남습니다.</p><button id="outlook-connect" ${outlookConnectBusy?'disabled':''}>${outlookConnectBusy?'Outlook 확인 중…':'Outlook 메일함 불러오기'}</button><p class="small-note" role="status">${outlookConnectBusy?'메일함을 확인하고 있습니다.':esc(outlookConnectError)}</p>
  ${outlookStores?outlookStores.map((s,i)=>`<div class="mail-row"><span class="source-name">${esc(s.name)}${s.path?`<small>${esc(s.path)}</small>`:''}</span><button class="text-button" data-store-folders="${i}">폴더 선택</button></div>`).join('')||'<p class="small-note">연결할 메일함이 없습니다. 아래에서 PST·OST 파일을 지정할 수 있습니다.</p>':''}
  ${outlookFolders?`<div class="outlook-folders"><h4>가져올 폴더 선택</h4>${outlookFolders.map((s,i)=>`<div class="mail-row"><span class="source-name">${esc(s.name)}</span><button class="text-button" data-folder-add="${i}" ${has(s)?'disabled':''}>${has(s)?'연결됨':'이 폴더 추가'}</button></div>`).join('')||'<p>메일 폴더가 없습니다.</p>'}</div>`:''}
@@ -577,12 +699,12 @@ function renderLocalDetail(){let f=local.available&&local.files.find(x=>x.id===l
  // so the native viewer retains the current page and zoom.
  if(localPDFPreview?.id!==f.id||!localPDFPreview.host.isConnected){
   localPDFPreview?.dispose();
-  $('#detail').innerHTML=`<div class="local-file-heading"><span class="report-date">${esc(f.added.slice(0,10))} 추가 · ${fmtSize(f.size)} · 이 PC 전용</span><h2>📄 ${esc(f.name)}</h2></div><div id="local-pdf-preview"></div><div id="local-pdf-links"></div>`;
+  $('#detail').innerHTML=`<div class="local-file-heading"><span class="report-date">${esc(f.added.slice(0,10))} 추가 · ${fmtSize(f.size)} · 이 PC 전용</span><h2>${uiIcon('file')} ${esc(f.name)}</h2></div><div id="local-pdf-preview"></div><div id="local-pdf-links"></div>`;
   $('#detail').scrollTop=0;
   localPDFPreview=mountPDFPreview($('#local-pdf-preview'),f);
  }
  $('#local-pdf-links').innerHTML=`<h3>연결된 리포트</h3>${linked.map(id=>`<div class="mail-row"><button class="related-card" data-goto-report="${esc(id)}">${esc(reportOf(id)?.title||id)}<small>${esc(reportOf(id)?.date||'')}</small></button><button class="text-button" data-pdf-unlink="${esc(id)}">해제</button></div>`).join('')||'<p class="small-note">연결된 리포트가 없습니다.</p>'}
- <div class="link-form"><select id="pdf-target" aria-label="연결할 리포트"><option value="">리포트 선택…</option>${rs.filter(r=>!f.reports.includes(r.id)).map(r=>`<option value="${esc(r.id)}">${esc(r.date)} · ${esc(r.title)}</option>`).join('')}</select><button id="pdf-link" class="primary">연결</button></div>
+ <div class="link-form"><select id="pdf-target" aria-label="연결할 리포트"><option value="">리포트 선택…</option>${rs.filter(r=>!f.reports.includes(r.id)).map(reportLinkOption).join('')}</select><button id="pdf-link" class="primary">연결</button></div>
  <h3>삭제</h3><button id="pdf-delete" class="danger">이 PC에서 삭제</button>`;
  $('#pdf-link').onclick=()=>{let v=$('#pdf-target').value;if(v)localDo('/api/local/link',{id:f.id,report:v},'리포트에 연결했습니다.')};
  $$('[data-pdf-unlink]').forEach(b=>b.onclick=()=>localDo('/api/local/link',{id:f.id,report:b.dataset.pdfUnlink,remove:true}));
@@ -592,10 +714,11 @@ function renderLocalDetail(){let f=local.available&&local.files.find(x=>x.id===l
 function renderReportLocal(r){if(state.setup||!local.available)return;
  if(networkView())return;
  if(r.origin)return;
- let pdfs=local.files.filter(f=>f.reports.includes(r.id)),linked=local.mails.filter(m=>m.report===r.id),sug=mailCache[r.id],box=document.createElement('section');box.className='local-links';
+ let pdfs=local.files.filter(f=>f.reports.includes(r.id)),linked=local.mails.filter(m=>m.report===r.id),sug=mailCache[r.id],empty=!pdfs.length&&!linked.length,box=document.createElement(empty?'details':'section');box.className='local-links'+(empty?' local-links-empty':'');
  let list=sug===undefined?(r.companies.length?'':'<p class="small-note">기업 태그가 없어 자동 제안이 없습니다. 직접 검색하세요.</p>'):sug.loading?'<p class="small-note">Outlook에서 찾는 중…</p>':sug.error?`<p class="small-note error">${esc(sug.error)}</p>`:(sug.mails.filter(m=>!linked.some(x=>x.entry_id===m.entry_id)).map(m=>mailRow(m,`<button class="text-button" data-mail-link="${esc(m.entry_id)}">연결</button>`)).join('')||'<p class="small-note">찾은 메일이 없습니다.</p>');
- box.innerHTML=`<h3>🔒 내 자료 <small>이 PC 전용</small></h3>${pdfs.map(f=>`<div class="mail-row"><a class="mail-open" href="/api/local/file?id=${encodeURIComponent(f.id)}&view=1" target="_blank" rel="noopener"><b>📄 ${esc(f.name)}</b><small>${fmtSize(f.size)}</small></a></div>`).join('')}${linked.map(m=>mailRow(m,`<button class="text-button" data-mail-unlink="${esc(m.entry_id)}">해제</button>`)).join('')}${pdfs.length||linked.length?'':'<p class="small-note">연결된 PDF·메일이 없습니다.</p>'}
- ${local.sources.length?`<div class="cloud-title">${sug?.q?`‘${esc(sug.q)}’ 검색 결과`:`관련 메일 제안 · ${esc(r.companies.slice(0,6).join(', '))} · 리포트 전후 30일`}</div>${list}<form class="link-form"><input name="q" placeholder="메일 직접 검색 (제목·본문)" aria-label="메일 직접 검색" value="${esc(sug?.q||'')}"><button class="primary">검색</button></form>`:'<p class="small-note">Outlook 탭의 ‘Outlook 연동’으로 메일함이나 PST를 지정하면 관련 메일을 찾아 연결할 수 있습니다.</p>'}`;
+ box.innerHTML=(empty?'<summary>내 자료 · 연결 없음</summary><div class="local-links-content">':`<h3>${uiIcon('lock')} 내 자료 <small>이 PC 전용</small></h3>`)+`${pdfs.map(f=>`<div class="mail-row"><a class="mail-open" href="/api/local/file?id=${encodeURIComponent(f.id)}&view=1" target="_blank" rel="noopener"><b>${uiIcon('file')} ${esc(f.name)}</b><small>${fmtSize(f.size)}</small></a></div>`).join('')}${linked.map(m=>mailRow(m,`<button class="text-button" data-mail-unlink="${esc(m.entry_id)}">해제</button>`)).join('')}
+ ${local.sources.length?`<div class="cloud-title">${sug?.q?`‘${esc(sug.q)}’ 검색 결과`:`관련 메일 제안 · ${esc(r.companies.slice(0,6).join(', '))} · 리포트 전후 30일`}</div>${list}<form class="link-form"><input name="q" placeholder="메일 직접 검색 (제목·본문)" aria-label="메일 직접 검색" value="${esc(sug?.q||'')}"><button class="primary">검색</button></form>`:'<p class="small-note">Outlook 탭의 ‘Outlook 연동’으로 메일함이나 PST를 지정하면 관련 메일을 찾아 연결할 수 있습니다.</p>'}`+(empty?'</div>':'');
+ if(empty){box.open=expandedLocalLinks.has(r.id);box.addEventListener('toggle',()=>{if(box.isConnected){if(box.open)expandedLocalLinks.add(r.id);else expandedLocalLinks.delete(r.id)}})}
  let at=$('#detail .downloads');at?at.after(box):$('#detail').append(box);
  box.querySelectorAll('[data-mail-link]').forEach(b=>b.onclick=()=>localDo('/api/outlook/link',{report:r.id,mail:mailPool[b.dataset.mailLink]},'메일을 연결했습니다.'));
  box.querySelectorAll('[data-mail-unlink]').forEach(b=>b.onclick=()=>localDo('/api/outlook/link',{report:r.id,mail:mailPool[b.dataset.mailUnlink],remove:true}));
@@ -607,13 +730,13 @@ async function findMails(r,q=''){let d=Date.parse(r.date+'T00:00:00Z'),iso=t=>ne
  const redraw=()=>{if(selected===r.id&&tab!=='local')renderDetail()};mailCache[r.id]={loading:true,q,mails:[]};redraw();
  try{mailCache[r.id]={q,mails:(await api('/api/outlook/search',body)).mails||[]}}catch(e){mailCache[r.id]={q,mails:[],error:e.message}}redraw()}
 document.addEventListener('click',e=>{let o=e.target.closest('[data-mail-open]');if(o){api('/api/outlook/open',{mail:mailPool[o.dataset.mailOpen]}).then(()=>toast('Outlook에서 메일을 엽니다.'),x=>toast(x.message));return}
- let g=e.target.closest('[data-goto-report]');if(g){selected=g.dataset.gotoReport;selectedRelation='';if(tab==='outlook'){linkedReport=selected;renderDetail()}else setTab(reportSource(reportOf(selected)||{})==='outlook'?'outlook':'search',selected)}});
+ let g=e.target.closest('[data-goto-report]');if(g){if(tab==='outlook')selectReport(g.dataset.gotoReport,{fromDetail:true,exactSource:true});else{selected=g.dataset.gotoReport;selectedRelation='';setTab(reportSource(reportOf(selected)||{})==='outlook'?'outlook':'search',selected)}}});
 // Files dropped anywhere become 내 자료; the browser must never open or navigate to a dropped file.
 let dragDepth=0;const dragFiles=e=>[...(e.dataTransfer?.types||[])].includes('Files');
-addEventListener('dragenter',e=>{if(!dragFiles(e))return;e.preventDefault();if(state&&!state.setup&&tab!=='rag'){dragDepth++;$('#drop-overlay').hidden=false}});
+addEventListener('dragenter',e=>{if(!dragFiles(e))return;e.preventDefault();if(state&&!state.setup&&tab!=='rag'&&tab!=='notes'){dragDepth++;$('#drop-overlay').hidden=false}});
 addEventListener('dragover',e=>{if(dragFiles(e))e.preventDefault()});
 addEventListener('dragleave',e=>{if(dragFiles(e)&&--dragDepth<=0){dragDepth=0;$('#drop-overlay').hidden=true}});
-addEventListener('drop',e=>{if(!dragFiles(e))return;e.preventDefault();dragDepth=0;$('#drop-overlay').hidden=true;if(state&&!state.setup&&tab!=='rag')routeDroppedFiles([...e.dataTransfer.files])});
+addEventListener('drop',e=>{if(!dragFiles(e))return;e.preventDefault();dragDepth=0;$('#drop-overlay').hidden=true;if(state&&!state.setup&&tab!=='rag'&&tab!=='notes')routeDroppedFiles([...e.dataTransfer.files])});
 $('#local-input').onchange=e=>{addFiles([...e.target.files]);e.target.value=''};
 
 let reportImportBusy=false;
@@ -656,12 +779,12 @@ async function renderRag(){if(!ragEnvironmentState)await pollRagEnvironment();if
  if(tab!=='rag')return;
  if(!s||!s.ok){$('#results').innerHTML='<div id="rag-environment">'+ragEnvironmentHtml()+'</div><div class="empty">환경 설정 후 검색 서비스를 시작하면 PDF·이미지를 올려 검색할 수 있습니다.</div>';bindRagEnvironment();scheduleRagEnvironment();return}
  const m=s.model||{};
- $('#results').innerHTML=`<div id="rag-environment">${ragEnvironmentHtml()}</div><p class="local-note">🧪 <b>${esc(m.model||'')}</b> · 오디오 인코더 미적재 · 파라미터 ${fmtN(m.parameters)} · 차원 ${m.dimensions||'-'} · 불러오기 ${fmtS(m.load_seconds)} · ${esc(m.device||'')}<br>올린 원본 파일과 변환 결과는 <code>${esc(s.index_dir||'%LOCALAPPDATA%\\AVReportHub\\rag\\index')}</code>에 암호화 없이 저장됩니다.</p>
+ $('#results').innerHTML=`<div id="rag-environment">${ragEnvironmentHtml()}</div><p class="local-note">${uiIcon('flask')} <b>${esc(m.model||'')}</b> · 오디오 인코더 미적재 · 파라미터 ${fmtN(m.parameters)} · 차원 ${m.dimensions||'-'} · 불러오기 ${fmtS(m.load_seconds)} · ${esc(m.device||'')}<br>올린 원본 파일과 변환 결과는 <code>${esc(s.index_dir||'%LOCALAPPDATA%\\AVReportHub\\rag\\index')}</code>에 암호화 없이 저장됩니다.</p>
  <div class="dropzone" id="rag-drop" tabindex="0" role="button" aria-label="PDF·이미지 색인"><b>PDF·이미지를 여기로 끌어다 놓거나 눌러서 선택</b><span>PNG · JPG · WebP · GIF · BMP · TIFF · AVIF · HEIC · ICO / 최대 50MB</span><span>PDF·TIFF는 모든 페이지, 움직이는 이미지는 첫 프레임을 색인합니다.</span></div>
  <form class="link-form" id="rag-query"><input name="q" placeholder="문장으로 검색 (예: 안전요원 없는 무인 운행 허가)" aria-label="AI 검색" value="${esc(rag.q)}"><button class="primary">검색</button></form>
  <div class="form-actions"><button type="button" class="text-button" id="rag-demo">보여 줘 · 모델·첫 페이지 임베딩·유사도</button><button type="button" class="text-button" id="rag-demo-fresh">다시 계산</button></div>
  <p id="rag-job-progress" class="small-note" role="status">${rag.uploading?esc(rag.busy):''}</p><div id="rag-out">${rag.busy?`<p class="small-note">${esc(rag.busy)}</p>`:''}${ragDemoHtml()}${ragHitsHtml()}</div>
- <div class="form-actions"><h3 class="local-h">색인된 자료</h3><button class="text-button" id="rag-show-map">전체 지도에서 보기</button></div><p class="small-note">색인된 자료는 전체 지도에 자동으로 표시됩니다. 자료 사이의 유사도 연결은 확인된 기업·사건 관계와 구분합니다.</p>${(s.docs||[]).map(d=>`<div class="mail-row"><button class="mail-open" data-rag-open="${esc(d.id)}"><b>${d.kind==='image'?'🖼':'📄'} ${esc(d.name)}</b><small> ${d.pages}개 페이지 · ${fmtSize(d.size)} · 색인 ${fmtS(d.seconds)}</small></button><button class="text-button" data-rag-del="${esc(d.id)}" ${rag.uploading?'disabled':''}>삭제</button></div>`).join('')||'<p class="small-note">아직 색인된 PDF·이미지가 없습니다.</p>'}`;
+ <div class="form-actions"><h3 class="local-h">색인된 자료</h3><button class="text-button" id="rag-show-map">전체 지도에서 보기</button></div><p class="small-note">색인된 자료는 전체 지도에 자동으로 표시됩니다. 자료 사이의 유사도 연결은 확인된 기업·사건 관계와 구분합니다.</p>${(s.docs||[]).map(d=>`<div class="mail-row"><button class="mail-open" data-rag-open="${esc(d.id)}"><b>${uiIcon(d.kind==='image'?'image':'file')} ${esc(d.name)}</b><small> ${d.pages}개 페이지 · ${fmtSize(d.size)} · 색인 ${fmtS(d.seconds)}</small></button><button class="text-button" data-rag-del="${esc(d.id)}" ${rag.uploading?'disabled':''}>삭제</button></div>`).join('')||'<p class="small-note">아직 색인된 PDF·이미지가 없습니다.</p>'}`;
  bindRagEnvironment();scheduleRagEnvironment();
  const drop=$('#rag-drop');drop.onclick=()=>$('#rag-input').click();drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('#rag-input').click()}};
  drop.ondragover=e=>{e.preventDefault();e.stopPropagation();drop.classList.add('over')};drop.ondragleave=()=>drop.classList.remove('over');drop.ondrop=e=>{e.preventDefault();e.stopPropagation();drop.classList.remove('over');ragAdd([...e.dataTransfer.files])};
@@ -838,3 +961,5 @@ async function saveOutlookPath(value){
   clearTimeout(timer);outlookPath.busy=false;updateOutlookPathForm();
  }
 }
+
+window.AVNotes?.configure({reports:()=>state?[...state.snapshot.catalog.reports,...importedReports]:[],openNotes:()=>setTab('notes'),openReport:id=>{selected=id;setTab('search',id)}});

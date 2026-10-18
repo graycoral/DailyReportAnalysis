@@ -17,5 +17,5 @@ $p = Start-Process -FilePath (Resolve-Path dist/AVReportHub.exe) -ArgumentList @
 if ($p.ExitCode -ne 0) { throw 'Windows smoke test failed' }
 ./scripts/smoke.ps1
 Copy-Item README.md dist/README.md -Force
-Get-FileHash dist/*.exe -Algorithm SHA256 | ForEach-Object { $_.Hash.ToLower() + '  ' + (Split-Path $_.Path -Leaf) } | Set-Content dist/SHA256SUMS.txt
+Get-FileHash -LiteralPath dist/AVReportHub.exe,dist/AVReportHub-Setup.exe -Algorithm SHA256 | ForEach-Object { $_.Hash.ToLower() + '  ' + (Split-Path $_.Path -Leaf) } | Set-Content dist/SHA256SUMS.txt
 Compress-Archive -Path dist/AVReportHub.exe,dist/AVReportHub-Setup.exe,dist/README.md,dist/SHA256SUMS.txt -DestinationPath dist/AVReportHub-Windows-x64.zip -Force

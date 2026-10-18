@@ -11,7 +11,7 @@ async function noOverflow(page){
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'page should fit the viewport');
 }
 (async()=>{
- fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',sync_time:'08:00',configured:true,offline:true}));
+ fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',sync_time:'08:00',configured:true,offline:true,github_choice_version:fs.readFileSync(path.join(__dirname,'../internal/hub/model.go'),'utf8').match(/\bVersion\s*=\s*"([^"]+)"/)[1]}));
  viewer=spawn(process.env.AV_NAV_VIEWER||path.join(build,'navigation-viewer.exe'),['--no-browser','--data-dir',dir],{windowsHide:true,stdio:'ignore'});
  const file=path.join(dir,'instance-viewer.json');
  for(let i=0;i<150&&!fs.existsSync(file);i++)await wait(100);
@@ -23,9 +23,10 @@ async function noOverflow(page){
  await page.route('**/api/rag/environment',r=>r.fulfill({json:{state:'ready',supported:true,ready:true,message:'테스트 환경'}}));
  await page.route('**/api/rag/status',r=>r.fulfill({json:{ok:true,docs:[],model:{}}}));
  await page.route('**/api/rag/map',r=>r.fulfill({json:{ok:true,docs:[],links:[]}}));
+ await require('./ui-catalog-fixture.cjs')(page);
  await page.goto(instance.address+'/open?key='+instance.key);
  await page.locator('#results [data-report]').first().waitFor();
- assert.equal(await page.getByRole('tab').count(),8);
+ assert.equal(await page.getByRole('tab').count(),9);
  assert.equal(await page.getByRole('tablist').getAttribute('aria-orientation'),'vertical');
  assert.equal(await page.locator('#filter-panel').isVisible(),false);
  await noOverflow(page);
@@ -122,9 +123,16 @@ async function noOverflow(page){
  await page.getByRole('tab',{name:'데일리리포트',exact:true}).click();
  await page.locator('#results [data-report="local-2026-10-15"]').waitFor();
  await page.locator('#visibility-label').press('Escape');
- await page.locator('#help').click();await page.getByRole('dialog').waitFor();
- assert.match(await page.locator('#published').innerText(),/마지막 GitHub 확인/);
+ await page.getByRole('button',{name:'도움말',exact:true}).click();
+ await page.getByRole('dialog',{name:'쉽게 시작하기'}).waitFor();
+ const helpOpened=page.waitForEvent('popup');
+ await page.locator('#help-details').click();
+ const help=await helpOpened;await help.waitForLoadState();
+ assert.equal(new URL(help.url()).pathname,'/help.html');
+ assert.equal(await help.title(),'쉬운 사용법 · AV 리포트');
+ await help.close();
  await page.getByRole('button',{name:'도움말 닫기',exact:true}).click();
+ assert.equal(await page.locator('#sync-time').isVisible(),true,'update status remains available in the header');
 
  for(const theme of ['apple','apple-dark','classic']){
   await page.getByRole('tab',{name:'설정',exact:true}).click();
@@ -145,7 +153,7 @@ async function noOverflow(page){
   await page.locator('#filter-toggle').click();
  }
  assert.deepEqual(errors,[]);
- console.log('PASS: icon navigation, keyboard/bookmarks, shared filters, independent filename/RAG search, import, hide/restore, help, three themes and responsive layout');
+ console.log('PASS: icon navigation, keyboard/bookmarks, shared filters, independent filename/RAG search, import, hide/restore, separate help page, three themes and responsive layout');
 })().catch(error=>{console.error(String(error.stack||error).replace(/([?&]key=)[a-f0-9]+/g,'$1[redacted]'));process.exitCode=1}).finally(async()=>{
  if(browser)await browser.close();
  if(viewer&&viewer.exitCode===null){const done=new Promise(resolve=>viewer.once('exit',resolve));viewer.kill();await done}

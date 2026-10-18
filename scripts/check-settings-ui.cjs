@@ -8,7 +8,7 @@ const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 let viewer,browser;
 async function noOverflow(page){assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'page should fit the viewport')}
 (async()=>{
- fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',sync_time:'08:00',configured:true,offline:true}));
+ fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',sync_time:'08:00',configured:true,offline:true,github_choice_version:fs.readFileSync(path.join(__dirname,'../internal/hub/model.go'),'utf8').match(/\bVersion\s*=\s*"([^"]+)"/)[1]}));
  viewer=spawn(process.env.AV_NAV_VIEWER||path.join(build,'navigation-viewer.exe'),['--no-browser','--data-dir',dir],{windowsHide:true,stdio:'ignore'});
  const file=path.join(dir,'instance-viewer.json');
  for(let i=0;i<150&&!fs.existsSync(file);i++)await wait(100);
@@ -18,16 +18,19 @@ async function noOverflow(page){assert.equal(await page.evaluate(()=>document.do
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/api/local',r=>r.fulfill({json:{available:true,files:[],mails:[],sources:[]}}));
  await page.goto(instance.address+'/open?key='+instance.key);
- await page.locator('#results [data-report]').first().waitFor();
+ await page.locator('#results .empty').waitFor();
+ assert.equal(await page.locator('#results [data-report]').count(),0,'disabled GitHub starts without published reports');
  assert.equal(await page.locator('header #theme,header #exit,header [data-tab]').count(),0);
  assert.equal(await page.locator('.nav-rail #exit').count(),1);
  assert.equal(await page.locator('#sync-indicator').getAttribute('data-state'),'idle');
  assert.match(await page.locator('#sync-time').innerText(),/확인 기록 없음/);
- await page.locator('#sync-summary').click();assert.match(await page.locator('#sync-detail').innerText(),/오프라인/);
+ await page.locator('#sync-summary').click();assert.match(await page.locator('#sync-detail').innerText(),/연동이 꺼져/);
  await page.locator('#sync-summary').press('Escape');assert.equal(await page.locator('#sync-indicator').getAttribute('open'),null);
 
- // Offline update action leads to the new tab, with no report tools showing.
- await page.locator('#sync').click();
+ // Disabled integration prevents updates; settings remain accessible in the rail.
+ assert.equal(await page.locator('#sync').isDisabled(),true);
+ await page.locator('#tab-settings').click();
+ assert.equal(await page.getByRole('switch',{name:'GitHub 자료 연동'}).isChecked(),false);
  assert.equal(await page.locator('#tab-settings').getAttribute('aria-selected'),'true');
  for(const selector of ['#search-toolbar','#report-filters','#source-controls','.workspace'])assert.equal(await page.locator(selector).isVisible(),false);
  await page.locator('#settings-slot [name=owner]').fill('draft-owner');
@@ -49,7 +52,7 @@ async function noOverflow(page){assert.equal(await page.evaluate(()=>document.do
  }
  await page.setViewportSize({width:1440,height:900});
 
- let saved=await page.evaluate(()=>fetch('/api/state').then(r=>r.json())),lastInput,saveFails=false,automaticFails=false,launches=0,updates=0,exits=0;
+ let saved=await page.evaluate(()=>fetch('/api/state').then(r=>r.json())),lastInput,saveFails=false,connectionFails=false,automaticFails=false,launches=0,updates=0,exits=0;
  let status={...saved,commit:saved.snapshot.commit,synced_at:'2026-10-16T02:45:00Z'};
  await page.route('**/api/state',r=>r.fulfill({json:saved}));
  await page.route('**/api/status',r=>r.fulfill({json:{...status,setup:saved.setup}}));
@@ -58,8 +61,10 @@ async function noOverflow(page){assert.equal(await page.evaluate(()=>document.do
   const input=r.request().postDataJSON();
   if(input.automatic)return r.fulfill({json:automaticFails?{ok:false,error:'테스트 설치 오류'}:{ok:true,checks:['자동 설치 검사']}});
   lastInput=input;if(saveFails)return r.fulfill({json:{ok:false,error:'테스트 연결 오류'}});
-  saved={...saved,config:{...saved.config,...input,configured:true}};
-  return r.fulfill({json:{ok:true,checks:['테스트 설정 저장 완료']}});
+  const offline=input.offline||connectionFails,offline_reason=connectionFails&&!input.offline?'connection_failed':'';
+  saved={...saved,sync_state:offline?(offline_reason?'auto_disabled':'offline'):'ready',config:{...saved.config,...input,configured:true,offline,offline_reason}};
+  status={...status,config:saved.config,sync_state:saved.sync_state};
+  return r.fulfill({json:{ok:true,checks:['테스트 설정 저장 완료'],config:saved.config}});
  });
  await page.route('**/api/launch',r=>{launches++;return r.fulfill({json:{ok:true}})});
  await page.route('**/api/sync',r=>{updates++;status={...status,syncing:true,sync_state:'checking'};return r.fulfill({json:{ok:true}})});
@@ -77,13 +82,37 @@ async function noOverflow(page){assert.equal(await page.evaluate(()=>document.do
  assert.equal(await page.locator('#settings-slot [name=clear_token]').isChecked(),false);
  assert.equal(await page.locator('#settings-page').isVisible(),true);
 
+ // An explicit enable is checked and saved. A failed retry must reset the switch
+ // even if its persisted auto-disabled state did not change.
+ const toggle=page.getByRole('switch',{name:'GitHub 자료 연동'});
+ for(let attempt=0;attempt<2;attempt++){
+  connectionFails=true;await toggle.check();
+  await page.locator('#settings-slot .save-settings').click();
+  await page.waitForFunction(()=>!formBusy&&!document.querySelector('[name=github_enabled]').checked);
+  assert.equal(lastInput.offline,false);
+  assert.equal(await page.locator('#sync').isDisabled(),true);
+  assert.match(await page.locator('.github-state').innerText(),/자동 꺼짐/);
+ }
+ connectionFails=false;await toggle.check();await page.locator('#settings-slot .save-settings').click();
+ await page.waitForFunction(()=>!formBusy&&!document.querySelector('#sync').disabled);
+ assert.equal(await toggle.isChecked(),true);
+ // A status-only poll updates connection controls without losing unrelated drafts.
+ await page.locator('#settings-slot [name=owner]').fill('unsaved-owner');
+ status={...status,config:undefined,offline:true,offline_reason:'connection_failed',sync_state:'auto_disabled'};
+ await page.evaluate(()=>refresh());assert.equal(await toggle.isChecked(),false);
+ assert.equal(await page.locator('#settings-slot [name=owner]').inputValue(),'unsaved-owner');
+ await page.screenshot({path:path.join(build,'settings-github-auto-disabled.png'),fullPage:true});
+ await toggle.check();await page.evaluate(()=>refresh());
+ assert.equal(await toggle.isChecked(),true,'unchanged polls must preserve the retry draft');
+ assert.match(await page.locator('.github-state').innerText(),/설정 변경됨/);
+
  // Timestamp is the last successful check, unchanged by later failures; display always uses KST.
  await page.locator('#tab-search').click();
- for(const [sync_state,signal] of [['ready','ready'],['checking','checking'],['unavailable','error'],['offline','idle'],['unconfigured','idle'],['unknown','idle']]){
+ for(const [sync_state,signal] of [['ready','ready'],['checking','checking'],['unavailable','error'],['auto_disabled','error'],['offline','idle'],['unconfigured','idle'],['unknown','idle']]){
   status={...status,sync_state,syncing:sync_state==='checking',status:sync_state==='unavailable'?'테스트 네트워크 연결 오류':''};
   await page.evaluate(()=>refresh());
   assert.equal(await page.locator('#sync-indicator').getAttribute('data-state'),signal);
-  assert.equal(await page.locator('#sync').isDisabled(),sync_state==='checking');
+  assert.equal(await page.locator('#sync').isDisabled(),['checking','offline','auto_disabled'].includes(sync_state));
   assert.match(await page.locator('#sync-time').innerText(),/2026.*10.*16.*11:45/);
   if(sync_state==='unavailable'){
    await page.locator('#sync-summary').click();assert.match(await page.locator('#sync-detail').innerText(),/테스트 네트워크 연결 오류/);

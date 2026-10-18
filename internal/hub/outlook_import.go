@@ -10,6 +10,9 @@ import (
 	"time"
 )
 
+// Revisit selected folders once when embedded-message support is introduced.
+const outlookReaderVersion = 1
+
 type outlookImportStatus struct {
 	Busy    bool   `json:"busy"`
 	Pending bool   `json:"pending"`
@@ -18,12 +21,17 @@ type outlookImportStatus struct {
 	Added   int    `json:"added"`
 	Updated int    `json:"updated"`
 	Skipped int    `json:"skipped"`
+	Rejected int   `json:"rejected"`
+	Failed int     `json:"failed"`
+	Limited int    `json:"limited"`
 }
 type outlookDocument struct {
-	Mail        MailRef `json:"mail"`
-	FolderID    string  `json:"folder_id"`
-	Body        string  `json:"body"`
-	Attachments []struct {
+	Mail         MailRef           `json:"mail"`
+	FolderID     string            `json:"folder_id"`
+	Conversation string            `json:"conversation"`
+	Fingerprints []mailFingerprint `json:"fingerprints"`
+	Body         string            `json:"body"`
+	Attachments  []struct {
 		Name string `json:"name"`
 		Body string `json:"body"`
 	} `json:"attachments"`
@@ -34,6 +42,7 @@ type outlookBatch struct {
 	Pending bool                     `json:"pending"`
 	Failed  int                      `json:"failed"`
 	Scanned int                      `json:"scanned"`
+	Limited int                      `json:"limited"`
 }
 
 func (a *App) outlookImportView() outlookImportStatus {
@@ -43,7 +52,7 @@ func (a *App) outlookImportView() outlookImportStatus {
 }
 func (a *App) outlookScheduler() {
 	a.importOutlookReports()
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 	last := time.Now()
 	for now := range ticker.C {
@@ -89,9 +98,20 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 		a.outlookImportStatus = s
 		a.outlookStatusMu.Unlock()
 	}()
-	cursors, e := a.viewOutlookCursors()
-	if e != nil {
+	// Once per upgrade, revisit existing selected folders to index ordinary mail
+	// metadata too. Dedicated cursors commit together with the encrypted index.
+	a.localMu.Lock()
+	rules, ruleErr := a.loadConnections()
+	a.localMu.Unlock()
+	if ruleErr != nil {
+		e = ruleErr
 		return
+	}
+	cursors := map[string]outlookCursor{}
+	for key, cursor := range rules.Cursors {
+		if cursor.ReaderVersion == outlookReaderVersion {
+			cursors[key] = cursor
+		}
 	}
 	var batch outlookBatch
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
@@ -112,6 +132,11 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 	if e != nil {
 		return
 	}
+	rules, e = a.loadConnections()
+	if e != nil {
+		return
+	}
+	rulesChanged := false
 	allowed := map[string]OutlookSource{}
 	for _, old := range sources {
 		for _, now := range current.Sources {
@@ -129,6 +154,12 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 		if err != nil {
 			s.Skipped++
 			continue
+		}
+		indexed := cleanIndexedMail(doc, mail)
+		mailID := connectionMailID(mail)
+		if old, exists := rules.Mails[mailID]; !exists || !reflect.DeepEqual(old, indexed) {
+			rules.Mails[mailID] = indexed
+			rulesChanged = true
 		}
 		// Trust the actual selected folder name returned by Outlook, not content.
 		folder := cleanText(mail.Folder, 120)
@@ -157,6 +188,7 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 				continue
 			}
 			if err != nil {
+				s.Rejected++
 				continue
 			}
 			matched = true
@@ -180,6 +212,11 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 	cursorsChanged := false
 	for key, cursor := range batch.Cursors {
 		if _, ok := allowed[key]; ok {
+			cursor.ReaderVersion = outlookReaderVersion
+			if old, exists := rules.Cursors[key]; !exists || !reflect.DeepEqual(old, cursor) {
+				rules.Cursors[key] = cursor
+				rulesChanged = true
+			}
 			if old, exists := x.Cursors[key]; !exists || !reflect.DeepEqual(old, cursor) {
 				x.Cursors[key] = cursor
 				cursorsChanged = true
@@ -191,6 +228,11 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 			return
 		}
 	}
+	if rulesChanged {
+		if e = a.saveConnections(rules); e != nil {
+			return
+		}
+	}
 	// Reports are committed first: if cursor persistence fails, the next import
 	// safely repeats the batch instead of skipping any unsaved reports.
 	if cursorsChanged {
@@ -199,7 +241,14 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 		}
 	}
 	s.Pending = batch.Pending
+	s.Failed, s.Limited = batch.Failed, batch.Limited
 	s.Message = fmt.Sprintf("Outlook 확인 완료 · 추가 %d건 · 변경 %d건 · 중복·제외 %d건", s.Added, s.Updated, s.Skipped)
+	if s.Rejected > 0 {
+		s.Message += fmt.Sprintf(" · MD 형식 확인 필요 %d건", s.Rejected)
+	}
+	if s.Limited > 0 {
+		s.Message += fmt.Sprintf(" · 첨부 크기·개수 제한 %d건", s.Limited)
+	}
 	if batch.Pending {
 		s.Message += " · 남은 메일은 계속 가져옵니다."
 	}

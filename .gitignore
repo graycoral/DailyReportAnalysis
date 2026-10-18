@@ -1,5 +1,6 @@
 /dist/
 /build/
+/node_modules/
 /cmd/setup/payload/AVReportHub.exe
 *.log
 config.json
@@ -9,4 +10,5 @@ rag-service.json
 /rag/.venv/
 /rag/index/
 /rag/__pycache__/
+/scripts/__pycache__/
 /docs/sample-from-*.pdf

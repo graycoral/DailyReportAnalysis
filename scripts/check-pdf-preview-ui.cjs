@@ -24,7 +24,7 @@ async function ready(page,scope='#local-pdf-preview'){
  await page.locator(scope+' [role="status"]').waitFor({state:'hidden'});
 }
 (async()=>{
- fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',sync_time:'08:00',configured:true,offline:true}));
+ fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',sync_time:'08:00',configured:true,offline:true,github_choice_version:fs.readFileSync(path.join(__dirname,'../internal/hub/model.go'),'utf8').match(/\bVersion\s*=\s*"([^"]+)"/)[1]}));
  viewer=spawn(process.env.AV_PDF_VIEWER||path.join(build,'pdf-preview-viewer.exe'),['--no-browser','--data-dir',dir],{windowsHide:true,stdio:'ignore'});
  const file=path.join(dir,'instance-viewer.json');
  for(let i=0;i<150&&!fs.existsSync(file);i++)await wait(100);
@@ -36,6 +36,7 @@ async function ready(page,scope='#local-pdf-preview'){
  page.on('response',r=>{if(r.url().includes('/api/local/file?')&&r.request().method()==='GET')pdfResponses.push(r)});
  page.on('request',r=>{if(/^https?:/.test(r.url())&&!r.url().startsWith(instance.address+'/'))external.push(r.url())});
  await page.goto(instance.address+'/open?key='+instance.key);
+ await page.locator('#report-input').setInputFiles(path.join(root,'scripts/fixtures/offline-report.md'));
  await page.locator('#results [data-report]').first().waitFor();
  const pdfA=samplePDF('ALPHA'),pdfB=samplePDF('BETA');
  const added=page.waitForResponse(r=>r.url().includes('/api/local/add?'));

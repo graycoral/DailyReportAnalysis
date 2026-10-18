@@ -17,6 +17,7 @@ function fixture(){
  let timer,implementation=async()=>{throw Error('Unexpected request')};
  const calls=[];
  const context=vm.createContext({
+  window:{},
   $:selector=>({'#pst-form':form,'#pst-status':status,'#pst-browse':browse}[selector]),
   esc:s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;'),
   local:{sources:[],files:[],mails:[]},

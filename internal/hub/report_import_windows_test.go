@@ -34,6 +34,46 @@ func TestMarkdownBatchPreservesLegacyOutlookAndDuplicateIDs(t *testing.T) {
 	}
 }
 
+func TestGitHubDisabledKeepsOutlookAndManualReports(t *testing.T) {
+	a := localApp(t)
+	r, err := parseReport([]byte(importFixture), "report.md", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mail := importedReport{Report: r, Origin: "outlook-report", Hash: bodyHash(r.Body)}
+	mail.ID = "outlook-2026-10-15"
+	if err = a.saveReports(reportArchive{Reports: []importedReport{mail}}); err != nil {
+		t.Fatal(err)
+	}
+	a.config.Offline = true
+	if _, _, err = a.importMarkdown("report.md", []byte(importFixture)); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(a.reportPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, enabled := range []bool{false, true, false} {
+		a.config.Offline = !enabled
+		w := call(t, a.routes(), "GET", "/api/local/reports", "")
+		var archive reportArchive
+		if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &archive) != nil || len(archive.Reports) != 2 {
+			t.Fatal("GitHub setting changed local reports", w.Code, w.Body)
+		}
+		if !a.hasReport(mail.ID) {
+			t.Fatal("Outlook report became inaccessible")
+		}
+		w = call(t, a.routes(), "GET", "/api/local/reports/download?id="+mail.ID, "")
+		if w.Code != 200 || w.Body.String() != importFixture {
+			t.Fatal("Outlook report download blocked")
+		}
+	}
+	after, err := os.ReadFile(a.reportPath())
+	if err != nil || !bytes.Equal(before, after) {
+		t.Fatal("GitHub visibility modified local archive", err)
+	}
+}
+
 func TestImportedReportsEncryptedSeparateAndPersistent(t *testing.T) {
 	a := localApp(t)
 	h := a.routes()
@@ -67,11 +107,12 @@ func TestImportedReportsEncryptedSeparateAndPersistent(t *testing.T) {
 	// Public updates must preserve the archive byte for byte, even if GitHub is unavailable.
 	cfg := defaultConfig()
 	cfg.Configured = true
+	cfg.GitHubChoiceVersion = Version
 	a.config = cfg
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { http.Error(w, "blocked", 403) }))
 	defer srv.Close()
 	withBase(srv.URL, func() { a.syncData() })
-	if a.syncAvailability() != "unavailable" {
+	if a.syncAvailability() != "auto_disabled" {
 		t.Fatal(a.syncAvailability())
 	}
 	after, _ := os.ReadFile(a.reportPath())
@@ -212,7 +253,7 @@ $folder|Add-Member ScriptMethod GetTable {param($filter,$flags) return $this.tab
 $accessor=[pscustomobject]@{data=[Text.Encoding]::UTF8.GetBytes([string]$req.terms[0])}
 $accessor|Add-Member ScriptMethod GetProperty {param($property) return $this.data}
 $attachment=[pscustomobject]@{FileName='report.md';Size=1000;PropertyAccessor=$accessor}
-$ns=[pscustomobject]@{Stores=@($store);folder=$folder;item=[pscustomobject]@{Body=[string]$req.terms[0];Attachments=@($attachment)}}
+$ns=[pscustomobject]@{Stores=@($store);folder=$folder;item=[pscustomobject]@{Body=[string]$req.terms[0];Attachments=@($attachment);ConversationID='0123456789ABCDEF0123456789ABCDEF'}}
 $ns|Add-Member ScriptMethod GetFolderFromID {param($id,$store) if($id -ne '00BB'){throw 'wrong folder'};return $this.folder}
 $ns|Add-Member ScriptMethod GetItemFromID {param($id,$store) return $this.item}
 `
@@ -227,6 +268,9 @@ $ns|Add-Member ScriptMethod GetItemFromID {param($id,$store) return $this.item}
 	}
 	if first.Failed != 0 || len(first.Items) != 1 || !first.Pending || first.Items[0].Mail.EntryID != "00CC" || len(first.Items[0].Attachments) != 1 || first.Items[0].Attachments[0].Body != importFixture {
 		t.Fatalf("first batch: %+v", first)
+	}
+	if first.Items[0].Conversation != "0123456789ABCDEF0123456789ABCDEF" || len(first.Items[0].Fingerprints) != 1 || first.Items[0].Fingerprints[0].SHA256 != digest(importFixture) {
+		t.Fatal("conversation ID or attachment fingerprint missing from Outlook bridge")
 	}
 	req.Cursors = first.Cursors
 	var second outlookBatch

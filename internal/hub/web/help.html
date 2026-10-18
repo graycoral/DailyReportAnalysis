@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width,initial-scale=1">
+ <title>쉬운 사용법 · AV 리포트</title>
+ <script src="/theme.js"></script>
+ <link rel="stylesheet" href="/style.css">
+ <link rel="stylesheet" href="/help.css">
+ <script src="/help.js" defer></script>
+</head>
+<body class="guide-page" id="top">
+<a class="guide-skip" href="#guide-main">사용법 바로 읽기</a>
+<header class="guide-header">
+ <div class="brand"><span class="brand-icon" aria-hidden="true">AV</span><strong>리포트 사용법</strong></div>
+ <a class="guide-home" href="/">리포트 화면 열기 <span aria-hidden="true">↗</span></a>
+</header>
+<main id="guide-main" class="guide-main">
+ <section class="guide-intro" aria-labelledby="guide-title">
+  <p class="guide-eyebrow">AV 리포트 도움말</p>
+  <h1 id="guide-title">탭별 자세한 사용법</h1>
+  <p>궁금한 탭을 골라 보세요. 그 탭의 설명만 보여드려요.</p>
+ </section>
+
+ <section class="guide-tabs" aria-label="탭별 사용법">
+  <h2 class="sr-only">탭별 사용법</h2>
+  <nav class="guide-jump" aria-label="탭별 사용법 바로가기">
+   <a href="#search">데일리리포트</a><a href="#timeline">타임라인</a><a href="#graph">관계</a><a href="#map">지도</a><a href="#outlook">Outlook</a><a href="#local">내 자료</a><a href="#notes">노트</a><a href="#rag">AI 검색</a><a href="#settings">설정</a>
+  </nav>
+  <div class="guide-panels">
+   <article class="guide-card" id="search" aria-labelledby="search-title">
+    <div class="guide-card-title"><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3H5a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9l-6-6ZM14 3v6h6M8 13h8M8 17h8"/></svg></span><h3 id="search-title">데일리리포트</h3><span class="guide-badge">여기부터</span></div>
+    <p class="guide-purpose">궁금한 소식을 찾아 읽는 곳이에요.</p>
+    <ol><li>위쪽 검색칸에 회사 이름이나 궁금한 말을 써요.<span class="guide-example">예: 현대차</span></li><li>목록에서 제목을 누르면 글이 열려요.</li><li>너무 많이 나오면 <b>검색 조건</b>에서 회사나 날짜를 골라요.</li></ol>
+    <p class="guide-tip">검색어와 검색 조건을 지우려면 <b>초기화</b>를 눌러요.</p>
+    <div class="guide-extra"><h4>내 리포트도 함께 보기</h4><p><b>가져오기</b>로 정해진 양식의 MD 리포트 파일을 넣을 수 있어요. Outlook에서 가져온 리포트도 여기에 모여요. 같은 내용은 한 번만 보여요.</p><p>목록의 <b>삭제</b>는 글을 숨기는 기능이에요. 다시 보고 싶으면 <b>설정 → 삭제한 리포트 복원</b>을 이용해요.</p><p>새로 올라온 글을 받으려면 위쪽의 <b>지금 업데이트</b>를 눌러요. 버튼이 꺼져 있으면 설정에서 <b>GitHub 자료 연동</b>을 켜고 저장해요.</p></div>
+   </article>
+
+   <article class="guide-card" id="timeline" aria-labelledby="timeline-title">
+    <div class="guide-card-title"><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3v18M11 6h9M11 12h6M11 18h9"/><circle cx="6" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/></svg></span><h3 id="timeline-title">타임라인</h3></div>
+    <p class="guide-purpose">어떤 일이 언제 있었는지 날짜순으로 봐요.</p>
+    <ol><li>날짜를 따라 소식을 살펴봐요.</li><li>궁금한 제목을 누르면 관련 글이 열려요.</li><li>옛날 일부터 보려면 <b>최신순</b>을 <b>오래된순</b>으로 바꿔요.</li></ol>
+    <p class="guide-tip"><b>계획</b>은 앞으로 하려는 일이에요. <b>보고일</b>은 소식을 전한 날짜예요.</p>
+    <div class="guide-extra"><h4>원하는 기간만 보기</h4><p><b>검색 조건</b>에서 시작일과 종료일을 고르면 그 기간의 리포트에서 정리한 일을 볼 수 있어요. 데일리리포트에서 쓰던 검색어와 조건도 그대로 적용돼요.</p><p>보고 싶은 내용이 안 보이면 <b>초기화</b>를 눌러 다시 살펴보세요.</p></div>
+   </article>
+
+   <article class="guide-card" id="graph" aria-labelledby="graph-title">
+    <div class="guide-card-title"><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 7 9 4M7 17l9-4M5 8v8"/><circle cx="5" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="12" r="3"/></svg></span><h3 id="graph-title">관계</h3></div>
+    <p class="guide-purpose">회사와 회사가 어떻게 이어져 있는지 봐요.</p>
+    <ol><li>회사 이름과 그 사이의 선을 찾아봐요.</li><li>이름이나 선을 눌러요.</li><li>옆에 나온 설명과 원문을 읽어요.</li></ol>
+    <p class="guide-tip">그림이 비어 있으면, 그 조건에 맞게 정리된 관계가 아직 없는 거예요.</p>
+    <div class="guide-extra"><h4>어떤 자료인지 확인하기</h4><p>위쪽의 <b>Outlook · 데일리 리포트 · 내 자료 · 내 노트</b>를 켜거나 끄면 보고 싶은 자료만 남길 수 있어요.</p><p>선을 눌러 연결된 이유와 근거를 읽어 보세요. 노트·PDF·메일이 리포트에 연결된 것과, 회사끼리 협력한 것은 서로 다른 연결이에요.</p></div>
+   </article>
+
+   <article class="guide-card" id="map" aria-labelledby="map-title">
+    <div class="guide-card-title"><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2ZM9 3v16M15 5v16"/></svg></span><h3 id="map-title">지도</h3></div>
+    <p class="guide-purpose">글과 자료가 이어진 모습을 한눈에 봐요.</p>
+    <ol><li>동그라미에 적힌 이름을 살펴봐요.</li><li>회사 이름을 누르면 관련 글을 모아 봐요. 글을 누르면 본문이 열려요.</li><li>빈 곳을 누른 채 움직이면 그림이 이동해요. 마우스 바퀴를 굴리면 커지거나 작아져요.</li></ol>
+    <p class="guide-tip">여기서 지도는 <b>자료 사이의 연결을 그린 그림</b>이에요.</p>
+    <div class="guide-extra"><h4>그림이 복잡할 때</h4><p>검색어나 <b>검색 조건</b>으로 범위를 좁혀 보세요. 위쪽의 <b>Outlook · 데일리 리포트 · 내 자료 · 내 노트</b>로 표시할 자료도 고를 수 있어요.</p><p>표시할 자료를 바꾸면 관계 탭에도 함께 적용돼요. 모두 끄면 그림이 비어 있으니, 보고 싶은 자료를 하나 이상 켜 주세요.</p></div>
+   </article>
+
+   <article class="guide-card" id="outlook" aria-labelledby="outlook-title">
+    <div class="guide-card-title"><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6M3 18l6-6m6 0 6 6"/></svg></span><h3 id="outlook-title">Outlook</h3></div>
+    <p class="guide-purpose">메일로 받은 리포트를 모아 보는 곳이에요.</p>
+    <ol><li><b>메일함에서 리포트 가져오기</b>를 펼쳐요.</li><li><b>Outlook 메일함 불러오기</b>를 누르고, 원하는 메일함의 <b>폴더 선택</b>을 눌러요.</li><li>원하는 폴더 옆의 <b>이 폴더 추가</b>를 눌러요. 가져온 글은 아래 목록에서 읽어요.</li></ol>
+    <p class="guide-tip"><b>클래식 Outlook</b>이 있어야 해요. 정해진 리포트 양식의 메일만 가져와요.</p>
+    <div class="guide-extra"><h4>가져온 뒤에는</h4><p>선택한 폴더에서 리포트를 자동으로 가져와요. 바로 확인하고 싶으면 <b>지금 가져오기</b>를 눌러요. 메일 제목이나 보낸 사람, 폴더 이름으로 찾을 수도 있어요.</p><p>리포트를 연 뒤 <b>Outlook 원문 열기</b>를 누르면 원래 메일을 볼 수 있어요. 데일리리포트에 같은 글이 있어도, 이곳에서는 메일에서 가져온 원본을 볼 수 있어요.</p><p>따로 받은 PST·OST 메일 보관 파일은 <b>경로 추가</b>로 골라 연결해요. <b>연결 해제</b>를 눌러도 원래 메일과 이미 가져온 리포트는 남아요.</p></div>
+   </article>
+
+   <article class="guide-card" id="local" aria-labelledby="local-title">
+    <div class="guide-card-title"><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 8V5a1 1 0 0 1 1-1h5l2 3h9a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z"/><rect x="9" y="12" width="6" height="5" rx="1"/><path d="M10 12v-1a2 2 0 0 1 4 0v1"/></svg></span><h3 id="local-title">내 자료</h3></div>
+    <p class="guide-purpose">내 PDF 문서를 넣어 두는 서랍이에요.</p>
+    <ol><li><b>PDF 추가</b>를 누르고 보관할 파일을 골라요.</li><li>목록에서 파일 이름을 누르면 문서가 보여요.</li><li>작게 보이면 <b>크게 보기</b>를 눌러요.</li></ol>
+    <p class="guide-tip">보관한 사본은 이 PC에 잠가 두어요. 여기서 <b>삭제한 PDF 사본은 되돌릴 수 없어요.</b></p>
+    <div class="guide-extra"><h4>PDF를 리포트와 연결하기</h4><p>파일 옆의 <b>연결</b>을 누르거나, 파일을 연 뒤 <b>연결할 리포트</b>를 골라 <b>연결</b>을 눌러요.</p><p>제목이 같으면 <b>게시 리포트 · Outlook · 직접 가져온 MD</b> 표시를 보고 골라요. 연결된 제목을 누르면 그 리포트를 읽을 수 있어요.</p><p><b>해제</b>는 리포트와의 연결만 끊어요. PDF 파일은 내 자료에 그대로 남아요.</p></div>
+   </article>
+
+   <article class="guide-card" id="notes" aria-labelledby="notes-title">
+    <div class="guide-card-title"><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-9M8 16l1-4L19 2l3 3-10 10-4 1Z"/></svg></span><h3 id="notes-title">노트</h3></div>
+    <p>리포트를 읽으며 떠오른 생각을 Markdown으로 기록하세요.</p>
+    <ol><li><b>새 노트</b>에서 제목과 본문을 쓰면 자동 저장됩니다.</li><li>원문·분할·읽기·Live Preview를 선택하고, 캡처를 붙여넣으세요.</li><li><b>[[노트 이름]]</b>이나 연결된 리포트로 관련 내용을 모아 보세요.</li></ol>
+    <p class="guide-note">노트는 이 PC의 평문 .md 파일입니다. 저장 폴더 변경, 태그·검색, 휴지통과 이전 저장본 복구를 지원합니다.</p>
+    <div class="guide-extra"><h4>노트의 연결 보기</h4><p><b>관계</b>와 <b>지도</b>에서 <b>내 노트</b>를 켜세요. [[노트 이름]]과 직접 연결한 리포트가 선으로 이어집니다. 연결 없는 노트도 지도에 표시돼요.</p><p>노트를 누르면 미리보기와 <b>노트 열기 · 편집</b>이 나옵니다. 선을 누르면 어떤 본문 링크로 연결됐는지 확인할 수 있어요.</p></div>
+   </article>
+   <article class="guide-card" id="rag" aria-labelledby="rag-title">
+    <div class="guide-card-title"><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="15" height="15" rx="3"/><circle cx="8" cy="8" r="1"/><path d="m4 16 5-5 3 3"/><circle cx="16" cy="16" r="4"/><path d="m19 19 3 3"/></svg></span><h3 id="rag-title">AI 검색</h3><span class="guide-badge">필요할 때만</span></div>
+    <p class="guide-purpose">올려 둔 문서와 그림에서 비슷한 내용을 찾아요.</p>
+    <ol><li>처음에는 <b>환경 설정</b> 안내를 따라 준비하고 <b>검색 서비스 시작</b>을 눌러요.</li><li>PDF나 그림 파일을 골라 올려요.</li><li>찾고 싶은 내용을 문장으로 쓰고 <b>검색</b>을 눌러요. 나온 결과를 눌러 내용을 봐요.<span class="guide-example">예: 운전자가 없는 자동차</span></li></ol>
+    <p class="guide-tip">준비가 어려우면 담당자에게 도움을 요청해요. 올린 사본은 <b>잠금 없이 저장</b>되니, 회사의 중요한 자료는 올리지 마세요.</p>
+    <div class="guide-extra"><h4>언제 쓰면 좋을까요?</h4><p>정확한 단어가 생각나지 않을 때, 찾고 싶은 내용을 문장으로 써 보세요. 올린 PDF와 그림에서 비슷한 내용을 찾아줘요.</p><p>결과를 누르면 해당 페이지나 그림을 확인할 수 있어요. AI 검색을 준비하지 않아도 다른 탭은 그대로 사용할 수 있어요.</p></div>
+   </article>
+
+   <article class="guide-card" id="settings" aria-labelledby="settings-title">
+    <div class="guide-card-title"><span class="guide-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 3-.7 2.2-2 .9L4 5.7 2.5 8.3 4 10v2l-1.5 1.7L4 16.3l2.3-.4 2 .9L9 19h3l.7-2.2 2-.9 2.3.4 1.5-2.6L17 12v-2l1.5-1.7L17 5.7l-2.3.4-2-.9L12 3Z" transform="translate(1.5 1)"/><circle cx="12" cy="12" r="3"/></svg></span><h3 id="settings-title">설정</h3></div>
+    <p class="guide-purpose">화면을 바꾸거나 숨긴 글을 다시 꺼내요.</p>
+    <ul><li>화면 색을 바꾸려면 <b>화면 스타일</b>에서 골라요. 바로 바뀌어요.</li><li>삭제한 리포트를 다시 보려면 <b>삭제한 리포트 복원</b>에서 글을 고르고 <b>선택 복원</b>을 눌러요.</li><li>새 자료를 받으려면 <b>자료 연결 · 자동 업데이트</b>에서 <b>GitHub 자료 연동</b>을 켜요. 확인할 시간을 정한 뒤 <b>검사하고 저장</b>을 눌러요.</li></ul>
+    <p class="guide-tip">리포트 목록의 <b>삭제</b>는 글을 숨기는 거예요. 여기서 다시 꺼낼 수 있어요.</p>
+    <div class="guide-extra"><h4>자료 연결과 프로그램 종료</h4><p>GitHub는 새 리포트를 받아오는 보관소예요. 연동을 켜고 연결에 성공하면 GitHub 리포트를 받아 표시해요. 연동을 끄거나 연결에 실패하면 GitHub 리포트는 목록에서 빠져요. Outlook·직접 가져온 자료는 계속 볼 수 있어요.</p><p>브라우저 창만 닫으면 프로그램은 계속 실행돼요. 자동 업데이트도 멈추려면 왼쪽 아래의 <b>종료</b>를 눌러요.</p></div>
+   </article>
+  </div>
+ </section>
+ <footer class="guide-footer"><p>이 도움말 탭을 닫으면, 보던 리포트가 그대로 있어요.</p><a href="#top">맨 위로 ↑</a></footer>
+</main>
+</body>
+</html>
