@@ -142,6 +142,11 @@ func TestNotesHTTPRecoveryAndBoundaries(t *testing.T) {
 		t.Fatal(w.Code)
 	}
 	vault := t.TempDir()
+	// Match the canonical root returned by notesRoot, including Windows 8.3 aliases.
+	vault, err := filepath.EvalSymlinks(vault)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if w = request("/root", noteInput{Root: vault}); w.Code != 200 {
 		t.Fatal(w.Body)
 	}
@@ -162,7 +167,11 @@ func TestNotesHTTPRecoveryAndBoundaries(t *testing.T) {
 	}
 }
 func TestNotesCommitPreflightAndMetadata(t *testing.T) {
-	root := t.TempDir()
+	// Production callers pass the canonical path obtained from notesRoot.
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
 	os.WriteFile(filepath.Join(root, "a.md"), []byte("a"), 0600)
 	os.WriteFile(filepath.Join(root, "b.md"), []byte("external"), 0600)
 	e := noteCommit(root, []noteChange{{"a.md", []byte("a"), []byte("changed")}, {"b.md", []byte("b"), []byte("new")}})

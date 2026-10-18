@@ -78,6 +78,11 @@ func TestNotesIncrementalListingAndExternalChanges(t *testing.T) {
 		t.Fatal("deleted note remained addressable", err)
 	}
 	otherRoot := t.TempDir()
+	// Windows CI may return an 8.3 alias from TempDir; notesRoot resolves it.
+	otherRoot, err = filepath.EvalSymlinks(otherRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := writeJSON(filepath.Join(a.dir, "notes-settings.json"), map[string]string{"root": otherRoot}); err != nil {
 		t.Fatal(err)
 	}
