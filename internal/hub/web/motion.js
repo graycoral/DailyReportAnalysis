@@ -2,7 +2,7 @@
 // Scope motion to pointer interactions. Keyboard and assistive clicks stay immediate.
 (()=>{
  const root=document.documentElement;
- const input=kind=>{if(root.dataset.helpInput!==kind)root.dataset.helpInput=kind};
+ const input=kind=>{if(root.dataset.uiInput!==kind)root.dataset.uiInput=kind};
  input('keyboard');
  document.addEventListener('pointerdown',()=>input('pointer'),{capture:true,passive:true});
  document.addEventListener('pointermove',event=>{

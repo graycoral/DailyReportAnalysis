@@ -1,0 +1,50 @@
+/* Shared motion policy. Lists, reading, previews and keyboard actions stay immediate. */
+:root{
+ --motion-hover:120ms;--motion-press:120ms;--motion-toggle:160ms;
+ --motion-enter:220ms;--motion-exit:140ms;
+ --motion-ease-out:cubic-bezier(.23,1,.32,1);
+ --motion-ease-in-out:cubic-bezier(.77,0,.175,1);
+}
+@media(prefers-reduced-motion:no-preference){
+ html[data-ui-input=pointer] :is(.primary,header button,.dialog-title button,.form-actions button,.filter-toggle,#report-back,#help,#close-help,.nav-exit,.downloads a,.help-more a,.guide-home,.guide-jump a,.guide-routes a){transition:transform var(--motion-press) var(--motion-ease-out)}
+ html[data-ui-input=pointer] :is(.primary,header button,.dialog-title button,.form-actions button,.filter-toggle,#report-back,#help,#close-help,.nav-exit,.downloads a,.help-more a,.guide-home,.guide-jump a,.guide-routes a):active:not(:disabled){transform:scale(.97)}
+ html[data-ui-input=pointer] .filter-toggle span,
+ html[data-ui-input=pointer] :is(.source-switch input,.github-switch input)::before{transition:transform var(--motion-toggle) var(--motion-ease-in-out)}
+ html[data-ui-input=pointer] .github-switch input{transition:background-color var(--motion-hover) ease}
+ html[data-ui-input=pointer] :is(.node,.edge,.mn,.ml){transition:opacity var(--motion-hover) ease}
+ @media(hover:hover) and (pointer:fine){
+  html[data-ui-input=pointer] :is(button,.query,.chip,.downloads a,.dropzone,.rag-library,.help-more a,.guide-home,.guide-jump a,.guide-routes a){transition:transform var(--motion-press) var(--motion-ease-out),background-color var(--motion-hover) ease,border-color var(--motion-hover) ease,color var(--motion-hover) ease,outline-color var(--motion-hover) ease}
+  html[data-ui-input=pointer] :is(.report-card,[role=tab],.chip,[data-note-id],[data-trash-key]){transition:none}
+  /* Guide navigation has press feedback, but its reading panel never animates. */
+  html[data-ui-input=pointer] .guide-jump a{transition:transform var(--motion-press) var(--motion-ease-out),background-color var(--motion-hover) ease,border-color var(--motion-hover) ease,color var(--motion-hover) ease}
+ }
+}
+/* Only persistent, occasionally opened dialogs fade out. PDF/notes previews are
+   frequent and release their content on close, so they keep native instant close. */
+:is(#help-dialog,#connections-dialog,#pdf-links-dialog,#github-choice-dialog,#rag-warning,#data-trash-dialog){opacity:0;transform:scale(.98);transform-origin:center}
+:is(#help-dialog,#connections-dialog,#pdf-links-dialog,#github-choice-dialog,#rag-warning,#data-trash-dialog)[open]{opacity:1;transform:none}
+dialog:not([open]),dialog:not([open])::backdrop{pointer-events:none}
+:is(#help-dialog,#connections-dialog,#pdf-links-dialog,#github-choice-dialog,#rag-warning,#data-trash-dialog)::backdrop{opacity:0}
+:is(#help-dialog,#connections-dialog,#pdf-links-dialog,#github-choice-dialog,#rag-warning,#data-trash-dialog)[open]::backdrop{opacity:1}
+@media(prefers-reduced-motion:no-preference){
+ @supports (transition-behavior:allow-discrete) and (overlay:auto){
+  html[data-ui-input=pointer] :is(#help-dialog,#connections-dialog,#pdf-links-dialog,#github-choice-dialog,#rag-warning,#data-trash-dialog){
+   transition:opacity var(--motion-exit) var(--motion-ease-out),transform var(--motion-exit) var(--motion-ease-out),display var(--motion-exit) allow-discrete,overlay var(--motion-exit) allow-discrete;
+  }
+  html[data-ui-input=pointer] :is(#help-dialog,#connections-dialog,#pdf-links-dialog,#github-choice-dialog,#rag-warning,#data-trash-dialog)::backdrop{
+   transition:opacity var(--motion-exit) var(--motion-ease-out),display var(--motion-exit) allow-discrete,overlay var(--motion-exit) allow-discrete;
+  }
+  html[data-ui-input=pointer] :is(#help-dialog,#connections-dialog,#pdf-links-dialog,#github-choice-dialog,#rag-warning,#data-trash-dialog)[open],
+  html[data-ui-input=pointer] :is(#help-dialog,#connections-dialog,#pdf-links-dialog,#github-choice-dialog,#rag-warning,#data-trash-dialog)[open]::backdrop{transition-duration:var(--motion-enter)}
+  @starting-style{
+   html[data-ui-input=pointer] :is(#help-dialog,#connections-dialog,#pdf-links-dialog,#github-choice-dialog,#rag-warning,#data-trash-dialog)[open]{opacity:0;transform:scale(.98)}
+   html[data-ui-input=pointer] :is(#help-dialog,#connections-dialog,#pdf-links-dialog,#github-choice-dialog,#rag-warning,#data-trash-dialog)[open]::backdrop{opacity:0}
+  }
+ }
+}
+/* Cancel in-flight motion, including pseudo-elements, as soon as input or the
+   preference changes. No close timer: native dialogs restore focus immediately. */
+html:not([data-ui-input=pointer]) *,html:not([data-ui-input=pointer]) *::before,html:not([data-ui-input=pointer]) *::after,html:not([data-ui-input=pointer]) dialog::backdrop{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after,dialog::backdrop{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}

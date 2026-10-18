@@ -98,6 +98,7 @@ async function activeGuide(page,id){
  assert.deepEqual(await state(),beforeHelp,'original search, tab and selected report stay unchanged');
  assert.equal(await page.locator('#sync-time').isVisible(),true);
  await require('./check-help-motion.cjs')(page,help,build);
+ await require('./check-app-motion.cjs')(page);
  // Cross-panel setup links reveal and scroll to the exact instructions, including after reload.
  await jump.getByRole('tab',{name:'Outlook',exact:true}).click();
  await help.getByRole('link',{name:'PST 파일 연결 순서',exact:true}).click();
