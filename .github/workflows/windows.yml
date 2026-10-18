@@ -53,6 +53,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Media test dependencies failed' }
           python -m unittest discover -s rag -p test_media.py
           if ($LASTEXITCODE -ne 0) { throw 'Media service tests failed' }
+          python -m unittest discover -s rag -p test_efficiency.py
+          if ($LASTEXITCODE -ne 0) { throw 'Background task and model scheduling tests failed' }
       - name: Test and build self-contained executables
         shell: pwsh
         run: ./scripts/build.ps1

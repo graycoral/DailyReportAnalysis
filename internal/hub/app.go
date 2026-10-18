@@ -38,6 +38,7 @@ type App struct {
 	mu                   sync.RWMutex
 	syncLock             sync.Mutex
 	localMu              sync.Mutex
+	pdfCache             pdfCache
 	visibilityMu         sync.Mutex
 	syncing              bool
 	status               string
@@ -86,6 +87,7 @@ func Run(setup bool, payload []byte) {
 	log.Printf("start v%s setup=%v dir=%s", Version, setup, dir)
 	a := &App{dir: dir, setup: setup, payload: payload, config: defaultConfig(), status: "포함된 리포트"}
 	defer a.stopRagTask()
+	defer a.pdfCache.clear()
 	if b, e := os.ReadFile(filepath.Join(dir, "config.json")); e == nil {
 		var c Config
 		if json.Unmarshal(b, &c) == nil && c.Validate() == nil {

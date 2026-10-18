@@ -358,16 +358,25 @@ mark{background:var(--mark);color:inherit;padding:0 2px;border-radius:3px}
 .compact-dropzone{flex-direction:row;justify-content:space-between;gap:8px;padding:12px 14px;margin-bottom:14px;border-width:1px;flex-wrap:wrap}
 .compact-dropzone b{font-size:13px;font-weight:600}
 .pdf-list{container-type:inline-size}
-.pdf-list-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:5px 8px;margin-bottom:6px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface)}
-.pdf-list-row.selected{border-color:var(--accent);background:var(--accent-soft)}
-.pdf-file{display:flex;align-items:center;gap:10px;min-width:0;padding:7px 4px;border:0;border-radius:6px;background:transparent;text-align:left}
-.pdf-file:hover{box-shadow:none;background:var(--surface-2)}
-.pdf-file-icon{display:grid;place-items:center;flex-shrink:0;width:30px;height:34px;border:1px solid var(--line-2);border-radius:5px;background:var(--surface);font-size:9px;font-weight:700;color:var(--accent-ink)}
-.pdf-file-text{display:flex;flex-direction:column;gap:4px;min-width:0}
-.pdf-file-text b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
-.pdf-file-text small{font-size:10.5px;color:var(--muted)}
-.pdf-row-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
-.pdf-links-button{display:inline-flex;gap:5px;align-items:center;white-space:nowrap;font-size:11px;padding:6px 8px;border:0;border-radius:8px;background:transparent}
+.pdf-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--line);border-radius:4px;font-size:12px}
+.pdf-table th{height:32px;padding:0 8px;text-align:left;font-size:11px;font-weight:500;color:var(--muted);background:var(--surface-2);border-bottom:1px solid var(--line)}
+.pdf-table th+th{border-left:1px solid var(--line)}
+.pdf-table td{height:34px;padding:1px 8px;white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+.pdf-list-row{cursor:pointer}
+.pdf-list-row:hover{background:var(--surface-2)}
+.pdf-list-row.selected{background:var(--accent-soft)}
+.pdf-list-row.selected td:first-child{box-shadow:inset 2px 0 var(--accent)}
+.pdf-table .pdf-date{width:100px}
+.pdf-table .pdf-size{width:76px;text-align:right}
+.pdf-table .pdf-links-cell{width:48px;text-align:center;padding:1px 4px}
+.pdf-table .pdf-actions-cell{width:36px;text-align:center;padding:1px 4px}
+.pdf-file{display:flex;align-items:center;gap:7px;width:100%;min-width:0;min-height:32px;padding:4px 0;border:0;border-radius:2px;background:transparent;text-align:left;line-height:20px}
+.pdf-file:hover{box-shadow:none;background:transparent}
+.pdf-file-icon{display:grid;place-items:center;flex-shrink:0;width:20px;height:24px;border:1px solid var(--line-2);border-radius:2px;background:var(--surface);font-size:7px;font-weight:700;color:var(--accent-ink);line-height:1}
+.pdf-file-text{display:block;min-width:0}
+.pdf-file-text b{display:block;font-size:12px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.pdf-links-button{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;white-space:nowrap;font-size:11px;padding:0 4px;border:0;border-radius:4px;background:transparent}
+.pdf-actions-cell .list-delete{width:28px;height:28px;padding:0;border-radius:4px}
 .pdf-links-button span{color:var(--accent-ink);font-variant-numeric:tabular-nums}
 .pdf-links-name{overflow-wrap:anywhere;font-weight:600;color:var(--ink-2)}
 .pdf-linked-list{max-height:40vh;overflow:auto}
@@ -375,16 +384,22 @@ mark{background:var(--mark);color:inherit;padding:0 2px;border-radius:3px}
 .pdf-linked-row>span{flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px}
 .pdf-linked-row small{display:block;color:var(--muted);margin-top:4px}
 .pdf-linked-row button{flex-shrink:0;font-size:12px}
-@container(max-width:420px){.pdf-list-row{grid-template-columns:minmax(0,1fr);gap:0}.pdf-row-actions{justify-content:flex-end;border-top:1px solid var(--line);padding-top:3px}.pdf-file{padding:7px 4px}}
+@container(max-width:560px){.pdf-table .pdf-date{display:none}}
+@container(max-width:360px){.pdf-table .pdf-size{display:none}}
 #drop-overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);pointer-events:none;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 #drop-overlay[hidden]{display:none}
 #drop-overlay div{display:flex;flex-direction:column;gap:8px;align-items:center;padding:36px 48px;border:3px dashed var(--accent);border-radius:18px;background:var(--surface);box-shadow:var(--shadow-lg)}
 #drop-overlay b{font-size:18px;color:var(--ink)}#drop-overlay span{font-size:12.5px;color:var(--muted)}
 .local-h{margin:22px 0 10px;font-size:12px;letter-spacing:.8px;color:var(--muted);font-weight:700}
-.outlook-connect-card{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:20px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin-bottom:14px}
-.outlook-connect-card h2{font-size:17px;margin:0 0 7px}.outlook-connect-card p{font-size:12px;color:var(--muted);margin:0}
-.outlook-connection-panel{padding:16px;border:1px solid var(--accent);border-radius:var(--r);background:var(--surface);margin-bottom:20px}
-.outlook-connection-panel h3{font-size:14px;margin:0 0 12px}.outlook-connection-panel #outlook-connect-close{margin-top:16px}
+.outlook-import-area{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:20px}
+.outlook-import-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.outlook-folder-count{font-size:11px;color:var(--muted);white-space:nowrap}
+#outlook-import-now{margin-left:auto;font-size:12px;white-space:nowrap}
+#outlook-import-status{margin:10px 0 0;overflow-wrap:anywhere}
+.outlook-connection-panel{padding:16px 0 0;border-top:1px solid var(--line);margin-top:14px}
+.outlook-connection-panel h3{font-size:13px;margin:22px 0 10px}.outlook-connection-panel #outlook-connect-close{margin-top:16px}
+.outlook-import-area .mail-row button{flex-shrink:0;white-space:nowrap}
+.outlook-import-area #pst-form{flex-wrap:wrap}.outlook-import-area #pst-form input{flex-basis:200px}
 .mail-row{display:flex;align-items:center;gap:10px;margin:6px 0}
 .mail-row>:first-child{flex:1;min-width:0}
 .mail-open,.source-name{display:block;text-align:left;padding:10px 12px;font-size:12.5px;line-height:1.5;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);color:var(--ink-2);text-decoration:none}

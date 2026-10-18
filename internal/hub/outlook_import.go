@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -88,14 +89,14 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 		a.outlookImportStatus = s
 		a.outlookStatusMu.Unlock()
 	}()
-	x, e := a.viewReports()
+	cursors, e := a.viewOutlookCursors()
 	if e != nil {
 		return
 	}
 	var batch outlookBatch
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
-	e = run(ctx, outlookReq{Op: "reports", Sources: sources, Cursors: x.Cursors, Limit: 100}, &batch)
+	e = run(ctx, outlookReq{Op: "reports", Sources: sources, Cursors: cursors, Limit: 100}, &batch)
 	if e != nil {
 		return
 	}
@@ -107,7 +108,7 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 	if e != nil {
 		return
 	}
-	x, e = a.loadReports()
+	x, e := a.loadReports()
 	if e != nil {
 		return
 	}
@@ -163,7 +164,7 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 			r.Companies = titleCompanies(mail.Subject, companies)
 			r.Tags = []string{folder, "동향"}
 			item := importedReport{Report: r, Hash: bodyHash(r.Body), Origin: "outlook-report", Imported: time.Now().In(kst).Format(time.RFC3339), Mail: &mail}
-			switch mergeImported(&x, item) {
+			switch mergeImported(&x, &item) {
 			case "added":
 				s.Added++
 			case "updated":
@@ -176,13 +177,26 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 			s.Skipped++
 		}
 	}
+	cursorsChanged := false
 	for key, cursor := range batch.Cursors {
 		if _, ok := allowed[key]; ok {
-			x.Cursors[key] = cursor
+			if old, exists := x.Cursors[key]; !exists || !reflect.DeepEqual(old, cursor) {
+				x.Cursors[key] = cursor
+				cursorsChanged = true
+			}
 		}
 	}
-	if e = a.saveReports(x); e != nil {
-		return
+	if s.Added+s.Updated > 0 {
+		if e = a.saveReports(x); e != nil {
+			return
+		}
+	}
+	// Reports are committed first: if cursor persistence fails, the next import
+	// safely repeats the batch instead of skipping any unsaved reports.
+	if cursorsChanged {
+		if e = a.saveOutlookCursors(x.Cursors); e != nil {
+			return
+		}
 	}
 	s.Pending = batch.Pending
 	s.Message = fmt.Sprintf("Outlook 확인 완료 · 추가 %d건 · 변경 %d건 · 중복·제외 %d건", s.Added, s.Updated, s.Skipped)

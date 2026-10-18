@@ -37,9 +37,12 @@ try {
     if(!$state.config.configured -or $state.snapshot.catalog.reports.Count -lt 1){ throw 'Viewer has no configured reports' }
     if($state.snapshot.catalog.database -and !(Test-Path (Join-Path $testRoot ('databases/' + $state.snapshot.catalog.database.sha256 + '.sqlite')))){throw 'SQLite missing'}
     $dest=Join-Path $testRoot 'attachment.md'
-    Invoke-WebRequest -UseBasicParsing -Uri "$($v.address)/api/download?id=2026-10-14&index=0" -WebSession $v.session -OutFile $dest
+    $report=$state.snapshot.catalog.reports | Where-Object { $_.attachments.Count -gt 0 } | Select-Object -First 1
+    if (!$report) { throw 'Viewer has no report attachment to verify' }
+    $reportID=[Uri]::EscapeDataString($report.id)
+    Invoke-WebRequest -UseBasicParsing -Uri "$($v.address)/api/download?id=$reportID&index=0" -WebSession $v.session -OutFile $dest
     $hash=(Get-FileHash $dest -Algorithm SHA256).Hash.ToLower()
-    if($hash -ne $state.snapshot.catalog.reports[0].attachments[0].sha256){ throw 'Attachment mismatch' }
+    if($hash -ne $report.attachments[0].sha256){ throw 'Attachment mismatch' }
     $null=Invoke-RestMethod -Uri "$($v.address)/api/exit" -Method Post -WebSession $v.session -Headers @{Origin=$v.address; 'X-AV-Request'='1'} -Body '{}'
     Write-Host 'Windows setup, install, embedded icon, desktop shortcut, viewer, and attachment smoke test passed.'
 } finally {

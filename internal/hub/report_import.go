@@ -215,6 +215,46 @@ type reportArchive struct {
 }
 
 func (a *App) reportPath() string { return filepath.Join(a.localDir(), "reports.bin") }
+func (a *App) cursorPath() string { return filepath.Join(a.localDir(), "outlook-cursors.bin") }
+
+// Cursor-only updates must not rewrite the report bodies or change their UI revision.
+func (a *App) loadOutlookCursors() (map[string]outlookCursor, error) {
+	b, err := os.ReadFile(a.cursorPath())
+	if err != nil {
+		return nil, err
+	}
+	b, err = unprotect(b)
+	if err != nil {
+		return nil, err
+	}
+	cursors := map[string]outlookCursor{}
+	err = json.Unmarshal(b, &cursors)
+	return cursors, err
+}
+func (a *App) viewOutlookCursors() (map[string]outlookCursor, error) {
+	a.localMu.Lock()
+	defer a.localMu.Unlock()
+	if err := a.localBlocked(); err != nil {
+		return nil, err
+	}
+	cursors, err := a.loadOutlookCursors()
+	if os.IsNotExist(err) {
+		// Older versions stored cursors in the report archive.
+		x, legacyErr := a.loadReports()
+		return x.Cursors, legacyErr
+	}
+	return cursors, err
+}
+func (a *App) saveOutlookCursors(cursors map[string]outlookCursor) error {
+	b, err := json.Marshal(cursors)
+	if err == nil {
+		b, err = protect(b)
+	}
+	if err != nil {
+		return err
+	}
+	return writeAtomic(a.cursorPath(), b)
+}
 func (a *App) localReportRevision() string {
 	s, e := os.Stat(a.reportPath())
 	if e != nil {
@@ -228,17 +268,23 @@ func (a *App) loadReports() (reportArchive, error) {
 	x := reportArchive{Reports: []importedReport{}, Cursors: map[string]outlookCursor{}}
 	b, e := os.ReadFile(a.reportPath())
 	if os.IsNotExist(e) {
-		return x, nil
-	}
-	if e != nil {
+		b = nil
+	} else if e != nil {
 		return x, e
 	}
-	b, e = unprotect(b)
-	if e != nil {
-		return x, errors.New("가져온 자료를 열 수 없습니다. 저장한 Windows 계정으로 실행하세요.")
+	if b != nil {
+		b, e = unprotect(b)
+		if e != nil {
+			return x, errors.New("가져온 자료를 열 수 없습니다. 저장한 Windows 계정으로 실행하세요.")
+		}
+		if e = json.Unmarshal(b, &x); e != nil {
+			return x, errors.New("가져온 자료 목록이 손상되어 변경하지 않았습니다.")
+		}
 	}
-	if e = json.Unmarshal(b, &x); e != nil {
-		return x, errors.New("가져온 자료 목록이 손상되어 변경하지 않았습니다.")
+	if cursors, err := a.loadOutlookCursors(); err == nil {
+		x.Cursors = cursors
+	} else if !os.IsNotExist(err) {
+		return x, errors.New("Outlook 확인 기록을 읽지 못해 자료를 변경하지 않았습니다.")
 	}
 	if x.Reports == nil {
 		x.Reports = []importedReport{}
@@ -271,23 +317,48 @@ func bodyHash(s string) string {
 	h := sha256.Sum256([]byte(strings.TrimSpace(strings.ReplaceAll(s, "\r\n", "\n"))))
 	return hex.EncodeToString(h[:])
 }
-func mergeImported(x *reportArchive, r importedReport) string {
+func mergeImported(x *reportArchive, r *importedReport) string {
 	for i, old := range x.Reports {
-		if old.ID != r.ID {
+		if old.Date != r.Date || old.Origin != r.Origin {
 			continue
 		}
+		// Keep legacy IDs so saved PDF/mail links and hidden preferences still work.
+		r.ID = old.ID
 		if old.Hash == r.Hash && strings.Join(old.Tags, "\n") == strings.Join(r.Tags, "\n") {
 			return "unchanged"
 		}
-		// Background mail must not replace a manual correction or a newer received edition.
-		if r.Origin != "markdown" && (old.Origin == "markdown" || old.Mail != nil && r.Mail != nil && old.Mail.Received > r.Mail.Received) {
+		// Within the Outlook collection, retain the latest received edition.
+		if r.Origin != "markdown" && old.Mail != nil && r.Mail != nil && old.Mail.Received > r.Mail.Received {
 			return "kept"
 		}
-		x.Reports[i] = r
+		x.Reports[i] = *r
 		return "updated"
 	}
-	x.Reports = append(x.Reports, r)
+	assignImportedID(r, func(id string) bool {
+		for _, old := range x.Reports {
+			if old.ID == id {
+				return true
+			}
+		}
+		return false
+	})
+	x.Reports = append(x.Reports, *r)
 	return "added"
+}
+
+func assignImportedID(r *importedReport, used func(string) bool) {
+	// Old Outlook records may already own local-DATE; never reuse a saved link's ID.
+	r.ID = "local-" + r.Date
+	if r.Origin == "outlook-report" {
+		r.ID = "outlook-" + r.Date
+	}
+	if used(r.ID) {
+		r.ID = r.Origin + "-" + r.Date
+		base := r.ID
+		for n := 2; used(r.ID); n++ {
+			r.ID = fmt.Sprintf("%s-%d", base, n)
+		}
+	}
 }
 func (a *App) importMarkdown(name string, b []byte) (importedReport, string, error) {
 	if !strings.EqualFold(filepath.Ext(name), ".md") {
@@ -307,13 +378,14 @@ func (a *App) importMarkdown(name string, b []byte) (importedReport, string, err
 	if e != nil {
 		return item, "", e
 	}
-	status := mergeImported(&x, item)
+	status := mergeImported(&x, &item)
 	if status == "added" || status == "updated" {
 		e = a.saveReports(x)
 	}
 	return item, status, e
 }
 func (a *App) reportImportRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/api/local/reports/import-batch", a.importMarkdownBatchHandler)
 	mux.HandleFunc("/api/local/reports", func(w http.ResponseWriter, r *http.Request) {
 		x, e := a.viewReports()
 		if e != nil {

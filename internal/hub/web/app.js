@@ -2,7 +2,8 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 let state, tab='search', selected='', selectedRelation='', formBusy=false;
 let importedReports=[],localReportsRevision='',importError='',mergedSource=null,mergedCatalog=null,lastSyncState='',outlookImportState={};
-let local={available:false,reason:'',files:[],mails:[],sources:[]},localSel='',outlookStores=null,outlookFolders=null,outlookLinkedReport='';
+let mergedImports=null,mergedVisibility=null,dailyRepresentatives=new Map(),dailyStatuses=new Map();
+let local={available:false,reason:'',files:[],mails:[],sources:[]},localSel='',outlookStores=null,outlookFolders=null,linkedReport='';
 let networkSources={outlook:true,daily:true,local:true},networkSelection=null,currentDocuments={nodes:[],links:[]};
 let localPDFPreview=null,dialogPDFPreview=null;
 let pdfLinksID='',pdfLinkBusy=false;const deletingPDFs=new Set();
@@ -77,23 +78,45 @@ function visibleCatalog(source){
  catalogViews.set(source,view);
  return view;
 }
+function reportIdentity(r){
+ const body=String(r.body_markdown||'').replace(/\r\n?/g,'\n').trim().replace(/^---\n[\s\S]*?\n---\s*\n/,'').split('\n').map(line=>line.trimEnd()).join('\n').trim();
+ return body?r.date+'\n'+body:r.id;
+}
+function dailyCatalog(){
+ const source=state.snapshot.catalog;
+ if(mergedSource!==source||mergedImports!==importedReports||mergedVisibility!==hiddenReports){
+  // Imported MD/mail have already passed REPORT_FORMAT validation. Identical content appears once,
+  // preferring published evidence. A hidden member hides its daily group even after sync changes its ID.
+  const groups=new Map();
+  for(const r of [...source.reports,...importedReports.filter(r=>reportSource(r)==='daily'),...importedReports.filter(r=>reportSource(r)==='outlook')]){
+   const key=importedReports.length?reportIdentity(r):r.id;let group=groups.get(key);
+   if(!group){group={report:r,ids:[],hidden:false};groups.set(key,group)}
+   group.ids.push(r.id);group.hidden=group.hidden||hiddenReports.has(r.id);
+  }
+  const reports=[...groups.values()].filter(g=>!g.hidden).map(g=>g.report);
+  const added=reports.filter(r=>r.origin);
+  mergedCatalog=visibleCatalog({...source,reports,events:[...source.events,...added.map(r=>({id:'date-'+r.id,date:r.date,title:r.title,status:'보고일',report_id:r.id,detail:'가져온 리포트의 보고일',companies:r.companies,sources:r.sources}))]});
+  const visibleIDs=new Set(mergedCatalog.reports.map(r=>r.id));
+  dailyRepresentatives=new Map();dailyStatuses=new Map();
+  for(const group of groups.values())for(const id of group.ids){
+   const visible=visibleIDs.has(group.report.id);
+   if(visible)dailyRepresentatives.set(id,group.report.id);
+   dailyStatuses.set(id,visible?(id===group.report.id?'데일리에 추가됨':'중복 · 데일리에 있음'):'데일리 목록에서 숨김');
+  }
+  mergedSource=source;mergedImports=importedReports;mergedVisibility=hiddenReports;
+ }
+ return mergedCatalog;
+}
+function outlookDailyStatus(r){dailyCatalog();return dailyStatuses.get(r.id)||'데일리 목록에서 숨김'}
 function catalog(){
  const source=state.snapshot.catalog;
- // Visual source layers retain each original report and its own evidence, even on the same date.
- // A disabled Outlook layer must not remove the published report that its local copy overlays in search.
- if(networkView()){
-  const reports=[...source.reports,...importedReports].filter(r=>networkSources[reportSource(r)]),ids=new Set(reports.map(r=>r.id));
-  return visibleCatalog({...source,reports,events:source.events.filter(e=>ids.has(e.report_id)),relations:source.relations.filter(r=>ids.has(r.report_id)),related:source.related.filter(r=>ids.has(r.from)&&ids.has(r.to))});
- }
- if(!importedReports.length)return visibleCatalog(source);
- if(mergedSource!==source){
-  const dates=new Set(importedReports.map(r=>r.date));
-  const published=source.reports.filter(r=>!dates.has(r.date)),ids=new Set(published.map(r=>r.id));
-  mergedCatalog={...source,reports:[...published,...importedReports],events:[...source.events.filter(e=>ids.has(e.report_id)),...importedReports.map(r=>({id:'date-'+r.id,date:r.date,title:r.title,status:'보고일',report_id:r.id,detail:'가져온 리포트의 보고일',companies:r.companies,sources:r.sources}))],relations:source.relations.filter(r=>ids.has(r.report_id)),related:source.related.filter(r=>ids.has(r.from)&&ids.has(r.to))};
-  mergedSource=source;
- }
- return visibleCatalog(mergedCatalog);
+ // Maps keep distinct source records and their original evidence, including identical reports.
+ if(networkView())return visibleCatalog({...source,reports:[...source.reports,...importedReports].filter(r=>networkSources[reportSource(r)])});
+ if(tab==='outlook')return visibleCatalog({...source,reports:importedReports.filter(r=>reportSource(r)==='outlook')});
+ if(['local','rag','settings'].includes(tab))return visibleCatalog({...source,reports:[...source.reports,...importedReports]});
+ return dailyCatalog();
 }
+const reportOf=id=>visibleCatalog({...state.snapshot.catalog,reports:[...state.snapshot.catalog.reports,...importedReports]}).reports.find(r=>r.id===id);
 // End catalog visibility policy
 const terms=()=>$(tab==='outlook'?'#outlook-query':'#query').value.trim().split(/\s+/).filter(Boolean);
 // Wrap query terms in <mark> by walking text nodes, so markup and attributes are never touched.
@@ -118,7 +141,7 @@ function mentions(r,co){if(r.origin)return r.companies.includes(co);return !stri
 const realCompanies=r=>r.companies.filter(c=>mentions(r,c));
 function filtered(){let q=$('#query').value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean),co=$('#company').value,cat=$('#category').value,from=$('#from').value,to=$('#to').value;return catalog().reports.filter(r=>(!co||((r.companies||[]).includes(co)&&mentions(r,co)))&&(!cat||(r.tags||[]).includes(cat))&&(!from||r.date>=from)&&(!to||r.date<=to)&&q.every(t=>searchText(r).includes(t))).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date))}
 const deleteIcon='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>';
-function reportCard(r,i=0){return `<div class="report-card-shell"><button class="report-card ${selected===r.id?'selected':''}" data-report="${esc(r.id)}" style="--i:${i}"><div class="card-head"><span class="report-date">${esc(r.date)}</span><span class="card-meta">${r.attachments.length?'MD · PPTX':''}</span></div><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p><div class="chips">${r.companies.map(s=>mentions(r,s)?chip(s,'teal','company'):chip(s,'teal faint','company').replace('title="','title="점검 결과 ‘없음’으로만 언급 · ')).join('')}${r.tags.map(s=>chip(s,'','tag')).join('')}</div></button><button type="button" class="list-delete" data-hide-report="${esc(r.id)}" aria-label="${esc(r.title)} 목록에서 삭제" title="목록·관계·지도에서 숨기기 · 원본 보관 · 설정에서 복원">${deleteIcon}<span>삭제</span></button></div>`}
+function reportCard(r,i=0){return `<div class="report-card-shell"><button class="report-card ${selected===r.id?'selected':''}" data-report="${esc(r.id)}" style="--i:${i}"><div class="card-head"><span class="report-date">${esc(r.date)}</span><span class="card-meta">${tab==='outlook'?outlookDailyStatus(r):r.origin==='outlook-report'?'Outlook':r.attachments.length?'MD · PPTX':''}</span></div><h3>${esc(r.title)}</h3><p>${esc(r.summary)}</p><div class="chips">${r.companies.map(s=>mentions(r,s)?chip(s,'teal','company'):chip(s,'teal faint','company').replace('title="','title="점검 결과 ‘없음’으로만 언급 · ')).join('')}${r.tags.map(s=>chip(s,'','tag')).join('')}</div></button><button type="button" class="list-delete" data-hide-report="${esc(r.id)}" aria-label="${esc(r.title)} 목록에서 삭제" title="목록·관계·지도에서 숨기기 · 원본 보관 · 설정에서 복원">${deleteIcon}<span>삭제</span></button></div>`}
 function renderStats(rs){let c=catalog(),ids=new Set(rs.map(r=>r.id));let cos=new Set(rs.flatMap(realCompanies));let ev=c.events.filter(e=>ids.has(e.report_id)).length,rel=c.relations.filter(r=>ids.has(r.report_id)).length;
  $('#stats').innerHTML=[['리포트',rs.length,c.reports.length],['기업',cos.size,null],['사건',ev,null],['관계',rel,null]].map(([k,v,t])=>`<span class="stat"><span>${k}</span><b>${v}${t!=null&&t!==v?` <em>/ ${t}</em>`:''}</b></span>`).join('')}
 function saveStrict(){try{localStorage.setItem('av_strict',$('#strict').checked?'1':'0')}catch(e){}}
@@ -149,7 +172,7 @@ function render(){if(!state)return;renderSearchContext();
  if(tab==='timeline'){let es=catalog().events.filter(e=>ids.has(e.report_id)&&matches(e.title,e.detail,e.status,e.companies)).sort((a,b)=>$('#sort').value==='desc'?b.date.localeCompare(a.date):a.date.localeCompare(b.date));let month='';$('#results').innerHTML='<p class="small-note">사건 날짜와 보관 기록을 표시합니다. ‘보고일’은 사건 발생일이 아니며, 계획은 완료 사실과 구분합니다.</p><div class="timeline">'+es.map((e,i)=>{let m=e.date.slice(0,7),head=m!==month?`<div class="month">${esc(m.replace('-','년 '))}월</div>`:'';month=m;return head+`<div class="event ${e.status==='계획'?'plan':''}" style="--i:${i}"><button class="report-card ${selected===e.report_id?'selected':''}" data-report="${esc(e.report_id)}"><div class="card-head"><span class="report-date">${esc(e.date)}</span>${chip(e.status,e.status==='계획'?'amber':'teal')}</div><h3>${esc(e.title)}</h3><p>${esc(e.detail)}</p><div class="chips">${e.companies.map(c=>chip(c,'','company')).join('')}</div></button></div>`}).join('')+'</div>'+(es.length?'':'<div class="empty">이 조건에 미리 정리된 사건이 없습니다.</div>')}
  if(tab==='graph')renderGraph(ids);else if(tab==='map')renderMap(rs);else if(tab==='local')renderLocal();else if(tab==='outlook')renderOutlook();else if(tab==='rag')renderRag();else highlight($('#results'));
  bindChips($('#results'));
- $$('[data-report]').forEach(b=>b.onclick=()=>{selected=b.dataset.report;selectedRelation='';outlookLinkedReport='';networkSelection=null;render()});renderDetail();renderVisibilityControls();if(pdfLinksID)renderPDFLinksDialog();
+ $$('[data-report]').forEach(b=>b.onclick=()=>{selected=b.dataset.report;selectedRelation='';linkedReport='';networkSelection=null;render()});renderDetail();renderVisibilityControls();if(pdfLinksID)renderPDFLinksDialog();
 }
 // Saved source/reference edges are distinct from published company/event assertions.
 function buildDocumentNetwork(rs){
@@ -212,10 +235,22 @@ function renderGraph(ids){const label=id=>catalog().entities.find(n=>n.id===id)?
 }
 // Local indexed sources are a separate layer; similarities never become catalog facts.
 let mapMedia={loaded:false,loading:false,ok:false,docs:[],links:[]},mapMediaSelected='',mapMediaPage=1,mapMediaEdge=null;
+// Long local tasks return immediately; each poll fits within the server deadline.
+async function ragResult(result,onProgress=()=>{}){
+ while(result.job){
+  if(result.error||result.state==='error')throw Error(result.error||'작업에 실패했습니다.');
+  if(result.state==='done')return result.result;
+  onProgress(result);
+  await new Promise(resolve=>setTimeout(resolve,750));
+  result=await api('/api/rag/job?id='+encodeURIComponent(result.job));
+ }
+ if(result.error)throw Error(result.error);
+ return result;
+}
 async function loadMapMedia(force=false){
  if(mapMedia.loading||mapMedia.loaded&&!force)return;
  mapMedia.loading=true;
- try{const result=await api('/api/rag/map');mapMedia={loaded:true,loading:false,ok:!!result.ok,docs:result.docs||[],links:result.links||[]}}
+ try{const result=await ragResult(await api('/api/rag/map'));mapMedia={loaded:true,loading:false,ok:!!result.ok,docs:result.docs||[],links:result.links||[]}}
  catch(e){mapMedia={loaded:true,loading:false,ok:false,docs:[],links:[]}}
  if(mapMediaSelected&&!mapMedia.docs.some(d=>d.id===mapMediaSelected))mapMediaSelected='';
  if(mapMediaEdge&&!mapMedia.links.some(e=>e.from===mapMediaEdge.from&&e.to===mapMediaEdge.to))mapMediaEdge=null;
@@ -267,26 +302,34 @@ function renderMap(rs){
  if(!nodes.length)return;
  const svg=$('#results svg'),vp=svg.querySelector('.viewport'),L=$$('#results .ml'),N=$$('#results .mn');
  L.forEach((el,i)=>{if(!links[i].evidence)return;const choose=()=>{if(links[i].kind==='reference')return selectNetwork('link',links[i].evidence.id);networkSelection=null;mapMediaEdge=links[i].evidence;mapMediaSelected='';renderDetail()};el.onclick=choose;el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}}});
- let view={x:0,y:0,k:1},alpha=1,userView=false;const setView=()=>vp.setAttribute('transform',`translate(${view.x} ${view.y}) scale(${view.k})`);
+ let view={x:0,y:0,k:1},userView=false;const setView=()=>vp.setAttribute('transform',`translate(${view.x} ${view.y}) scale(${view.k})`);
  // Keep the whole graph in frame while it settles, until the user zooms or pans.
  const fit=()=>{let xs=nodes.map(n=>n.x),ys=nodes.map(n=>n.y),minx=Math.min(...xs)-60,maxx=Math.max(...xs)+60,miny=Math.min(...ys)-40,maxy=Math.max(...ys)+50;let k=Math.min(1.3,W/(maxx-minx),H/(maxy-miny));view={k,x:-(minx+maxx)/2*k,y:-(miny+maxy)/2*k};setView()};
  const draw=()=>{links.forEach((l,i)=>{let e=L[i];e.setAttribute('x1',l.a.x);e.setAttribute('y1',l.a.y);e.setAttribute('x2',l.b.x);e.setAttribute('y2',l.b.y)});nodes.forEach((n,i)=>{N[i].setAttribute('transform',`translate(${n.x} ${n.y})`);mapPos[n.id]={x:n.x,y:n.y}});if(!userView)fit()};
- const step=()=>{for(let i=0;i<nodes.length;i++){let a=nodes[i];for(let j=i+1;j<nodes.length;j++){let b=nodes[j],dx=b.x-a.x,dy=b.y-a.y;if(dx===0&&dy===0){dx=Math.random()-.5;dy=Math.random()-.5}let d2=Math.max(dx*dx+dy*dy,400),d=Math.sqrt(d2);let f=7000/d2;if(d<90)f*=2.5;let fx=dx/d*f,fy=dy/d*f;a.vx-=fx;a.vy-=fy;b.vx+=fx;b.vy+=fy}}
-  for(let l of links){let dx=l.b.x-l.a.x,dy=l.b.y-l.a.y,d=Math.hypot(dx,dy)||1,rest=l.kind==='related'?120:l.kind==='tag'?150:105;let f=(d-rest)*.012,fx=dx/d*f,fy=dy/d*f;l.a.vx+=fx;l.a.vy+=fy;l.b.vx-=fx;l.b.vy-=fy}
-  for(let n of nodes){n.vx-=n.x*.007;n.vy-=n.y*.007;if(n.fixed){n.vx=n.vy=0;continue}n.vx*=.82;n.vy*=.82;let sp=Math.hypot(n.vx,n.vy);if(sp>40){n.vx*=40/sp;n.vy*=40/sp}n.x+=n.vx*alpha;n.y+=n.vy*alpha}};
- let raf=0;const loop=()=>{step();draw();alpha=Math.max(alpha*.985,.08);raf=requestAnimationFrame(loop)};const stop=()=>{cancelAnimationFrame(raf);raf=0};const start=()=>{if(!raf)loop()};
- mapSim={stop};for(let i=0;i<60;i++)step();draw();start();setTimeout(stop,6000);
+ // Layout runs off the UI thread; draw at most once per animation frame.
+ let worker=null,raf=0;
+ const stop=()=>{worker?.terminate();worker=null;cancelAnimationFrame(raf);raf=0};
+ mapSim={stop};draw();
+ if(typeof Worker!=='undefined'){
+  worker=new Worker('/map-layout.js');
+  worker.onmessage=({data})=>{
+   nodes.forEach((n,i)=>{if(!n.fixed){n.x=data[i*2];n.y=data[i*2+1]}});
+   if(!raf)raf=requestAnimationFrame(()=>{raf=0;draw()});
+  };
+  worker.onerror=stop;
+  worker.postMessage({type:'init',nodes:nodes.map(n=>({x:n.x,y:n.y,vx:0,vy:0,fixed:false})),links:links.map(l=>({a:idx[l.a.id],b:idx[l.b.id],kind:l.kind}))});
+ }
  // Hover: keep the neighbourhood, dim the rest.
  const focus=n=>{svg.classList.toggle('focus',!!n);N.forEach((el,i)=>el.classList.toggle('on',!!n&&(nodes[i]===n||adj.get(n).has(nodes[i]))));L.forEach((el,i)=>el.classList.toggle('on',!!n&&(links[i].a===n||links[i].b===n)))};
  N.forEach((el,i)=>{const n=nodes[i];el.onmouseenter=()=>focus(n);el.onmouseleave=()=>focus(null);
   const act=()=>{if(n.kind==='media'){selectMapMedia(n.ref.id);N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n))}else if(n.kind==='mail'||n.kind==='pdf'){selectNetwork('node',n.id);N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n))}else if(n.kind==='report'){networkSelection=null;mapMediaSelected='';mapMediaEdge=null;selected=n.ref.id;selectedRelation='';N.forEach((x,j)=>x.classList.toggle('selected',nodes[j]===n));renderDetail()}else{let sel=$(n.kind==='company'?'#company':'#category');sel.value=sel.value===n.ref?'':n.ref;render()}};
   let moved=false;el.onpointerdown=e=>{e.stopPropagation();moved=false;n.fixed=true;el.setPointerCapture(e.pointerId);let sx=e.clientX,sy=e.clientY,ox=n.x,oy=n.y;const pt=svg.createSVGPoint();const scale=()=>{let r=svg.getBoundingClientRect();return W/r.width/view.k};
-   el.onpointermove=ev=>{if(!(ev.buttons&1))return;let s=scale();n.x=ox+(ev.clientX-sx)*s;n.y=oy+(ev.clientY-sy)*s;if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>3)moved=true;alpha=Math.max(alpha,.6);start();draw()};
-   el.onpointerup=()=>{el.onpointermove=null;n.fixed=false;setTimeout(stop,2500);if(!moved)act()}};
+   el.onpointermove=ev=>{if(!(ev.buttons&1))return;let s=scale();n.x=ox+(ev.clientX-sx)*s;n.y=oy+(ev.clientY-sy)*s;if(Math.abs(ev.clientX-sx)+Math.abs(ev.clientY-sy)>3)moved=true;worker?.postMessage({type:'drag',index:i,x:n.x,y:n.y,fixed:true});draw()};
+   el.onpointerup=()=>{el.onpointermove=null;n.fixed=false;worker?.postMessage({type:'drag',index:i,x:n.x,y:n.y,fixed:false});if(!moved)act()}};
   el.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();act()}}});
  svg.onwheel=e=>{e.preventDefault();userView=true;let r=svg.getBoundingClientRect(),mx=(e.clientX-r.left)/r.width*W-W/2,my=(e.clientY-r.top)/r.height*H-H/2;let k=Math.min(4,Math.max(.3,view.k*(e.deltaY<0?1.15:1/1.15)));view.x=mx-(mx-view.x)*k/view.k;view.y=my-(my-view.y)*k/view.k;view.k=k;setView()};
  svg.onpointerdown=e=>{if(e.target!==svg&&!e.target.classList.contains('viewport'))return;svg.setPointerCapture(e.pointerId);userView=true;let sx=e.clientX,sy=e.clientY,ox=view.x,oy=view.y,r=svg.getBoundingClientRect();svg.onpointermove=ev=>{if(!(ev.buttons&1))return;view.x=ox+(ev.clientX-sx)*W/r.width;view.y=oy+(ev.clientY-sy)*W/r.width;setView()};svg.onpointerup=()=>svg.onpointermove=null};
- $('#map-reset').onclick=()=>{nodes.forEach(n=>{n.x=(Math.random()-.5)*300;n.y=(Math.random()-.5)*300;n.vx=n.vy=0});alpha=1;userView=false;start();setTimeout(stop,6000)};
+ $('#map-reset').onclick=()=>{nodes.forEach(n=>{n.x=(Math.random()-.5)*300;n.y=(Math.random()-.5)*300;n.vx=n.vy=0});userView=false;worker?.postMessage({type:'reset'});draw()};
 }
 function markdown(text){
  text=String(text||'').replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/,'').replace(/<!--[\s\S]*?-->/g,'');let refs={};text=text.replace(/^\[([^\]]+)\]:\s*(https?:\/\/\S+)\s*$/gm,(_,id,u)=>{refs[id]=u;return ''});
@@ -304,7 +347,7 @@ function markdown(text){
   if(l.trim())out.push(`<p>${inline(l)}</p>`)}
  return out.join('');
 }
-function renderDetail(){if(tab==='local')return renderLocalDetail();if(tab==='rag')return renderRagDetail();if(networkView()&&renderNetworkDetail())return;if(tab==='map'&&networkSources.local&&(mapMediaEdge||mapMedia.docs.some(d=>d.id===mapMediaSelected)))return renderMapMediaDetail();let r=tab==='outlook'&&outlookLinkedReport===selected?reportOf(selected):catalog().reports.find(r=>r.id===selected);if(tab==='outlook'&&r&&reportSource(r)!=='outlook'&&outlookLinkedReport!==selected)r=null;if(networkView()&&r&&!filtered().some(x=>x.id===r.id))r=null;if(!r){$('#detail').innerHTML=tab==='outlook'?'<div class="empty">가져온 Outlook 리포트를 선택하면<br>본문과 원본 메일을 확인할 수 있습니다.</div>':'<div class="empty">리포트나 그래프의 연결을 선택하면<br>본문과 관련 내용을 볼 수 있습니다.</div>';return}
+function renderDetail(){if(tab==='local')return renderLocalDetail();if(tab==='rag')return renderRagDetail();if(networkView()&&renderNetworkDetail())return;if(tab==='map'&&networkSources.local&&(mapMediaEdge||mapMedia.docs.some(d=>d.id===mapMediaSelected)))return renderMapMediaDetail();let r=linkedReport===selected?reportOf(selected):catalog().reports.find(r=>r.id===selected);if(tab==='outlook'&&r&&reportSource(r)!=='outlook'&&linkedReport!==selected)r=null;if(networkView()&&r&&!filtered().some(x=>x.id===r.id))r=null;if(!r){$('#detail').innerHTML=tab==='outlook'?'<div class="empty">가져온 Outlook 리포트를 선택하면<br>본문과 원본 메일을 확인할 수 있습니다.</div>':'<div class="empty">리포트나 그래프의 연결을 선택하면<br>본문과 관련 내용을 볼 수 있습니다.</div>';return}
  let rel=catalog().relations.find(x=>x.id===selectedRelation);let related=catalog().related.filter(x=>x.from===r.id||x.to===r.id).map(x=>({r:catalog().reports.find(z=>z.id===(x.from===r.id?x.to:x.from)),reason:x.reason})).filter(x=>x.r);
  let same=catalog().reports.filter(x=>x.id!==r.id&&!related.some(t=>t.r.id===x.id)&&x.companies.some(c=>r.companies.includes(c))).slice(0,4);
  // Body first and fully expanded; linked issues follow as title-only cards (reason shown on hover).
@@ -355,11 +398,14 @@ async function loadImportedReports(){
  const note=$('#report-import-status');if(note&&importError)note.textContent=importError;
 }
 function updateCatalogView(){
- const options=networkView()?visibleCatalog({...state.snapshot.catalog,reports:[...state.snapshot.catalog.reports,...importedReports]}).reports:catalog().reports;
+ const options=visibleCatalog({...state.snapshot.catalog,reports:[...state.snapshot.catalog.reports,...importedReports]}).reports;
  for(let [id,values,label] of [['company',options.flatMap(r=>r.companies),'전체 기업'],['category',options.flatMap(r=>r.tags),'전체 분류']]){
   let el=$('#'+id),value=el.value;el.innerHTML=`<option value="">${label}</option>`+[...new Set(values)].sort().map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');el.value=values.includes(value)?value:'';
  }
- if(!catalog().reports.some(r=>r.id===selected)){selected=filtered()[0]?.id||'';selectedRelation=''}
+ if(!catalog().reports.some(r=>r.id===selected)&&!(linkedReport&&linkedReport===selected&&reportOf(selected))){
+  const representative=(tab==='search'||tab==='timeline')?dailyRepresentatives.get(selected):'';
+  selected=representative||filtered()[0]?.id||'';selectedRelation='';linkedReport='';
+ }
  render();
 }
 // The status poll also picks up preferences changed in another window. Ignore
@@ -376,7 +422,7 @@ async function refresh(force=false){
  state=next;if(!state.setup)await loadImportedReports();if(request!==refreshRequest)return;applyReportVisibility(state.report_visibility);showStatus({...state,synced_at:state.snapshot.synced_at});updateCatalogView();
 }
 // Tab is mirrored in the URL hash (#timeline, #graph, #map) so a view can be bookmarked or reloaded.
-function setTab(t){let b=$(`[data-tab="${t}"]`);if(!b)return;tab=t;networkSelection=null;$('#visibility-menu').open=false;history.replaceState(null,'',t==='search'?location.pathname:'#'+t);if(t==='map')mapMedia.loaded=false;render()}
+function setTab(t,reportID=''){let b=$(`[data-tab="${t}"]`);if(!b)return;tab=t;networkSelection=null;linkedReport=reportID;$('#visibility-menu').open=false;history.replaceState(null,'',t==='search'?location.pathname:'#'+t);if(t==='map')mapMedia.loaded=false;updateCatalogView()}
 $$('[data-tab]').forEach((b,i)=>{b.onclick=()=>setTab(b.dataset.tab);b.onkeydown=e=>{const tabs=$$('[data-tab]');let next;if(e.key==='ArrowDown')next=(i+1)%tabs.length;else if(e.key==='ArrowUp')next=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;else return;e.preventDefault();setTab(tabs[next].dataset.tab);tabs[next].focus()}});
 $('#filter-toggle').onclick=()=>{const panel=$('#filter-panel');panel.hidden=!panel.hidden;$('#filter-toggle').setAttribute('aria-expanded',String(!panel.hidden))};
 $('#filter-panel').onkeydown=e=>{if(e.key==='Escape'){$('#filter-panel').hidden=true;$('#filter-toggle').setAttribute('aria-expanded','false');$('#filter-toggle').focus()}};
@@ -412,7 +458,6 @@ async function autoInstall(){
 // Ordinary mail keeps metadata only; selected daily reports use a separate encrypted archive.
 const mailCache={},mailPool={};
 const fmtSize=n=>n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
-const reportOf=id=>catalog().reports.find(r=>r.id===id)||visibleCatalog(state.snapshot.catalog).reports.find(r=>r.id===id);
 async function loadLocal(){if(!state||state.setup)return;try{let v=await api('/api/local');local={available:v.available,reason:v.reason||'',files:v.files||[],mails:v.mails||[],sources:v.sources||[]}}catch(e){local={...local,available:false,reason:e.message}}render()}
 async function localDo(path,body,msg){try{let v=await api(path,body);if(msg)toast(msg);await loadLocal();return v}catch(e){toast(e.message)}}
 async function addFiles(list){if(!local.available)return toast(local.reason||'내 자료를 사용할 수 없습니다.');let ok=0,msgs=[];
@@ -428,9 +473,10 @@ function renderLocal(){$('#result-count').textContent=`PDF ${local.files.length}
  $('#result-count').textContent=`PDF ${fs.length}${fs.length!==local.files.length?' / '+local.files.length:''}개 · 이 PC에만 보관`;
  $('#results').innerHTML=`<p class="local-note">🔒 PDF를 이 PC의 현재 Windows 계정으로 암호화해 보관합니다. 리포트에 직접 연결하면 관계 그래프와 전체 지도에도 표시됩니다.</p>
  <div class="dropzone compact-dropzone" id="dropzone" tabindex="0" role="button" aria-label="PDF 추가"><b>＋ PDF 추가</b><span>파일 선택 또는 끌어다 놓기 · 최대 50MB</span></div>
- <div class="pdf-list">${fs.map(f=>`<div class="pdf-list-row ${localSel===f.id?'selected':''}"><button type="button" class="pdf-file" data-local="${esc(f.id)}" title="${esc(f.name)} · PDF 미리보기" aria-pressed="${localSel===f.id}"><span class="pdf-file-icon" aria-hidden="true">PDF</span><span class="pdf-file-text"><b>${esc(f.name)}</b><small>${esc(f.added.slice(0,10))} · ${fmtSize(f.size)}</small></span></button><div class="pdf-row-actions"><button type="button" class="pdf-links-button" data-local-links="${esc(f.id)}" aria-label="${esc(f.name)} 연결 리포트">연결 리포트 <span>${f.reports.filter(id=>!hiddenReports.has(id)).length}</span></button><button type="button" class="list-delete" data-delete-pdf="${esc(f.id)}" aria-label="${esc(f.name)} 이 PC에서 삭제" title="이 PC에 보관한 PDF 실제 삭제 · 되돌릴 수 없습니다" ${deletingPDFs.has(f.id)?'disabled':''}>${deleteIcon}<span>삭제</span></button></div></div>`).join('')||`<p class="small-note">${local.files.length?'파일명과 일치하는 PDF가 없습니다.':'아직 추가한 PDF가 없습니다.'}</p>`}</div>`;
+ <div class="pdf-list">${fs.length?`<table class="pdf-table" aria-label="보관한 PDF 파일"><thead><tr><th scope="col">이름</th><th scope="col" class="pdf-date">추가일</th><th scope="col" class="pdf-size">크기</th><th scope="col" class="pdf-links-cell">연결</th><th scope="col" class="pdf-actions-cell"><span class="sr-only">삭제</span></th></tr></thead><tbody>${fs.map(f=>`<tr class="pdf-list-row ${localSel===f.id?'selected':''}"><td><button type="button" class="pdf-file" data-local="${esc(f.id)}" title="${esc(f.name)} · ${esc(f.added.slice(0,10))} 추가 · ${fmtSize(f.size)} · PDF 미리보기" aria-pressed="${localSel===f.id}"><span class="pdf-file-icon" aria-hidden="true">PDF</span><span class="pdf-file-text"><b>${esc(f.name)}</b></span></button></td><td class="pdf-date">${esc(f.added.slice(0,10))}</td><td class="pdf-size">${fmtSize(f.size)}</td><td class="pdf-links-cell"><button type="button" class="pdf-links-button" data-local-links="${esc(f.id)}" aria-label="${esc(f.name)} 연결 리포트" title="연결 리포트 보기"><span>${f.reports.filter(id=>!hiddenReports.has(id)).length}</span></button></td><td class="pdf-actions-cell"><button type="button" class="list-delete" data-delete-pdf="${esc(f.id)}" aria-label="${esc(f.name)} 이 PC에서 삭제" title="이 PC에 보관한 PDF 실제 삭제 · 되돌릴 수 없습니다" ${deletingPDFs.has(f.id)?'disabled':''}>${deleteIcon}</button></td></tr>`).join('')}</tbody></table>`:`<p class="small-note">${local.files.length?'파일명과 일치하는 PDF가 없습니다.':'아직 추가한 PDF가 없습니다.'}</p>`}</div>`;
  const dz=$('#dropzone');dz.onclick=()=>$('#local-input').click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();dz.click()}};
  $$('[data-local]').forEach(b=>b.onclick=()=>{localSel=b.dataset.local;$$('[data-local]').forEach(x=>{x.setAttribute('aria-pressed',String(x===b));x.closest('.pdf-list-row').classList.toggle('selected',x===b)});renderLocalDetail()});
+ $$('.pdf-list-row').forEach(row=>row.onclick=e=>{if(!e.target.closest('button'))row.querySelector('[data-local]').click()});
  $$('[data-local-links]').forEach(b=>b.onclick=()=>{pdfLinksID=b.dataset.localLinks;renderPDFLinksDialog();$('#pdf-links-dialog').showModal()});
  $$('[data-delete-pdf]').forEach(b=>b.onclick=()=>deleteLocalPDF(local.files.find(f=>f.id===b.dataset.deletePdf)));
 }
@@ -452,6 +498,7 @@ function renderPDFLinksDialog(){
 $('#pdf-links-close').onclick=()=>$('#pdf-links-dialog').close();
 $('#pdf-links-dialog').addEventListener('close',()=>{pdfLinksID='';$('#pdf-links-content').replaceChildren()});
 let outlookConnectOpen=false,outlookConnectBusy=false,outlookConnectError='';
+function toggleOutlookConnection(open=!outlookConnectOpen){outlookConnectOpen=open;$('#outlook-connection-panel').hidden=!open;$('#outlook-import-toggle').setAttribute('aria-expanded',String(open));if(!open)$('#outlook-import-toggle').focus()}
 function renderOutlook(){
  const q=$('#outlook-query').value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean),match=(...fields)=>q.every(t=>fields.filter(Boolean).join(' ').toLocaleLowerCase().includes(t));
  const reports=catalog().reports.filter(r=>reportSource(r)==='outlook'&&match(r.title,r.mail?.subject,r.mail?.sender,r.mail?.folder,...r.tags)).sort((a,b)=>b.date.localeCompare(a.date));
@@ -459,25 +506,25 @@ function renderOutlook(){
  $('#result-count').textContent=`가져온 리포트 ${reports.length}개 · 연결된 메일 ${mails.length}개 · 연결 폴더 ${local.sources.filter(s=>s.folder_id).length}개`;
  if(!local.available){$('#results').innerHTML=`<div class="empty">${esc(local.reason||'Outlook 연결 정보를 불러오는 중입니다.')}</div>`;return}
  const has=s=>local.sources.some(x=>(x.folder_id||'')===(s.folder_id||'')&&((s.store_id&&x.store_id===s.store_id)||(s.path&&x.path&&x.path.toLowerCase()===s.path.toLowerCase())));
- $('#results').innerHTML=`<section class="outlook-connect-card"><div><h2>메일함에서 리포트 가져오기</h2><p>Outlook을 연결하고 가져올 폴더를 선택하세요.</p></div><button class="primary" id="outlook-connect" aria-expanded="${outlookConnectOpen}" aria-controls="outlook-connection-panel" ${outlookConnectBusy?'disabled':''}>${outlookConnectBusy?'Outlook 확인 중…':'Outlook 연동'}</button></section>
- <p class="small-note">클래식 Outlook의 선택한 폴더만 5분마다 확인합니다. REPORT_FORMAT 형식의 본문·MD 첨부만 리포트로 가져오며 일반 메일은 저장하지 않습니다. 자료는 이 PC에 암호화해 보관합니다.</p>
- <section id="outlook-connection-panel" class="outlook-connection-panel" ${outlookConnectOpen?'':'hidden'}><h3>연결할 메일함·파일 선택</h3><p class="small-note" role="status">${outlookConnectBusy?'메일함을 확인하고 있습니다.':esc(outlookConnectError)}</p>
+ $('#results').innerHTML=`<section class="outlook-import-area"><div class="outlook-import-bar"><button type="button" class="filter-toggle" id="outlook-import-toggle" aria-expanded="${outlookConnectOpen}" aria-controls="outlook-connection-panel">메일함에서 리포트 가져오기 <span aria-hidden="true">⌄</span></button><span class="outlook-folder-count">연결 폴더 ${local.sources.filter(s=>s.folder_id).length}개</span><button id="outlook-import-now" ${local.sources.some(s=>s.folder_id)?'':'disabled'}>지금 가져오기</button></div><p id="outlook-import-status" class="small-note" role="status"></p>
+ <section id="outlook-connection-panel" class="outlook-connection-panel" ${outlookConnectOpen?'':'hidden'}><p class="small-note">클래식 Outlook의 선택한 폴더만 5분마다 확인합니다. 데일리리포트 형식의 본문·MD 첨부만 가져오며 일반 메일은 저장하지 않습니다. 자료는 이 PC에 암호화해 보관합니다.</p><h3>연결된 메일함·폴더</h3>
+ ${local.sources.map((s,i)=>`<div class="mail-row"><span class="source-name">📬 <b>${esc(s.name)}</b><small>${s.folder_id?'자동 가져오기 · 태그: '+esc(s.folder_name):'메일 검색 연결 · 자동 가져오기는 폴더 선택 필요'}</small>${s.path?`<small>${esc(s.path)}</small>`:''}</span>${!s.folder_id?`<button class="text-button" data-source-folders="${i}">폴더 선택</button>`:''}<button class="text-button" data-src-remove="${i}">연결 해제</button></div>`).join('')||'<p class="small-note">지정된 메일 자료가 없습니다. 아래에서 메일함을 불러오거나 PST·OST 경로를 추가하세요.</p>'}
+ <h3>연결할 메일함·파일 선택</h3><p class="small-note">아래는 연결 가능한 후보입니다. 연결을 해제해도 Outlook 원본과 이미 가져온 리포트는 보관되며, 메일함은 후보 목록에 남습니다.</p><button id="outlook-connect" ${outlookConnectBusy?'disabled':''}>${outlookConnectBusy?'Outlook 확인 중…':'Outlook 메일함 불러오기'}</button><p class="small-note" role="status">${outlookConnectBusy?'메일함을 확인하고 있습니다.':esc(outlookConnectError)}</p>
  ${outlookStores?outlookStores.map((s,i)=>`<div class="mail-row"><span class="source-name">${esc(s.name)}${s.path?`<small>${esc(s.path)}</small>`:''}</span><button class="text-button" data-store-folders="${i}">폴더 선택</button></div>`).join('')||'<p class="small-note">연결할 메일함이 없습니다. 아래에서 PST·OST 파일을 지정할 수 있습니다.</p>':''}
- ${outlookFolders?`<div class="outlook-folders"><h4>가져올 폴더 선택</h4>${outlookFolders.map((s,i)=>`<div class="mail-row"><span class="source-name">${esc(s.name)}</span><button class="text-button" data-folder-add="${i}" ${has(s)?'disabled':''}>${has(s)?'가져오는 중':'이 폴더 추가'}</button></div>`).join('')||'<p>메일 폴더가 없습니다.</p>'}</div>`:''}
- ${outlookPathHtml()}<button id="outlook-connect-close" class="text-button">연결 설정 접기</button></section>
- <h3 class="local-h">연결된 메일함·폴더</h3>
- ${local.sources.map((s,i)=>`<div class="mail-row"><span class="source-name">📬 <b>${esc(s.name)}</b><small>${s.folder_id?'자동 가져오기 · 태그: '+esc(s.folder_name):'메일 검색 연결 · 자동 가져오기는 폴더 선택 필요'}</small>${s.path?`<small>${esc(s.path)}</small>`:''}</span>${!s.folder_id?`<button class="text-button" data-source-folders="${i}">폴더 선택</button>`:''}<button class="text-button" data-src-remove="${i}">제거</button></div>`).join('')||'<p class="small-note">지정된 메일 자료가 없습니다.</p>'}
- <div class="link-form"><button id="outlook-import-now" ${local.sources.some(s=>s.folder_id)?'':'disabled'}>Outlook 지금 가져오기</button></div><p id="outlook-import-status" class="small-note" role="status"></p>
- <h3 class="local-h">가져온 리포트</h3>${reports.map(reportCard).join('')||'<p class="small-note">표시할 Outlook 리포트가 없습니다. 폴더를 연결하거나 검색어를 확인하세요.</p>'}
+ ${outlookFolders?`<div class="outlook-folders"><h4>가져올 폴더 선택</h4>${outlookFolders.map((s,i)=>`<div class="mail-row"><span class="source-name">${esc(s.name)}</span><button class="text-button" data-folder-add="${i}" ${has(s)?'disabled':''}>${has(s)?'연결됨':'이 폴더 추가'}</button></div>`).join('')||'<p>메일 폴더가 없습니다.</p>'}</div>`:''}
+ ${outlookPathHtml()}<button id="outlook-connect-close" class="text-button">연결 설정 접기</button></section></section>
+ <h3 class="local-h">Outlook에서 가져온 리포트</h3><p class="small-note">데일리리포트 형식의 자료는 데일리리포트에도 표시합니다. 보고일과 본문이 같은 자료는 한 번만 표시하며, 가져온 내역과 원본 메일은 여기서 확인합니다.</p>${importError?`<p class="small-note error">${esc(importError)}</p>`:''}${reports.map(reportCard).join('')||'<p class="small-note">표시할 Outlook 리포트가 없습니다. 위의 ‘메일함에서 리포트 가져오기’를 열어 폴더를 설정하거나 검색어를 확인하세요.</p>'}
  <h3 class="local-h">리포트에 연결한 메일</h3>${mails.map(m=>mailRow(m,`<button class="text-button" data-goto-report="${esc(m.report)}">${esc(reportOf(m.report)?.title||m.report)}</button>`)).join('')||'<p class="small-note">표시할 연결 메일이 없습니다. 리포트 본문에서 관련 메일을 찾아 연결할 수 있습니다.</p>'}`;
- $$('[data-src-remove]').forEach(b=>b.onclick=()=>localDo('/api/outlook/source',{source:local.sources[+b.dataset.srcRemove],remove:true},'메일 자료 지정을 해제했습니다.'));
+ $$('[data-src-remove]').forEach(b=>b.onclick=()=>localDo('/api/outlook/source',{source:local.sources[+b.dataset.srcRemove],remove:true},'메일함 연결을 해제했습니다. Outlook 원본과 가져온 리포트는 보관됩니다.'));
  $$('[data-store-folders]').forEach(b=>b.onclick=()=>loadOutlookFolders(outlookStores[+b.dataset.storeFolders],b));
  $$('[data-source-folders]').forEach(b=>b.onclick=()=>loadOutlookFolders(local.sources[+b.dataset.sourceFolders],b));
  $$('[data-folder-add]').forEach(b=>b.onclick=()=>localDo('/api/outlook/source',{source:outlookFolders[+b.dataset.folderAdd]},'폴더를 추가했습니다. 자동으로 가져옵니다.'));
  $('#outlook-import-now').onclick=async()=>{try{await api('/api/outlook/import',{});outlookImportState={busy:true,message:'Outlook 폴더 확인을 요청했습니다…'};updateOutlookImportStatus()}catch(e){toast(e.message)}};
  updateOutlookImportStatus();
+ $('#outlook-import-toggle').onclick=()=>toggleOutlookConnection();
+ $('#outlook-connection-panel').onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();toggleOutlookConnection(false)}};
  $('#outlook-connect').onclick=connectOutlook;
- $('#outlook-connect-close').onclick=()=>{outlookConnectOpen=false;render();$('#outlook-connect').focus()};
+ $('#outlook-connect-close').onclick=()=>toggleOutlookConnection(false);
  bindOutlookPathForm();
 }
 async function connectOutlook(){
@@ -560,7 +607,7 @@ async function findMails(r,q=''){let d=Date.parse(r.date+'T00:00:00Z'),iso=t=>ne
  const redraw=()=>{if(selected===r.id&&tab!=='local')renderDetail()};mailCache[r.id]={loading:true,q,mails:[]};redraw();
  try{mailCache[r.id]={q,mails:(await api('/api/outlook/search',body)).mails||[]}}catch(e){mailCache[r.id]={q,mails:[],error:e.message}}redraw()}
 document.addEventListener('click',e=>{let o=e.target.closest('[data-mail-open]');if(o){api('/api/outlook/open',{mail:mailPool[o.dataset.mailOpen]}).then(()=>toast('Outlook에서 메일을 엽니다.'),x=>toast(x.message));return}
- let g=e.target.closest('[data-goto-report]');if(g){selected=g.dataset.gotoReport;selectedRelation='';if(tab==='outlook'){outlookLinkedReport=selected;renderDetail()}else setTab('search')}});
+ let g=e.target.closest('[data-goto-report]');if(g){selected=g.dataset.gotoReport;selectedRelation='';if(tab==='outlook'){linkedReport=selected;renderDetail()}else setTab(reportSource(reportOf(selected)||{})==='outlook'?'outlook':'search',selected)}});
 // Files dropped anywhere become 내 자료; the browser must never open or navigate to a dropped file.
 let dragDepth=0;const dragFiles=e=>[...(e.dataTransfer?.types||[])].includes('Files');
 addEventListener('dragenter',e=>{if(!dragFiles(e))return;e.preventDefault();if(state&&!state.setup&&tab!=='rag'){dragDepth++;$('#drop-overlay').hidden=false}});
@@ -578,12 +625,22 @@ async function importReportFiles(files){
  if(reportImportBusy)return toast('MD를 가져오는 중입니다. 완료 후 다시 놓아 주세요.');
  reportImportBusy=true;$('#report-import-button').disabled=true;
  const messages=[];let chosen='';$('#report-import-status').textContent='MD 형식을 확인하고 있습니다…';
- try{for(const file of files){
-  if(!/\.md$/i.test(file.name)||file.size>2*1048576){messages.push(`${file.name}: UTF-8 MD 파일(최대 2MB)을 선택하세요.`);continue}
-  try{const response=await fetch('/api/local/reports/import?name='+encodeURIComponent(file.name),{method:'POST',headers:{'X-AV-Request':'1','Content-Type':'text/markdown'},body:file});if(!response.ok)throw Error(await response.text());const result=await response.json();messages.push(`${file.name}: ${result.message||({added:'가져왔습니다.',updated:'같은 날짜의 로컬 리포트를 갱신했습니다.',unchanged:'이미 가져온 내용입니다.',kept:'기존 자료를 유지했습니다.'}[result.status]||result.status)}`);if(result.id)chosen=result.id}
-  catch(e){messages.push(`${file.name}: ${e.message}`)}
+ try{
+ const accepted=[];
+ for(const file of files){
+  if(!/\.md$/i.test(file.name)||file.size>2*1048576)messages.push(`${file.name}: UTF-8 MD 파일(최대 2MB)을 선택하세요.`);
+  else accepted.push(file);
  }
- await loadImportedReports();if(chosen){selected=chosen;selectedRelation='';for(const id of ['query','company','category','from','to'])$('#'+id).value='';setTab('search')}updateCatalogView();
+ while(accepted.length){
+  const batch=[],body=new FormData();let bytes=0;
+  while(accepted.length&&batch.length<256&&bytes+accepted[0].size<=24*1048576){const file=accepted.shift();batch.push(file);bytes+=file.size;body.append('files',file,file.name)}
+  try{
+   const response=await fetch('/api/local/reports/import-batch',{method:'POST',headers:{'X-AV-Request':'1'},body});
+   if(!response.ok)throw Error(await response.text());
+   for(const result of (await response.json()).results){messages.push(`${result.name}: ${result.message||({added:'가져왔습니다.',updated:'같은 날짜의 로컬 리포트를 갱신했습니다.',unchanged:'이미 가져온 내용입니다.',kept:'기존 자료를 유지했습니다.'}[result.status]||result.status)}`);if(result.id)chosen=result.id}
+  }catch(e){for(const file of batch)messages.push(`${file.name}: ${e.message}`)}
+ }
+ await loadImportedReports();if(chosen){selected=chosen;selectedRelation='';for(const id of ['query','company','category','from','to'])$('#'+id).value='';setTab('search',chosen)}updateCatalogView();
  }finally{reportImportBusy=false;$('#report-import-button').disabled=false;$('#report-import-status').textContent=messages.join('\n')}
 }
 $('#report-import-button').onclick=()=>$('#report-input').click();
@@ -603,7 +660,7 @@ async function renderRag(){if(!ragEnvironmentState)await pollRagEnvironment();if
  <div class="dropzone" id="rag-drop" tabindex="0" role="button" aria-label="PDF·이미지 색인"><b>PDF·이미지를 여기로 끌어다 놓거나 눌러서 선택</b><span>PNG · JPG · WebP · GIF · BMP · TIFF · AVIF · HEIC · ICO / 최대 50MB</span><span>PDF·TIFF는 모든 페이지, 움직이는 이미지는 첫 프레임을 색인합니다.</span></div>
  <form class="link-form" id="rag-query"><input name="q" placeholder="문장으로 검색 (예: 안전요원 없는 무인 운행 허가)" aria-label="AI 검색" value="${esc(rag.q)}"><button class="primary">검색</button></form>
  <div class="form-actions"><button type="button" class="text-button" id="rag-demo">보여 줘 · 모델·첫 페이지 임베딩·유사도</button><button type="button" class="text-button" id="rag-demo-fresh">다시 계산</button></div>
- <div id="rag-out">${rag.busy?`<p class="small-note">${esc(rag.busy)}</p>`:''}${ragDemoHtml()}${ragHitsHtml()}</div>
+ <p id="rag-job-progress" class="small-note" role="status">${rag.uploading?esc(rag.busy):''}</p><div id="rag-out">${rag.busy?`<p class="small-note">${esc(rag.busy)}</p>`:''}${ragDemoHtml()}${ragHitsHtml()}</div>
  <div class="form-actions"><h3 class="local-h">색인된 자료</h3><button class="text-button" id="rag-show-map">전체 지도에서 보기</button></div><p class="small-note">색인된 자료는 전체 지도에 자동으로 표시됩니다. 자료 사이의 유사도 연결은 확인된 기업·사건 관계와 구분합니다.</p>${(s.docs||[]).map(d=>`<div class="mail-row"><button class="mail-open" data-rag-open="${esc(d.id)}"><b>${d.kind==='image'?'🖼':'📄'} ${esc(d.name)}</b><small> ${d.pages}개 페이지 · ${fmtSize(d.size)} · 색인 ${fmtS(d.seconds)}</small></button><button class="text-button" data-rag-del="${esc(d.id)}" ${rag.uploading?'disabled':''}>삭제</button></div>`).join('')||'<p class="small-note">아직 색인된 PDF·이미지가 없습니다.</p>'}`;
  bindRagEnvironment();scheduleRagEnvironment();
  const drop=$('#rag-drop');drop.onclick=()=>$('#rag-input').click();drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();$('#rag-input').click()}};
@@ -621,7 +678,7 @@ function ragDemoHtml(){const d=rag.demo;if(!d)return'';const m=d.model||{},p=d.f
  ${(d.similarities||[]).length?`<h3 class="local-h">페이지 이미지와 문장의 유사도</h3><table class="rag-table">${d.similarities.map(x=>`<tr><th>${esc(x.label)}</th><td><b>${x.similarity.toFixed(4)}</b></td><td>${esc(x.sentence)}</td></tr>`).join('')}</table>`:''}</section>`}
 function ragHitsHtml(){if(!rag.hits.length)return rag.q&&!rag.busy?`<p class="small-note">‘${esc(rag.q)}’에 맞는 페이지가 없습니다.</p>`:'';
  return`<h3 class="local-h">‘${esc(rag.q)}’ 검색 결과</h3><div class="rag-hits">${rag.hits.map((h,i)=>`<button class="rag-hit" data-rag-hit="${i}"><img src="${esc(h.thumb)}" alt=""><span><b>${esc(h.name)}</b> ${ragPageLabel(h,h.page)}<small>유사도 ${h.similarity.toFixed(4)}</small></span></button>`).join('')}</div>`}
-async function ragDemo(fresh){rag.busy=fresh?'모델과 첫 페이지를 다시 계산하는 중… (CPU에서 수십 초)':'계산 결과를 불러오는 중…';render();try{const d=await api('/api/rag/demo'+(fresh?'?fresh=1':''));if(d.error)throw Error(d.error);rag.demo=d}catch(x){toast(x.message)}rag.busy='';render()}
+async function ragDemo(fresh){rag.busy=fresh?'모델과 첫 페이지를 다시 계산하는 중… (CPU에서 수십 초)':'계산 결과를 불러오는 중…';render();try{const d=await ragResult(await api('/api/rag/demo'+(fresh?'?fresh=1':'')));if(d.error)throw Error(d.error);rag.demo=d}catch(x){toast(x.message)}rag.busy='';render()}
 function ragWarn(){return new Promise(res=>{if(rag.warned)return res(true);const dlg=$('#rag-warning');const done=ok=>{dlg.close();if(ok&&$('#rag-warning-skip').checked)rag.warned=true;res(ok)};$('#rag-warning-ok').onclick=()=>done(true);$('#rag-warning-cancel').onclick=()=>done(false);dlg.oncancel=e=>{e.preventDefault();done(false)};dlg.showModal()})}
 async function ragAdd(files){
  if(rag.uploading)return toast('현재 파일의 색인이 끝난 뒤 추가해 주세요.');
@@ -632,7 +689,7 @@ async function ragAdd(files){
  try{
   if(!await ragWarn())return toast('취소했습니다. 아무것도 전송하지 않았습니다.');
   for(const f of files){if(f.size>50*1048576){toast(`${f.name}: 50MB를 넘습니다.`);continue}rag.busy=`${f.name} 색인 중… 페이지 수에 따라 몇 분 걸릴 수 있습니다.`;render();
-   try{const r=await fetch('/api/rag/index?name='+encodeURIComponent(f.name),{method:'POST',headers:{'X-AV-Request':'1','Content-Type':f.type||'application/octet-stream'},body:f});if(!r.ok)throw Error(await r.text());const v=await r.json();if(v.error)throw Error(v.error);invalidateMapMedia();toast(v.created?`${f.name}: ${v.pages}개 페이지 색인 완료 · 전체 지도에 표시됩니다.`:`${f.name}: 이미 색인된 자료입니다.`)}catch(x){toast(`${f.name}: ${x.message}`)}}
+   try{const r=await fetch('/api/rag/index?name='+encodeURIComponent(f.name),{method:'POST',headers:{'X-AV-Request':'1','Content-Type':f.type||'application/octet-stream'},body:f});if(!r.ok)throw Error(await r.text());const v=await ragResult(await r.json(),job=>{const note=$('#rag-job-progress');if(note)note.textContent=`${f.name} · ${job.pages_done||0}개 페이지 처리 완료`;});if(v.error)throw Error(v.error);invalidateMapMedia();toast(v.created?`${f.name}: ${v.pages}개 페이지 색인 완료 · 전체 지도에 표시됩니다.`:`${f.name}: 이미 색인된 자료입니다.`)}catch(x){toast(`${f.name}: ${x.message}`)}}
  }finally{rag.uploading=false;rag.busy='';await ragStatus();render()}
 }
 function renderRagDetail(){const h=rag.hit;if(!h){$('#detail').innerHTML='<div class="empty">검색 결과의 페이지를 누르면<br>여기에 크게 표시됩니다.</div>';return}

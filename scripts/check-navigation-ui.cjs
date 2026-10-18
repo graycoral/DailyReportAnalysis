@@ -61,7 +61,7 @@ async function noOverflow(page){
  await page.screenshot({path:path.join(build,'navigation-resizable.png'),fullPage:true});
 
  // Import through the retained action, then keep conditions across all report views.
- const imported=page.waitForResponse(r=>r.url().includes('/api/local/reports/import?'));
+ const imported=page.waitForResponse(r=>r.url().includes('/api/local/reports/import-batch'));
  await page.locator('#report-input').setInputFiles({name:'navigation.md',mimeType:'text/markdown',buffer:Buffer.from(fixture)});
  const response=await imported;assert.equal(response.status(),200,await response.text());
  await page.locator('#results [data-report="local-2026-10-15"]').waitFor();

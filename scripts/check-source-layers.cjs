@@ -14,8 +14,10 @@ context.imports=[{...report('outlook','Outlook 리포트','outlook-report'),mail
 context.saved={available:true,files:[{id:'pdf',name:'참고 <PDF>.pdf',reports:['published','outlook'],size:100},{id:'unlinked',name:'연결 없는 PDF.pdf',reports:[]}],mails:[{entry_id:'A2',store_id:'B1',subject:'사용자가 연결한 메일',report:'published'}],sources:[]};
 evaluate('state={snapshot:{catalog:raw}};importedReports=imports;local=saved');
 const original=JSON.stringify({raw:context.raw,imports:context.imports,saved:context.saved});
-// Existing search replacement semantics remain unchanged; original published evidence stays separate in maps.
-assert.deepEqual(plain(evaluate('catalog().reports.map(r=>r.id)')),['outlook','manual']);
+// The daily list deduplicates content; Outlook retains the imported source record.
+assert.deepEqual(plain(evaluate('catalog().reports.map(r=>r.id)')),['published','manual']);
+evaluate('tab="outlook"');
+assert.deepEqual(plain(evaluate('catalog().reports.map(r=>r.id)')),['outlook']);
 get('#sort').value='desc';
 for(const view of ['graph','map'])for(let mask=0;mask<8;mask++){
  evaluate(`tab='${view}';networkSources={daily:${!!(mask&1)},outlook:${!!(mask&2)},local:${!!(mask&4)}}`);

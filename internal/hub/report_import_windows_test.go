@@ -14,6 +14,26 @@ import (
 	"testing"
 )
 
+func TestMarkdownBatchPreservesLegacyOutlookAndDuplicateIDs(t *testing.T) {
+	a := localApp(t)
+	r, err := parseReport([]byte(importFixture), "report.md", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	legacy := importedReport{Report: r, Origin: "outlook-report", Hash: bodyHash(r.Body)}
+	if err = a.saveReports(reportArchive{Reports: []importedReport{legacy}}); err != nil {
+		t.Fatal(err)
+	}
+	results, err := a.importMarkdownBatch([]markdownFile{{"one.md", []byte(importFixture)}, {"duplicate.md", []byte(importFixture)}})
+	if err != nil || len(results) != 2 || results[0].Status != "added" || results[1].Status != "unchanged" || results[0].ID == legacy.ID || results[0].ID != results[1].ID {
+		t.Fatalf("batch identities: %+v %v", results, err)
+	}
+	x, err := (&App{dir: a.dir}).viewReports()
+	if err != nil || len(x.Reports) != 2 || x.Reports[0].ID != legacy.ID || x.Reports[0].Origin != "outlook-report" || x.Reports[1].Origin != "markdown" {
+		t.Fatalf("persisted origins: %+v %v", x, err)
+	}
+}
+
 func TestImportedReportsEncryptedSeparateAndPersistent(t *testing.T) {
 	a := localApp(t)
 	h := a.routes()

@@ -265,11 +265,7 @@ func (a *App) readPDF(id string) ([]byte, LocalFile, error) {
 	}
 	for _, f := range x.Files {
 		if f.ID == id {
-			c, e := os.ReadFile(a.blobPath(id))
-			if e != nil {
-				return nil, f, missing
-			}
-			b, e := unprotect(c)
+			b, e := a.pdfCache.read(a.blobPath(id), unprotect)
 			if e != nil {
 				return nil, f, errors.New("이 PDF는 추가한 Windows 계정에서만 열 수 있습니다.")
 			}
@@ -290,6 +286,7 @@ func (a *App) deletePDF(id string) error {
 	})
 	if e == nil {
 		e = os.Remove(a.blobPath(id))
+		a.pdfCache.discard(a.blobPath(id))
 		if os.IsNotExist(e) {
 			e = nil
 		}

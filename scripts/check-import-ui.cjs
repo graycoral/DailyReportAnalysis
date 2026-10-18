@@ -50,7 +50,8 @@ async function stop(){if(!viewer)return;const child=viewer;viewer=null;child.kil
  await page.route('**/api/outlook/folders',route=>route.fulfill({json:{folders:[folder]}}));
  await page.route('**/api/outlook/source',route=>{selectedSource=route.request().postDataJSON().source;sources=[selectedSource];return route.fulfill({json:{ok:true}})});
  await page.getByRole('tab',{name:'Outlook',exact:true}).click();
- await page.getByRole('button',{name:'Outlook 연동',exact:true}).click();
+ await page.locator('#outlook-import-toggle').click();
+ await page.getByRole('button',{name:'Outlook 메일함 불러오기',exact:true}).click();
  await page.getByRole('button',{name:'폴더 선택',exact:true}).click();
  await page.getByRole('button',{name:'이 폴더 추가',exact:true}).click();
  await page.getByText('자동 가져오기 · 태그: 자율주행',{exact:true}).waitFor();

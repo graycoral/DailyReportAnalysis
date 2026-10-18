@@ -71,11 +71,36 @@ func TestReportFormatImport(t *testing.T) {
 	}
 }
 
-func TestManualCorrectionWinsOverOutlook(t *testing.T) {
+func TestImportedOriginsStaySeparateAndPreserveLegacyIDs(t *testing.T) {
 	r, _ := parseReport([]byte(importFixture), "a.md", nil)
 	x := reportArchive{Reports: []importedReport{{Report: r, Origin: "markdown", Hash: "manual"}}}
-	if got := mergeImported(&x, importedReport{Report: r, Origin: "outlook-report", Hash: "mail"}); got != "kept" || x.Reports[0].Hash != "manual" {
-		t.Fatal("background mail replaced manual correction")
+	mail := importedReport{Report: r, Origin: "outlook-report", Hash: "mail", Mail: &MailRef{Received: "2026-10-15T10:00:00"}}
+	if got := mergeImported(&x, &mail); got != "added" || len(x.Reports) != 2 || mail.ID != "outlook-2026-10-15" || x.Reports[0].Hash != "manual" {
+		t.Fatal("Outlook and manual reports did not remain independent")
+	}
+	if got := mergeImported(&x, &mail); got != "unchanged" || len(x.Reports) != 2 {
+		t.Fatal("duplicate mail was added")
+	}
+	older := mail
+	older.Hash = "older"
+	older.Mail = &MailRef{Received: "2026-10-15T09:00:00"}
+	if got := mergeImported(&x, &older); got != "kept" {
+		t.Fatal("older mail replaced a newer edition")
+	}
+	// Existing Outlook records used local-DATE; neither links nor hidden preferences may break.
+	legacy := reportArchive{Reports: []importedReport{{Report: r, Origin: "outlook-report", Hash: "old"}}}
+	update := mail
+	if got := mergeImported(&legacy, &update); got != "updated" || update.ID != r.ID {
+		t.Fatal("legacy ID changed")
+	}
+	manual := importedReport{Report: r, Origin: "markdown", Hash: "manual"}
+	if got := mergeImported(&legacy, &manual); got != "added" || manual.ID == r.ID {
+		t.Fatal("manual import collided with a legacy Outlook ID")
+	}
+	manualID := manual.ID
+	manual.Hash = "correction"
+	if got := mergeImported(&legacy, &manual); got != "updated" || manual.ID != manualID || len(legacy.Reports) != 2 {
+		t.Fatal("manual correction lost its identity")
 	}
 }
 
