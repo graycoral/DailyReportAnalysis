@@ -9,3 +9,8 @@
 #data-trash-dialog{width:min(720px,92vw);max-height:85vh}#data-trash-list{max-height:50vh;overflow:auto;display:grid;gap:6px;padding:4px}
 .trash-item{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:12px}.trash-item b{overflow-wrap:anywhere;min-width:0}.trash-item small{white-space:nowrap}
 #data-trash-error{white-space:pre-line}.selection-toolbar button{font-size:12px}
+/* Keep selection tools contextual; preserve the mode and trash entry points. */
+.selection-toolbar{flex-shrink:0;justify-content:flex-end;padding:6px 14px}
+#selection-count{margin-right:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+.selection-hint{order:1;flex-basis:100%;line-height:1.5}
+@media(max-width:580px){.selection-toolbar{gap:6px;padding:6px 12px}.selection-toolbar button{padding:7px 9px;min-height:36px}#selection-count{flex-basis:100%}}

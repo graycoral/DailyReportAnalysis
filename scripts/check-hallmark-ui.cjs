@@ -4,7 +4,7 @@ const {spawn}=require('node:child_process'),{chromium}=require('playwright');
 const root=path.resolve(__dirname,'..'),out=path.join(root,'build/hallmark-review-ui');
 const profile=fs.mkdtempSync(path.join(os.tmpdir(),'avhub-hallmark-review-'));
 const wait=ms=>new Promise(r=>setTimeout(r,ms));let browser,viewer;
-const evidence={maps:[],contrast:[],errors:[]};
+const evidence={main:[],maps:[],contrast:[],errors:[]};
 async function contrast(page,selector,label){
  const values=await page.locator(selector).evaluateAll(elements=>elements.filter(e=>e.getBoundingClientRect().width).map(e=>{
   const rgba=s=>{const a=s.match(/[\d.]+/g).map(Number);return [...a.slice(0,3),a[3]??1]};
@@ -48,8 +48,36 @@ async function mapMetrics(page,label){
  const page=await context.newPage();page.on('pageerror',e=>evidence.errors.push(e.message));page.setDefaultTimeout(10000);
  await require('./ui-catalog-fixture.cjs')(page);
  await page.goto(instance.address+'/open?key='+encodeURIComponent(instance.key));await page.locator('#report-title').waitFor();
+ // The first report stays near the tools, even at 320px; no clipped navigation labels.
+ await page.locator('#tab-search').click();
+ assert.equal(await page.locator('#selection-delete').isVisible(),false);
+ assert.equal(await page.locator('#selection-clear').isVisible(),false);
+ assert.equal(await page.locator('#selection-hint').isVisible(),false);
+ for(const width of [1280,768,414,375,320]){
+  await page.setViewportSize({width,height:900});
+  const metrics=await page.evaluate(()=>{
+   const label=document.querySelector('#tab-search>span'),range=document.createRange();range.selectNodeContents(label);
+   const text=range.getBoundingClientRect(),button=label.parentElement.getBoundingClientRect();
+   return {width:innerWidth,pageWidth:document.documentElement.scrollWidth,firstCardY:document.querySelector('.report-card').getBoundingClientRect().top,labelFits:text.left>=button.left&&text.right<=button.right,lines:range.getClientRects().length};
+  });
+  assert.ok(metrics.pageWidth<=width+1,'main fits '+width);assert.ok(metrics.firstCardY<500,'report visible near tools: '+JSON.stringify(metrics));
+  assert.ok(metrics.labelFits&&metrics.lines===1,'navigation label fits on one line: '+JSON.stringify(metrics));
+  evidence.main.push(metrics);await page.screenshot({path:path.join(out,'main-'+width+'.png')});
+ }
+ await page.locator('#selection-mode').click();assert.equal(await page.locator('#selection-hint').isVisible(),true);
+ await page.locator('#results .report-card').first().focus();await page.keyboard.press('Enter');
+ assert.equal(await page.locator('#selection-delete').isVisible(),true);
+ await page.locator('#selection-clear').focus();await page.keyboard.press('Enter');
+ assert.equal(await page.locator('#selection-clear').isVisible(),false);
+ assert.equal(await page.locator('#selection-mode').evaluate(e=>e===document.activeElement),true,'clearing selection returns focus to a visible tool');
+ await page.locator('#results .report-card').first().focus();await page.keyboard.press('Enter');
+ await page.locator('#selection-delete').focus();await page.keyboard.press('Escape');
+ assert.equal(await page.locator('#selection-mode').evaluate(e=>e===document.activeElement),true,'Escape also keeps focus on a visible tool');
+ await page.locator('#selection-mode').click();await page.setViewportSize({width:1280,height:800});
  for(const theme of ['apple','apple-dark','classic']){
   await page.evaluate(t=>document.documentElement.dataset.theme=t,theme);
+  assert.equal(await page.locator('header').evaluate(e=>getComputedStyle(e).backdropFilter),'none');
+  assert.equal(await page.locator('header').evaluate(e=>getComputedStyle(e).backgroundColor.startsWith('rgb(')),true,'header is opaque');
   await page.locator('#tab-search').click();await contrast(page,'.chip.teal',theme+' tags');
   await page.locator('.downloads a').first().hover();await contrast(page,'.downloads a',theme+' download hover');
   await page.screenshot({path:path.join(out,'reader-'+theme+'.png')});

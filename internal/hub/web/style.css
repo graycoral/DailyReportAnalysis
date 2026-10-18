@@ -608,3 +608,34 @@ mark.rag-text-match{background:var(--rag-highlight);color:var(--rag-highlight-in
 .map-item-meta{font-size:12px;font-weight:400;line-height:1.6;color:var(--ink-2)}
 .map-list-back{margin-bottom:20px;min-height:44px}
 .map-report-summary{line-height:1.7;overflow-wrap:anywhere}
+
+/* Hallmark: restrained blue document workbench; a solid header and compact tools. */
+:root,:root[data-theme="apple"],:root[data-theme="apple-dark"]{--header-bg:var(--surface);--header-blur:none}
+:root[data-theme="classic"]{--header-bg:#002c5f;--header-blur:none}
+#viewer{grid-template-columns:88px minmax(0,1fr)}
+.query>span{display:flex;align-items:center;padding-left:12px}
+.query>span .ui-icon{width:18px;height:18px}
+.query button{display:grid;place-items:center;min-width:36px;min-height:36px;padding:6px;font-size:16px}
+#sync,#report-import-button{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.sync-light .ui-icon{width:13px;height:13px}
+.dialog-title button .ui-icon{width:20px;height:20px}
+.active-filters:empty{display:none}
+@media(max-width:850px){
+ #viewer{grid-template-columns:80px minmax(0,1fr)}
+ .tabs button,.nav-help,.nav-exit{font-size:10px}
+}
+@media(max-width:580px){
+ header{gap:12px}
+ .header-actions{flex-wrap:nowrap;gap:8px}
+ .sync-label-extra{display:none}
+ .sync-updated time{font-size:10px}
+ .header-actions>#sync{padding:7px 9px;font-size:11px;min-height:36px}
+ .toolbar{padding-top:8px;padding-bottom:8px}
+ .toolbar>#connections-open,#report-import-button{font-size:12px;padding:8px 10px;min-height:36px}
+ .query input{font-size:14px}
+ .filter-area{padding-bottom:8px}
+ .section-heading{margin-bottom:12px}
+ .section-title{gap:8px}
+ .stats{gap:6px 12px;font-size:11px;margin-top:8px}
+ .stat{gap:4px}.stat b{font-size:12px}
+}

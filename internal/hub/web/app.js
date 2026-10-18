@@ -25,6 +25,10 @@ const sourceLabel=source=>({outlook:'Outlook',daily:'데일리 리포트',local:
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const safeURL=s=>{try{let u=new URL(s);return ['https:','http:'].includes(u.protocol)?u.href:''}catch{return ''}};
 const uiIconPaths={
+ refresh:'M20 7v5h-5M4 17v-5h5M6 6a8 8 0 0 1 13 3M18 18A8 8 0 0 1 5 15',
+ check:'M5 12l4 4L19 6',
+ alert:'M12 5v9M12 18h.01',
+ minus:'M5 12h14',
  company:'M4 21V3h16v18M2 21h20M8 7h2m4 0h2M8 11h2m4 0h2M8 15h2m4 0h2M10 21v-3h4v3',
  person:'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM4 21v-2a8 8 0 0 1 16 0v2',
  pin:'M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 0 1 16 0ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
@@ -639,13 +643,13 @@ function showStatus(s){
  syncGitHubSettings(s.config||s);
  const disabled=['offline','auto_disabled','choice_required'].includes(lastSyncState),unavailable=['unavailable','offline','auto_disabled','choice_required','unconfigured'].includes(lastSyncState),button=$('#sync');
  button.disabled=!!(s.syncing||s.setup||disabled);
- button.textContent=s.syncing?'확인 중…':'↻ 지금 업데이트';
+ button.innerHTML=uiIcon('refresh')+' '+(s.syncing?'확인 중…':'지금 업데이트');
  button.title=disabled?'설정에서 GitHub 자료 연동을 켜고 저장하세요.':lastSyncState==='unconfigured'?'GitHub 연결 설정이 필요합니다.':unavailable?`${s.status||'GitHub 연결 불가'} · 눌러서 다시 확인`:'GitHub의 최신 자료를 확인합니다.';
  const signal=s.syncing?'checking':lastSyncState==='ready'?'ready':['unavailable','auto_disabled'].includes(lastSyncState)?'error':'idle';
  const message=s.syncing?'최신 자료 확인 중…':lastSyncState==='choice_required'?'GitHub 연동 선택 대기':lastSyncState==='auto_disabled'?'GitHub 연동 자동 꺼짐':lastSyncState==='offline'?'GitHub 연동 꺼짐':lastSyncState==='unconfigured'?'GitHub 연결 미설정':signal==='error'?'최신 자료 확인 실패':signal==='ready'?'최신 자료 확인 완료':'업데이트 확인 대기';
  const stamp=s.synced_at?new Date(s.synced_at):null,valid=stamp&&!Number.isNaN(stamp.getTime());
  const time=valid?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(stamp):'GitHub 확인 기록 없음';
- $('#sync-indicator').setAttribute('data-state',signal);$('#sync-symbol').textContent={checking:'↻',ready:'✓',error:'!',idle:'−'}[signal];
+ $('#sync-indicator').setAttribute('data-state',signal);$('#sync-symbol').innerHTML=uiIcon({checking:'refresh',ready:'check',error:'alert',idle:'minus'}[signal]);
  $('#sync-status').textContent=message;$('#sync-message').textContent=message;
  $('#sync-summary').title=message+' · 눌러서 자세히 보기';
  $('#sync-time').textContent=time;$('#sync-time').setAttribute('datetime',valid?stamp.toISOString():'');

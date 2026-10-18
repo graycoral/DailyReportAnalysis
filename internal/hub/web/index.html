@@ -3,13 +3,13 @@
 <body>
 <a class="skip-link" href="#view-panel">본문으로 건너뛰기</a>
 <header><div class="brand"><span class="brand-icon">AV</span><div><strong>리포트 아카이브</strong><small>DAILY REPORT ANALYSIS · <span data-app-version aria-label="실행 중인 앱 버전">버전 확인 중</span></small></div></div><div class="header-actions">
- <details id="sync-indicator" class="sync-indicator" data-state="checking"><summary id="sync-summary" title="자료 업데이트 상태 · 눌러서 자세히 보기"><span class="sync-light" aria-hidden="true" id="sync-symbol">↻</span><span id="sync-status" role="status" class="sr-only">로컬 자료 확인 중</span></summary><div class="sync-popover"><strong id="sync-message">로컬 자료 확인 중</strong><p id="sync-detail">상태를 불러오고 있습니다.</p></div></details>
- <div class="sync-updated"><span>마지막 업데이트 확인 · 한국시간</span><time id="sync-time">확인 기록 없음</time></div><button id="sync" class="ghost">↻ 지금 업데이트</button>
+ <details id="sync-indicator" class="sync-indicator" data-state="checking"><summary id="sync-summary" title="자료 업데이트 상태 · 눌러서 자세히 보기"><span class="sync-light" aria-hidden="true" id="sync-symbol"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 7v5h-5M4 17v-5h5M6 6a8 8 0 0 1 13 3M18 18A8 8 0 0 1 5 15"/></svg></span><span id="sync-status" role="status" class="sr-only">로컬 자료 확인 중</span></summary><div class="sync-popover"><strong id="sync-message">로컬 자료 확인 중</strong><p id="sync-detail">상태를 불러오고 있습니다.</p></div></details>
+ <div class="sync-updated"><span>마지막 <span class="sync-label-extra">업데이트 </span>확인<span class="sync-label-extra"> · 한국시간</span></span><time id="sync-time">확인 기록 없음</time></div><button id="sync" class="ghost"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 7v5h-5M4 17v-5h5M6 6a8 8 0 0 1 13 3M18 18A8 8 0 0 1 5 15"/></svg> 지금 업데이트</button>
 </div></header>
 <main id="viewer">
 <nav class="nav-rail" aria-label="화면 이동">
  <div class="tabs" role="tablist" aria-label="자료 보기" aria-orientation="vertical">
-  <button id="tab-search" role="tab" data-tab="search" aria-controls="view-panel" aria-selected="true" aria-label="데일리리포트" aria-describedby="report-unread-status" title="데일리리포트"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H5a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9l-6-6ZM14 3v6h6M8 13h8M8 17h8"/></svg><span>데일리<br>리포트</span><span id="report-unread-count" class="report-unread-count" aria-hidden="true" hidden></span></button>
+  <button id="tab-search" role="tab" data-tab="search" aria-controls="view-panel" aria-selected="true" aria-label="데일리리포트" aria-describedby="report-unread-status" title="데일리리포트"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H5a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9l-6-6ZM14 3v6h6M8 13h8M8 17h8"/></svg><span>데일리리포트</span><span id="report-unread-count" class="report-unread-count" aria-hidden="true" hidden></span></button>
   <button id="tab-timeline" role="tab" data-tab="timeline" aria-controls="view-panel" aria-selected="false" tabindex="-1" title="타임라인"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3v18M11 6h9M11 12h6M11 18h9"/><circle cx="6" cy="6" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="6" cy="18" r="1.5"/></svg><span>타임라인</span></button>
   <button id="tab-graph" role="tab" data-tab="graph" aria-controls="view-panel" aria-selected="false" tabindex="-1" aria-label="관계 그래프" title="관계 그래프 · 출처가 있는 기업과 사건의 연결"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 9 4M7 17l9-4M5 8v8"/><circle cx="5" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="12" r="3"/></svg><span>관계</span></button>
   <button id="tab-map" role="tab" data-tab="map" aria-controls="view-panel" aria-selected="false" tabindex="-1" aria-label="전체 지도" title="전체 지도 · 리포트와 자료를 한눈에"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2ZM9 3v16M15 5v16"/></svg><span>지도</span></button>
@@ -32,15 +32,15 @@
   <section class="settings-card"><div class="settings-card-heading"><h2>자료 연결 · 자동 업데이트</h2><p>GitHub 저장소와 매일 자료를 확인할 시간을 설정합니다.</p></div><div id="settings-slot"></div></section>
  </div></section>
  <section id="search-toolbar" class="toolbar">
-  <div id="report-query" class="query"><span aria-hidden="true">⌕</span><input id="query" aria-label="리포트 검색" placeholder="기업, 지역, 기술 또는 키워드를 검색하세요"><button id="clear" aria-label="검색어 지우기" title="검색어 지우기">×</button></div>
-  <div id="local-query-bar" class="query" hidden><span aria-hidden="true">⌕</span><input id="local-query" aria-label="내 자료 파일명 검색" placeholder="보관한 PDF 파일명을 검색하세요"><button id="local-clear" aria-label="파일명 검색어 지우기" title="파일명 검색어 지우기">×</button></div>
-  <div id="outlook-query-bar" class="query" hidden><span aria-hidden="true">⌕</span><input id="outlook-query" aria-label="Outlook 자료 검색" placeholder="가져온 리포트·연결된 메일의 제목, 발신자, 폴더 검색"><button id="outlook-clear" aria-label="Outlook 검색어 지우기" title="Outlook 검색어 지우기">×</button></div>
+  <div id="report-query" class="query"><span aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0ZM15 15l6 6"/></svg></span><input id="query" aria-label="리포트 검색" placeholder="기업, 지역, 기술 또는 키워드를 검색하세요"><button id="clear" aria-label="검색어 지우기" title="검색어 지우기"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div id="local-query-bar" class="query" hidden><span aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0ZM15 15l6 6"/></svg></span><input id="local-query" aria-label="내 자료 파일명 검색" placeholder="보관한 PDF 파일명을 검색하세요"><button id="local-clear" aria-label="파일명 검색어 지우기" title="파일명 검색어 지우기"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+  <div id="outlook-query-bar" class="query" hidden><span aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0ZM15 15l6 6"/></svg></span><input id="outlook-query" aria-label="Outlook 자료 검색" placeholder="가져온 리포트·연결된 메일의 제목, 발신자, 폴더 검색"><button id="outlook-clear" aria-label="Outlook 검색어 지우기" title="Outlook 검색어 지우기"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
   <button type="button" id="connections-open" aria-haspopup="dialog" aria-controls="connections-dialog">자료 연결</button>
-  <div id="report-import-panel"><button id="report-import-button" type="button" title="MD 리포트 가져오기 · UTF-8 · 최대 2MB · 화면에 끌어다 놓아도 됩니다">＋ 가져오기</button><input type="file" id="report-input" accept=".md,text/markdown" multiple hidden></div>
+  <div id="report-import-panel"><button id="report-import-button" type="button" title="MD 리포트 가져오기 · UTF-8 · 최대 2MB · 화면에 끌어다 놓아도 됩니다"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg> 가져오기</button><input type="file" id="report-input" accept=".md,text/markdown" multiple hidden></div>
  </section>
  <p id="report-import-status" role="status" aria-live="polite"></p>
  <section id="report-filters" class="filter-area" aria-label="리포트 검색 조건">
-  <div class="filter-bar"><button id="filter-toggle" class="filter-toggle" aria-expanded="false" aria-controls="filter-panel">검색 조건 <span aria-hidden="true">⌄</span></button><div id="active-filters" class="active-filters" aria-label="적용 중인 검색 조건"></div><button id="reset" class="text-button">초기화</button></div>
+  <div class="filter-bar"><button id="filter-toggle" class="filter-toggle" aria-expanded="false" aria-controls="filter-panel">검색 조건 <span aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg></span></button><div id="active-filters" class="active-filters" aria-label="적용 중인 검색 조건"></div><button id="reset" class="text-button">초기화</button></div>
   <div id="filter-panel" class="filters" hidden>
    <div class="filter-fields"><label>기업<select id="company"><option value="">전체 기업</option></select></label><label>분류<select id="category"><option value="">전체 분류</option></select></label><label>시작일<input type="date" id="from"></label><label>종료일<input type="date" id="to" aria-describedby="date-filter-error"></label></div>
    <details class="filter-options"><summary>상세 옵션 · 기업과 분류 빠른 선택</summary><label class="check strict"><input type="checkbox" id="strict" checked>‘신규 확인 사항 없음’만 있는 언급 제외<small>기업명이 점검 결과 ‘없음’ 줄에만 나오는 리포트는 검색·기업 필터·지도에서 뺍니다.</small></label><div id="tag-cloud" class="tag-cloud"></div></details>
@@ -53,7 +53,7 @@
 </section>
 </main>
 <dialog id="connections-dialog" aria-labelledby="connections-title" aria-describedby="connections-description">
- <div class="dialog-title"><h2 id="connections-title">자료 연결</h2><button id="connections-close" type="button" aria-label="자료 연결 닫기" autofocus>×</button></div>
+ <div class="dialog-title"><h2 id="connections-title">자료 연결</h2><button id="connections-close" type="button" aria-label="자료 연결 닫기" autofocus><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
  <p id="connections-description" class="small-note">메일 대화·동일 파일·문서 번호·기업 및 프로젝트 이름으로 관련 자료를 추천합니다. 모델이나 인터넷 연결 없이 동작하며, 확정한 연결만 지도에 표시합니다.</p>
  <details class="connections-scope"><summary>비교 범위 · 이 PC에 암호화 보관</summary><p class="small-note">선택한 Outlook 폴더의 메일 제목·발신자·날짜·대화 정보와 문서 첨부의 이름·지문을 보관합니다. 일반 메일 본문과 첨부 사본은 보관하지 않습니다. 추천에는 제목·파일명을 사용하며, 자료 원문으로 근거를 확인하세요.</p></details>
  <div class="connections-toolbar"><label>자료·연결 근거 검색<input id="connections-query" type="search" placeholder="기업, 프로젝트 번호, 제목"></label><label>처리 상태<select id="connections-filter"><option value="suggested">추천</option><option value="accepted">확정</option><option value="rejected">제외</option></select></label><button type="button" id="connections-refresh">새로고침</button></div>
@@ -62,7 +62,7 @@
  <div id="connections-list"></div>
 </dialog>
 <dialog id="help-dialog" aria-labelledby="help-title" aria-describedby="help-purpose">
- <div class="dialog-title"><h2 id="help-title">쉽게 시작하기</h2><button id="close-help" type="button" aria-label="도움말 닫기" autofocus>×</button></div>
+ <div class="dialog-title"><h2 id="help-title">쉽게 시작하기</h2><button id="close-help" type="button" aria-label="도움말 닫기" autofocus><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
  <p class="small-note">AV Report Hub <span data-app-version>버전 확인 중</span></p><p id="help-purpose">자율주행 소식과 자료를 모아 둔 책장이에요.<br>Outlook·MD 리포트를 읽고 PDF·노트와 연결할 수 있어요. GitHub 자료는 연동을 켰을 때만 표시해요.</p>
  <ol class="help-steps">
   <li><b>자료를 연결해요.</b> GitHub를 연동하거나 Outlook 메일함·PST 파일에서 리포트를 가져와요. 처음에 목록이 비어 있어도 정상이에요.</li>
@@ -71,10 +71,10 @@
  </ol>
  <div class="help-more"><p>처음 연결하는 방법부터 순서대로 안내해요.</p><a id="help-details" href="/help.html#start" target="_blank" rel="noopener">자세한 도움말 <span>처음 사용하기 ↗</span></a><a id="help-current" href="/help.html#search" target="_blank" rel="noopener">현재 화면 사용법 <span>새 탭에서 열기 ↗</span></a></div>
 </dialog>
-<dialog id="pdf-links-dialog" aria-labelledby="pdf-links-title"><div class="dialog-title"><h2 id="pdf-links-title">연결 리포트</h2><button id="pdf-links-close" type="button" aria-label="연결 리포트 닫기" autofocus>×</button></div><p id="pdf-links-name" class="pdf-links-name"></p><div id="pdf-links-content"></div></dialog>
-<dialog id="pdf-dialog" aria-labelledby="pdf-dialog-title"><div class="dialog-title"><h2 id="pdf-dialog-title">PDF 미리보기</h2><button id="pdf-dialog-close" type="button" aria-label="PDF 미리보기 닫기" autofocus>×</button></div><div id="pdf-dialog-preview"></div></dialog>
+<dialog id="pdf-links-dialog" aria-labelledby="pdf-links-title"><div class="dialog-title"><h2 id="pdf-links-title">연결 리포트</h2><button id="pdf-links-close" type="button" aria-label="연결 리포트 닫기" autofocus><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><p id="pdf-links-name" class="pdf-links-name"></p><div id="pdf-links-content"></div></dialog>
+<dialog id="pdf-dialog" aria-labelledby="pdf-dialog-title"><div class="dialog-title"><h2 id="pdf-dialog-title">PDF 미리보기</h2><button id="pdf-dialog-close" type="button" aria-label="PDF 미리보기 닫기" autofocus><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><div id="pdf-dialog-preview"></div></dialog>
 <dialog id="github-choice-dialog" aria-labelledby="github-choice-title" aria-describedby="github-choice-description">
- <div class="dialog-title"><h2 id="github-choice-title" tabindex="-1" autofocus>GitHub 자료를 연동할까요?</h2><button type="button" id="github-choice-later" aria-label="나중에 결정">×</button></div>
+ <div class="dialog-title"><h2 id="github-choice-title" tabindex="-1" autofocus>GitHub 자료를 연동할까요?</h2><button type="button" id="github-choice-later" aria-label="나중에 결정"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
  <p id="github-choice-version" class="github-choice-version"></p>
  <p id="github-choice-description">연동하면 GitHub에 게시된 리포트를 확인하고 새 자료를 받습니다. 연동하지 않으면 GitHub 리포트는 표시하지 않습니다. Outlook·직접 가져온 자료는 계속 사용할 수 있습니다.</p>
  <p class="note">선택은 이 버전에 대해 저장되며, 설정에서 언제든 바꿀 수 있습니다. 나중에 결정하면 선택할 때까지 연동을 보류합니다.</p>

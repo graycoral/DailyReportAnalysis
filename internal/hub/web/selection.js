@@ -49,6 +49,9 @@
   }
   const label = `${chosen.size}개 선택`;
   if ($('#selection-count').textContent !== label) $('#selection-count').textContent = label;
+  $('#selection-count').hidden = !chosen.size;
+  $('#selection-delete').hidden = $('#selection-clear').hidden = !chosen.size;
+  $('#selection-hint').hidden = !multiMode;
   $('#selection-mode').disabled=busy;$('#selection-mode').setAttribute('aria-pressed',String(multiMode));
   const hint=multiMode?'자료를 누르거나 Enter·Space로 선택·해제 · 선택을 마치면 여러 개 선택을 끄세요.':'Ctrl+클릭 여러 개 선택 · Delete 휴지통 · Shift+Delete 완전 삭제';
   if($('#selection-hint').textContent!==hint)$('#selection-hint').textContent=hint;
@@ -88,7 +91,10 @@
   if(e.key==='Delete'&&tab==='settings'&&restoreSelection.size&&!busy){e.preventDefault();remove([...restoreSelection].map(id=>report(id)||{kind:'report',id,title:id}),true);return;}
   if (e.key === 'Delete' && chosen.size && scope === tab && !busy) {
    e.preventDefault(); e.stopPropagation(); remove([...chosen.values()],e.shiftKey);
-  } else if (e.key === 'Escape' && chosen.size) { chosen.clear(); paint(); }
+  } else if (e.key === 'Escape' && chosen.size) {
+   const focusTool = e.target.matches('#selection-clear,#selection-delete');
+   chosen.clear(); paint(); if (focusTool) $('#selection-mode').focus();
+  }
  },true);
  async function change(x, action) {
   if (x.kind === 'report') {
@@ -138,7 +144,7 @@
  }
  $('#selection-delete').onclick = () => remove([...chosen.values()]);
  $('#selection-mode').onclick = () => {multiMode=!multiMode;paint()};
- $('#selection-clear').onclick = () => { chosen.clear(); paint(); };
+ $('#selection-clear').onclick = () => { chosen.clear(); paint(); $('#selection-mode').focus(); };
  $('#selection-trash').onclick = () => openTrash().catch(e => toast(e.message));
 
  const dialog = document.createElement('dialog'); dialog.id = 'data-trash-dialog'; dialog.setAttribute('aria-labelledby','data-trash-title');
