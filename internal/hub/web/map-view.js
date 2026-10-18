@@ -1,6 +1,29 @@
 'use strict';
 /* Hallmark · pre-emit critique: P4 H4 E4 S5 R4 V4 · existing workbench preserved */
 // Camera and labels only. Relationships and evidence remain owned by app.js.
+// Canvas measurement never forces SVG layout. Keep results across map rebuilds;
+// font and available width are part of the key, and the cache has a fixed bound.
+const mapLabelCache=new Map();
+let mapLabelCanvas;
+function mapLabel(label,limit,style){
+ const font=`${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+ const spacing=parseFloat(style.letterSpacing)||0,wordSpacing=parseFloat(style.wordSpacing)||0;
+ const key=JSON.stringify([label,limit,font,spacing,wordSpacing]);
+ if(mapLabelCache.has(key))return mapLabelCache.get(key);
+ const context=mapLabelCanvas||(mapLabelCanvas=document.createElement('canvas').getContext('2d'));
+ context.font=font;
+ const measure=text=>context.measureText(text).width+Math.max(0,Array.from(text).length-1)*spacing+(text.match(/ /g)||[]).length*wordSpacing;
+ let text=label,width=measure(text);
+ if(width>limit){
+  const chars=Array.from(label);let low=0,high=chars.length;
+  while(low<high){const mid=Math.ceil((low+high)/2);if(measure(chars.slice(0,mid).join('')+'…')<=limit)low=mid;else high=mid-1;}
+  text=chars.slice(0,low).join('')+'…';width=measure(text);
+ }
+ const result={text,width};
+ if(mapLabelCache.size>=5000)mapLabelCache.delete(mapLabelCache.keys().next().value);
+ mapLabelCache.set(key,result);return result;
+}
+document.fonts?.addEventListener('loadingdone',()=>mapLabelCache.clear());
 window.AVMapViewport=function({svg,nodes,links,adj,N}){
  const vp=svg.querySelector('.viewport'),host=svg.closest('.map'),viewer=document.querySelector('#viewer');
  const texts=N.map(el=>el.querySelector('text')),circles=N.map(el=>el.querySelector('circle'));
@@ -12,6 +35,9 @@ window.AVMapViewport=function({svg,nodes,links,adj,N}){
  const caption=host.querySelector('.map-caption');
  function labels(){
   const chosen=highlight||selected(),boxes=[],limit=Math.min(220,width-28);
+  // Read font variants before any SVG writes, not once per truncated character.
+  const styles=new Map(),fonts=N.map((el,i)=>{const key=el.getAttribute('class');if(!styles.has(key))styles.set(key,getComputedStyle(texts[i]));return styles.get(key)});
+  const measured=nodes.map((n,i)=>mapLabel(n.label,limit,fonts[i]));
   const positions=nodes.map(n=>({x:width/2+view.x+n.x*view.k,y:height/2+view.y+n.y*view.k}));
   const order=nodes.map((n,i)=>i).sort((a,b)=>{
    const rank=n=>n===chosen?4:chosen&&adj.get(chosen)?.has(n)?3:n.kind==='company'?2:1;
@@ -23,12 +49,8 @@ window.AVMapViewport=function({svg,nodes,links,adj,N}){
    text.setAttribute('transform',`scale(${1/view.k})`);text.setAttribute('text-anchor','start');
    text.style.visibility='hidden';
    if(p.x<0||p.x>width||p.y<0||p.y>height)continue;
-   if(text.dataset.width!==String(limit)){
-    text.textContent=n.label;let count=n.label.length;
-    while(text.getComputedTextLength()>limit&&count>3)text.textContent=n.label.slice(0,--count)+'…';
-    text.dataset.width=String(limit);text.dataset.measured=String(text.getComputedTextLength());
-   }
-   const w=+text.dataset.measured;
+   if(text.textContent!==measured[i].text)text.textContent=measured[i].text;
+   const w=measured[i].width;
    const candidates=[[radius+7,4],[-w/2,-radius-8],[-w/2,radius+18],[-w-radius-7,4]];
    for(const [dx,dy] of candidates){
     const box={left:p.x+dx-3,top:p.y+dy-13,right:p.x+dx+w+3,bottom:p.y+dy+4};
@@ -58,6 +80,7 @@ window.AVMapViewport=function({svg,nodes,links,adj,N}){
   if(manual)paint();else fit();
  }
  const observer=new ResizeObserver(resize);observer.observe(svg);
+ document.fonts?.addEventListener('loadingdone',resize);
  const button=id=>host.querySelector('#'+id);
  button('map-zoom-in').onclick=()=>zoom(1.3);button('map-zoom-out').onclick=()=>zoom(1/1.3);
  button('map-overview').onclick=()=>{overview=true;manual=false;fit()};
@@ -83,6 +106,6 @@ window.AVMapViewport=function({svg,nodes,links,adj,N}){
   dragScale(){manual=true;return 1/view.k},
   select(){if(disposed)return;overview=false;manual=false;if(viewer.classList.contains('map-expanded'))button('map-wide').click();fit()},
   reset(){manual=false;overview=false;fit()},
-  stop(){disposed=true;observer.disconnect()}
+  stop(){disposed=true;observer.disconnect();document.fonts?.removeEventListener('loadingdone',resize)}
  };
 };

@@ -28,20 +28,33 @@ export function relativePath(from, to) {
   }
   return [...a.map(() => ".."), ...b].join("/");
 }
+const noteIndexes = new WeakMap();
+export function createNoteIndex(notes) {
+  const paths = new Map(), titles = new Map();
+  for (const note of notes) {
+    const path = note.path.toLowerCase(), title = note.title.toLowerCase();
+    if (!paths.has(path)) paths.set(path, note);
+    // null deliberately represents an ambiguous title.
+    titles.set(title, titles.has(title) ? null : note);
+  }
+  return { paths, titles };
+}
 export function resolveNote(notes, from, target) {
+  let index = notes;
+  if (Array.isArray(notes)) {
+    index = noteIndexes.get(notes);
+    if (!index) noteIndexes.set(notes, (index = createNoteIndex(notes)));
+  }
   target = target.split("|")[0].split("#")[0].trim().replace(/\.md$/i, "");
   if (!target) return null;
   for (const p of [
     normalizePath(dirname(from) + "/" + target) + ".md",
     target + ".md",
   ]) {
-    const found = notes.find((n) => n.path.toLowerCase() === p.toLowerCase());
+    const found = index.paths.get(p.toLowerCase());
     if (found) return found;
   }
-  const matches = notes.filter(
-    (n) => n.title.toLowerCase() === target.toLowerCase(),
-  );
-  return matches.length === 1 ? matches[0] : null;
+  return index.titles.get(target.toLowerCase()) || null;
 }
 export function createMarkdown(context) {
   const md = new MarkdownIt({ html: false, linkify: true, breaks: true });

@@ -51,18 +51,23 @@
               # Only document attachments: embedded signature images are not evidence.
               # Read bytes in memory, retain a hash only; never create temporary copies.
               if ([string]$att.FileName -notmatch '\.(md|pdf|docx?|pptx?|xlsx?|txt|csv)$' -or $att.Size -gt 52428800) { continue }
-              if ($fingerprints.Count -ge 32 -or $hashedBytes + $att.Size -gt 52428800) { continue }
+              # Report extraction has its own 2MB / 8-file budget. Exhausting
+              # optional fingerprint work must never drop a report or advance
+              # its cursor past a failed read.
+              $readReport = [string]$att.FileName -match '\.md$' -and $att.Size -le 2097152 -and $attachments.Count -lt 8
+              $hashAttachment = $fingerprints.Count -lt 32 -and $hashedBytes + $att.Size -le 52428800
+              if (-not $readReport -and -not $hashAttachment) { continue }
               try { $data = [byte[]]$att.PropertyAccessor.GetProperty('http://schemas.microsoft.com/mapi/proptag/0x37010102') } catch {
-                if ([string]$att.FileName -match '\.md$') { $failed++; $retry = $true }
+                if ($readReport) { $failed++; $retry = $true }
                 continue
               }
-              $hashedBytes += $data.Length
-              if ($data.Length -gt 0) {
+              if ($hashAttachment -and $data.Length -gt 0 -and $hashedBytes + $data.Length -le 52428800) {
+                $hashedBytes += $data.Length
                 $sha = [Security.Cryptography.SHA256]::Create()
                 try { $hash = ([BitConverter]::ToString($sha.ComputeHash($data))).Replace('-', '').ToLowerInvariant() } finally { $sha.Dispose() }
                 [void]$fingerprints.Add(@{name=[string]$att.FileName; sha256=$hash})
               }
-              if ([string]$att.FileName -match '\.md$' -and $data.Length -le 2097152 -and $attachments.Count -lt 8) {
+              if ($readReport -and $data.Length -le 2097152) {
                 try { $text = (New-Object Text.UTF8Encoding($false, $true)).GetString($data) } catch { continue }
                 [void]$attachments.Add(@{ name=[string]$att.FileName; body=$text })
               }

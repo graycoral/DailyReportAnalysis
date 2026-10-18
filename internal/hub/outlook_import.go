@@ -10,8 +10,9 @@ import (
 	"time"
 )
 
-// Revisit selected folders once when embedded-message support is introduced.
-const outlookReaderVersion = 1
+// Revisit selected folders once after extraction fixes, including MD attachments
+// previously skipped when the optional fingerprint budget was exhausted.
+const outlookReaderVersion = 2
 
 type outlookImportStatus struct {
 	Busy     bool   `json:"busy"`

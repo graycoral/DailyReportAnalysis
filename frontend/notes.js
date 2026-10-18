@@ -1,5 +1,6 @@
 import { createNoteEditor } from "./note-editor.js";
 import { buildNoteNetwork } from "./note-network.js";
+import { createNoteListing } from "./note-listing.js";
 import {
   createMarkdown,
   escapeHTML as esc,
@@ -57,6 +58,7 @@ async function api(op = "", body) {
   }
   return response.json();
 }
+const listing = createNoteListing(since => api(since ? "?since=" + encodeURIComponent(since) : ""));
 function status(text, error = false) {
   if (!mounted) return;
   $("#note-status").textContent = text;
@@ -118,7 +120,7 @@ function mount() {
     change: () => changed(),
     composition(value) {
       composing = value;
-      if (!value && dirty) schedule();
+      if (!value && dirty) { schedule(); schedulePreview(); }
     },
     images: (files) => run(() => images(files))(),
     files: (files) => run(() => filesDropped(files))(),
@@ -198,7 +200,7 @@ function mount() {
   page.addEventListener("compositionstart", () => (composing = true));
   page.addEventListener("compositionend", () => {
     composing = false;
-    if (dirty) schedule();
+    if (dirty) { schedule(); schedulePreview(); }
   });
   try {
     const saved = localStorage.getItem("av_note_mode");
@@ -240,6 +242,7 @@ function setMode(value) {
   $("#note-editor-label").textContent =
     value === "live" ? "LIVE PREVIEW · 클릭한 문단을 편집합니다" : "MARKDOWN";
   editor?.mode(value);
+  updatePreview();
   try {
     localStorage.setItem("av_note_mode", value);
   } catch {}
@@ -315,7 +318,7 @@ function renderFilters() {
 }
 async function reload() {
   const request = ++listingRequest;
-  const data = await api();
+  const data = await listing(true);
   if (request !== listingRequest) return data;
   notes = data.notes;
   folders = data.folders;
@@ -335,7 +338,7 @@ async function show() {
   try {
     await reload();
     if (!current && notes.length && !switching) await openNote(notes[0].id);
-    else if (current) renderConnections();
+    else if (current) { renderConnections(); updatePreview(); }
   } catch (e) {
     status(e.message, true);
   } finally {
@@ -345,6 +348,7 @@ async function show() {
 function hide() {
   active = false;
   page.hidden = true;
+  clearTimeout(previewTimer);
 }
 function payload() {
   const title = $("#note-title").value.trim() || "제목 없음",
@@ -364,8 +368,18 @@ function payload() {
     version: current.version,
   };
 }
+let previewTimer, previewKey;
 function updatePreview() {
-  if (current) $("#note-preview").innerHTML = renderMD(editor.text());
+  clearTimeout(previewTimer);
+  if (!active || !current || (mode !== "split" && mode !== "read")) return;
+  const body = editor.text();
+  if (previewKey?.body === body && previewKey.path === current.path && previewKey.notes === notes) return;
+  $("#note-preview").innerHTML = renderMD(body);
+  previewKey = { body, path: current.path, notes };
+}
+function schedulePreview() {
+  clearTimeout(previewTimer);
+  if (!composing && active && (mode === "split" || mode === "read")) previewTimer = setTimeout(updatePreview, 150);
 }
 function changed() {
   if (!current) return;
@@ -375,7 +389,7 @@ function changed() {
     conflict ? "외부 변경이 있습니다. 비교 후 저장하세요." : "저장 대기 중…",
     conflict,
   );
-  if (!composing) updatePreview();
+  schedulePreview();
   schedule();
 }
 function schedule() {
@@ -923,7 +937,7 @@ window.AVNotes = {
   hide,
   flush,
   hasPending: () => dirty || !!saving || uploading > 0,
-  network: async () => buildNoteNetwork(await api()),
+  network: async () => buildNoteNetwork(await listing()),
   preview: (note, items) =>
     createMarkdown({ notes: () => items, path: () => note.path })(note.body),
   async open(id, target) {
@@ -951,7 +965,7 @@ window.AVNotes = {
       window.AVNotes.fromReport(report),
     );
     try {
-      const data = await api();
+      const data = await listing();
       if (!section.isConnected) return;
       const linked = data.notes.filter((n) => n.reports.includes(report.id));
       section.querySelector(".report-note-list").innerHTML =

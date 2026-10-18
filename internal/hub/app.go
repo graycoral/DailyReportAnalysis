@@ -40,6 +40,7 @@ type App struct {
 	syncLock             sync.Mutex
 	localMu              sync.Mutex
 	notesMu              sync.Mutex
+	notesCache           *noteCache
 	pdfCache             pdfCache
 	visibilityMu         sync.Mutex
 	syncing              bool

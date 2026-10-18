@@ -29,8 +29,10 @@ const noteMax = 2 << 20
 var errNoteConflict = errors.New("다른 창이나 편집기에서 파일이 변경되었습니다. 최신 내용과 비교하거나 내 내용을 사본으로 저장하세요.")
 var noteWiki = regexp.MustCompile(`\[\[([^\]\n]+)\]\]`)
 var noteLocalLink = regexp.MustCompile(`(!?\[[^\]\n]*\]\()([^\s)]+)(\))`)
+var noteReferenceLink = regexp.MustCompile(`(?m)^([ ]{0,3}\[(?:\\.|[^\]\\\r\n])+\]:[ \t]*(?:\r?\n[ ]{0,3})?)(<[^<>\r\n]+>|[^\s<>]+)`)
 var noteTag = regexp.MustCompile(`(?:^|\s)#([\p{L}\p{N}_/-]+)`)
 var noteIDPattern = regexp.MustCompile(`^n-[a-f0-9]{24}$`)
+var noteDevicePattern = regexp.MustCompile(`^(COM|LPT)[0-9¹²³]$`)
 
 type Note struct {
 	ID       string   `json:"id"`
@@ -58,6 +60,9 @@ type noteListing struct {
 	Notes    []Note   `json:"notes"`
 	Folders  []string `json:"folders"`
 	Warnings []string `json:"warnings"`
+	Revision string   `json:"revision,omitempty"`
+	Delta    bool     `json:"delta,omitempty"`
+	Deleted  []string `json:"deleted,omitempty"`
 }
 type noteTrash struct {
 	ID      string `json:"id"`
@@ -113,7 +118,7 @@ func noteClean(rel string) (string, error) {
 				bad = true
 			}
 		}
-		if bad || base == "CON" || base == "PRN" || base == "AUX" || base == "NUL" || regexp.MustCompile(`^(COM|LPT)[0-9¹²³]$`).MatchString(base) {
+		if bad || base == "CON" || base == "PRN" || base == "AUX" || base == "NUL" || noteDevicePattern.MatchString(base) {
 			return "", errors.New("폴더·파일 이름에 사용할 수 없는 문자가 있습니다.")
 		}
 	}
@@ -244,6 +249,9 @@ func noteEncode(n Note) []byte {
 	return []byte("---\n" + meta + "---\n" + body)
 }
 func noteScan(root string) (noteListing, error) {
+	return scanNotes(root, nil)
+}
+func scanNotes(root string, cache *noteCache) (noteListing, error) {
 	v := noteListing{Root: root, Notes: []Note{}, Folders: []string{}, Warnings: []string{}}
 	ids := map[string]string{}
 	err := filepath.WalkDir(root, func(p string, d fs.DirEntry, e error) error {
@@ -268,12 +276,16 @@ func noteScan(root string) (noteListing, error) {
 			}
 			return nil
 		}
-		if _, e = notePath(root, rel); e != nil {
-			v.Warnings = append(v.Warnings, rel+": "+e.Error())
-			if d.IsDir() {
-				return filepath.SkipDir
+		// Validate each directory once. Unchanged regular files need only a stat;
+		// changed files still pass the full path check before being read.
+		if d.IsDir() || d.Type()&os.ModeSymlink != 0 {
+			if _, e = notePath(root, rel); e != nil {
+				v.Warnings = append(v.Warnings, rel+": "+e.Error())
+				if d.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
 			}
-			return nil
 		}
 		if d.IsDir() {
 			if rel != "첨부" {
@@ -292,15 +304,28 @@ func noteScan(root string) (noteListing, error) {
 			v.Warnings = append(v.Warnings, rel+": 2MB를 초과해 열지 않았습니다.")
 			return nil
 		}
-		b, e := os.ReadFile(p)
-		if e != nil {
-			return e
+		var n Note
+		cached, reused := noteCacheEntry{}, false
+		if cache != nil {
+			cached, reused = cache.files[rel]
+			reused = reused && cached.info.Size() == info.Size() && cached.info.ModTime().Equal(info.ModTime()) && os.SameFile(cached.info, info)
 		}
-		if !utf8.Valid(b) {
-			v.Warnings = append(v.Warnings, rel+": UTF-8 파일이 아닙니다.")
-			return nil
+		if reused {
+			n = cached.note
+		} else {
+			b, err := noteRead(root, rel)
+			if err != nil {
+				return err
+			}
+			if !utf8.Valid(b) {
+				v.Warnings = append(v.Warnings, rel+": UTF-8 파일이 아닙니다.")
+				return nil
+			}
+			n = noteDecode(rel, b, info.ModTime())
 		}
-		n := noteDecode(rel, b, info.ModTime())
+		if cache != nil {
+			cache.scanned[rel] = noteCacheEntry{note: n, info: info}
+		}
 		if prev, ok := ids[n.ID]; ok {
 			return fmt.Errorf("노트 ID가 중복됩니다: %s, %s. 복사한 파일의 avhub_id 줄을 제거하세요.", prev, rel)
 		}
@@ -358,11 +383,37 @@ func noteRewrite(body, from, to, oldPath, newPath, id string, notes []Note) stri
 // Do not rename links inside code samples or user-owned YAML metadata.
 func noteProse(body string, transform func(string) string) string {
 	var out strings.Builder
+	var prose strings.Builder
+	flush := func() {
+		text := prose.String()
+		prose.Reset()
+		for len(text) > 0 {
+			start := strings.IndexByte(text, '`')
+			if start < 0 {
+				out.WriteString(transform(text))
+				break
+			}
+			count := 1
+			for start+count < len(text) && text[start+count] == '`' {
+				count++
+			}
+			end := strings.Index(text[start+count:], strings.Repeat("`", count))
+			if end < 0 {
+				out.WriteString(transform(text))
+				break
+			}
+			end += start + count + count
+			out.WriteString(transform(text[:start]))
+			out.WriteString(text[start:end])
+			text = text[end:]
+		}
+	}
 	fence := ""
 	front := strings.HasPrefix(body, "---\n")
 	for i, line := range strings.SplitAfter(body, "\n") {
 		trimmed := strings.TrimSpace(line)
 		if front {
+			flush()
 			out.WriteString(line)
 			if i > 0 && trimmed == "---" {
 				front = false
@@ -371,6 +422,7 @@ func noteProse(body string, transform func(string) string) string {
 		}
 		leading := len(line) - len(strings.TrimLeft(line, " "))
 		if leading <= 3 && (strings.HasPrefix(trimmed, "```") || strings.HasPrefix(trimmed, "~~~")) {
+			flush()
 			ch := trimmed[0]
 			count := 0
 			for count < len(trimmed) && trimmed[count] == ch {
@@ -385,30 +437,13 @@ func noteProse(body string, transform func(string) string) string {
 			continue
 		}
 		if fence != "" || strings.HasPrefix(line, "    ") || strings.HasPrefix(line, "\t") {
+			flush()
 			out.WriteString(line)
 			continue
 		}
-		for len(line) > 0 {
-			start := strings.IndexByte(line, '`')
-			if start < 0 {
-				out.WriteString(transform(line))
-				break
-			}
-			count := 1
-			for start+count < len(line) && line[start+count] == '`' {
-				count++
-			}
-			end := strings.Index(line[start+count:], strings.Repeat("`", count))
-			if end < 0 {
-				out.WriteString(transform(line))
-				break
-			}
-			end += start + count + count
-			out.WriteString(transform(line[:start]))
-			out.WriteString(line[start:end])
-			line = line[end:]
-		}
+		prose.WriteString(line)
 	}
+	flush()
 	return out.String()
 }
 func noteRewriteLinks(body, from, to, oldPath, newPath, id string, notes []Note) string {
@@ -425,20 +460,32 @@ func noteRewriteLinks(body, from, to, oldPath, newPath, id string, notes []Note)
 		}
 		return m
 	})
-	return noteLocalLink.ReplaceAllStringFunc(body, func(m string) string {
-		parts := noteLocalLink.FindStringSubmatch(m)
-		u, e := url.Parse(parts[2])
+	rewriteTarget := func(value string) string {
+		u, e := url.Parse(value)
 		if e != nil || u.IsAbs() || u.Host != "" || u.Path == "" || strings.HasPrefix(u.Path, "/") {
-			return m
+			return value
 		}
 		target := path.Clean(path.Join(path.Dir(from), u.Path))
 		if strings.EqualFold(target, oldPath) {
 			target = newPath
 		} else if from == to {
-			return m
+			return value
 		}
 		u.Path = noteRelative(to, target)
-		return parts[1] + u.String() + parts[3]
+		u.RawPath = ""
+		return u.String()
+	}
+	body = noteLocalLink.ReplaceAllStringFunc(body, func(m string) string {
+		parts := noteLocalLink.FindStringSubmatch(m)
+		return parts[1] + rewriteTarget(parts[2]) + parts[3]
+	})
+	return noteReferenceLink.ReplaceAllStringFunc(body, func(m string) string {
+		parts := noteReferenceLink.FindStringSubmatch(m)
+		target := parts[2]
+		if strings.HasPrefix(target, "<") {
+			return parts[1] + "<" + rewriteTarget(target[1:len(target)-1]) + ">"
+		}
+		return parts[1] + rewriteTarget(target)
 	})
 }
 func noteHistory(root string, n Note) error {
@@ -559,14 +606,16 @@ func (a *App) noteSave(root string, in noteInput) (Note, error) {
 	if !utf8.ValidString(in.Body) || len(in.Body) > noteMax-4096 {
 		return Note{}, errors.New("노트는 UTF-8, 2MB 이하로 작성하세요.")
 	}
-	v, e := noteScan(root)
-	if e != nil {
-		return Note{}, e
+	c := a.noteStore(root)
+	if !c.ready {
+		if e := c.scan(); e != nil {
+			return Note{}, e
+		}
 	}
 	n := Note{ID: "n-" + noteRandom(), Path: rel, Body: in.Body, Tags: noteStrings(in.Tags), Reports: noteStrings(in.Reports)}
 	var old Note
 	if in.ID != "" {
-		old, e = noteFind(v.Notes, in.ID)
+		old, e = a.noteGet(root, in.ID)
 		if e != nil {
 			return Note{}, errNoteConflict
 		}
@@ -575,9 +624,19 @@ func (a *App) noteSave(root string, in noteInput) (Note, error) {
 		}
 		n.ID = old.ID
 	}
-	for _, other := range v.Notes {
-		if strings.EqualFold(other.Path, rel) && other.ID != n.ID {
-			return Note{}, errors.New("같은 경로의 노트가 있습니다. 다른 이름을 사용하세요.")
+	if existing, ok := c.paths[strings.ToLower(rel)]; ok {
+		if c.files[existing].note.ID != n.ID {
+			p, err := notePath(root, existing)
+			if err != nil {
+				return Note{}, err
+			}
+			if _, err := os.Stat(p); os.IsNotExist(err) {
+				c.remove(existing)
+			} else if err != nil {
+				return Note{}, err
+			} else {
+				return Note{}, errors.New("같은 경로의 노트가 있습니다. 다른 이름을 사용하세요.")
+			}
 		}
 	}
 	if len(n.Tags) > 100 || len(n.Reports) > 100 {
@@ -588,6 +647,10 @@ func (a *App) noteSave(root string, in noteInput) (Note, error) {
 		// Windows case-only renames are ambiguous across file systems; require a distinct intermediate name.
 		if strings.EqualFold(old.Path, rel) {
 			return Note{}, errors.New("대소문자만 바꾸려면 다른 이름으로 변경한 뒤 다시 바꾸세요.")
+		}
+		v, e := a.noteList(root, "")
+		if e != nil {
+			return Note{}, e
 		}
 		n.Body = noteRewrite(n.Body, old.Path, rel, old.Path, rel, n.ID, v.Notes)
 		for _, other := range v.Notes {
@@ -622,10 +685,10 @@ func (a *App) noteSave(root string, in noteInput) (Note, error) {
 	} else {
 		changes = append(changes, noteChange{rel, old.raw, raw})
 	}
-	if e = noteCommit(root, changes); e != nil {
+	if e = a.noteCommit(root, changes); e != nil {
 		return Note{}, e
 	}
-	return noteDecode(rel, raw, time.Now()), nil
+	return a.noteStore(root).files[rel].note, nil
 }
 func (a *App) notesRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/notes", a.notesHandler)
@@ -633,7 +696,14 @@ func (a *App) notesRoutes(mux *http.ServeMux) {
 }
 func (a *App) notesHandler(w http.ResponseWriter, r *http.Request) {
 	a.notesMu.Lock()
-	defer a.notesMu.Unlock()
+	locked := true
+	unlock := func() {
+		if locked {
+			locked = false
+			a.notesMu.Unlock()
+		}
+	}
+	defer unlock()
 	root, e := a.notesRoot()
 	if e != nil {
 		http.Error(w, e.Error(), 500)
@@ -657,6 +727,7 @@ func (a *App) notesHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	fail := func(err error) {
+		unlock()
 		code := 400
 		if errors.Is(err, errNoteConflict) {
 			code = 409
@@ -669,20 +740,16 @@ func (a *App) notesHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			fail(err)
 		} else {
+			unlock()
 			writeResponse(w, value)
 		}
 	}
 	switch op {
 	case "":
-		v, e := noteScan(root)
+		v, e := a.noteList(root, r.URL.Query().Get("since"))
 		respond(v, e)
 	case "get":
-		v, e := noteScan(root)
-		if e != nil {
-			fail(e)
-			return
-		}
-		n, e := noteFind(v.Notes, r.URL.Query().Get("id"))
+		n, e := a.noteGet(root, r.URL.Query().Get("id"))
 		respond(n, e)
 	case "save":
 		n, e := a.noteSave(root, in)
@@ -698,12 +765,7 @@ func (a *App) notesHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		respond(map[string]bool{"ok": true}, e)
 	case "delete":
-		v, e := noteScan(root)
-		if e != nil {
-			fail(e)
-			return
-		}
-		n, e := noteFind(v.Notes, in.ID)
+		n, e := a.noteGet(root, in.ID)
 		if e != nil {
 			fail(e)
 			return
@@ -725,7 +787,7 @@ func (a *App) notesHandler(w http.ResponseWriter, r *http.Request) {
 			fail(e)
 			return
 		}
-		e = noteCommit(root, []noteChange{{n.Path, n.raw, nil}})
+		e = a.noteCommit(root, []noteChange{{n.Path, n.raw, nil}})
 		respond(map[string]bool{"ok": true}, e)
 	case "trash":
 		items := []noteTrash{}
@@ -785,7 +847,7 @@ func (a *App) notesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		n := noteDecode(t.Path, raw, time.Now())
-		v, e := noteScan(root)
+		v, e := a.noteList(root, "")
 		if e != nil {
 			fail(e)
 			return
@@ -809,7 +871,7 @@ func (a *App) notesHandler(w http.ResponseWriter, r *http.Request) {
 			n.Body = noteRewrite(n.Body, t.Path, n.Path, t.Path, n.Path, n.ID, append(v.Notes, n))
 			raw = noteEncode(n)
 		}
-		e = noteCommit(root, []noteChange{{n.Path, nil, raw}})
+		e = a.noteCommit(root, []noteChange{{n.Path, nil, raw}})
 		if e == nil {
 			e = os.Remove(filepath.Join(p, "info.json"))
 		}
@@ -868,7 +930,7 @@ func (a *App) notesHandler(w http.ResponseWriter, r *http.Request) {
 				fail(e)
 				return
 			}
-			listing, scanErr := noteScan(root)
+			listing, scanErr := a.noteList(root, "")
 			if scanErr != nil {
 				fail(scanErr)
 				return
@@ -996,6 +1058,7 @@ func (a *App) notesHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		f.Seek(0, 0)
 		w.Header().Set("Content-Type", mime)
+		unlock()
 		http.ServeContent(w, r, path.Base(rel), info.ModTime(), f)
 	default:
 		http.NotFound(w, r)

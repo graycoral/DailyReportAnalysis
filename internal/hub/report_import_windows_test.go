@@ -235,7 +235,33 @@ func TestOutlookBridgeFolderPagination(t *testing.T) {
 	old := outlookScript
 	defer func() { outlookScript = old }()
 	start := "try { $ol = New-Object -ComObject Outlook.Application; $ns = $ol.GetNamespace('MAPI') } catch { Fail 'com' $_.Exception.Message }"
-	fixture := `
+
+	if !strings.Contains(outlookScript, start) {
+		t.Fatal("bridge preamble changed")
+	}
+	outlookScript = strings.Replace(outlookScript, start, outlookBridgeFixture, 1)
+	req := outlookReq{Op: "reports", Sources: []OutlookSource{{StoreID: "00AA", FolderID: "00BB", FolderName: "자율주행"}}, Limit: 1, Terms: []string{importFixture}}
+	var first outlookBatch
+	if e := runOutlook(context.Background(), req, &first); e != nil {
+		t.Fatal(e)
+	}
+	if first.Failed != 0 || len(first.Items) != 1 || !first.Pending || first.Items[0].Mail.EntryID != "00CC" || len(first.Items[0].Attachments) != 1 || first.Items[0].Attachments[0].Body != importFixture {
+		t.Fatalf("first batch: %+v", first)
+	}
+	if first.Items[0].Conversation != "0123456789ABCDEF0123456789ABCDEF" || len(first.Items[0].Fingerprints) != 1 || first.Items[0].Fingerprints[0].SHA256 != digest(importFixture) {
+		t.Fatal("conversation ID or attachment fingerprint missing from Outlook bridge")
+	}
+	req.Cursors = first.Cursors
+	var second outlookBatch
+	if e := runOutlook(context.Background(), req, &second); e != nil {
+		t.Fatal(e)
+	}
+	if second.Failed != 0 || len(second.Items) != 1 || second.Items[0].Mail.EntryID != "00DD" || len(second.Cursors["00BB"].IDs) != 2 {
+		t.Fatalf("second batch: %+v", second)
+	}
+}
+
+const outlookBridgeFixture = `
 $store=[pscustomobject]@{StoreID='00AA'}
 $columns=[pscustomobject]@{}
 $columns|Add-Member ScriptMethod Add {param($name)}
@@ -257,27 +283,3 @@ $ns=[pscustomobject]@{Stores=@($store);folder=$folder;item=[pscustomobject]@{Bod
 $ns|Add-Member ScriptMethod GetFolderFromID {param($id,$store) if($id -ne '00BB'){throw 'wrong folder'};return $this.folder}
 $ns|Add-Member ScriptMethod GetItemFromID {param($id,$store) return $this.item}
 `
-	if !strings.Contains(outlookScript, start) {
-		t.Fatal("bridge preamble changed")
-	}
-	outlookScript = strings.Replace(outlookScript, start, fixture, 1)
-	req := outlookReq{Op: "reports", Sources: []OutlookSource{{StoreID: "00AA", FolderID: "00BB", FolderName: "자율주행"}}, Limit: 1, Terms: []string{importFixture}}
-	var first outlookBatch
-	if e := runOutlook(context.Background(), req, &first); e != nil {
-		t.Fatal(e)
-	}
-	if first.Failed != 0 || len(first.Items) != 1 || !first.Pending || first.Items[0].Mail.EntryID != "00CC" || len(first.Items[0].Attachments) != 1 || first.Items[0].Attachments[0].Body != importFixture {
-		t.Fatalf("first batch: %+v", first)
-	}
-	if first.Items[0].Conversation != "0123456789ABCDEF0123456789ABCDEF" || len(first.Items[0].Fingerprints) != 1 || first.Items[0].Fingerprints[0].SHA256 != digest(importFixture) {
-		t.Fatal("conversation ID or attachment fingerprint missing from Outlook bridge")
-	}
-	req.Cursors = first.Cursors
-	var second outlookBatch
-	if e := runOutlook(context.Background(), req, &second); e != nil {
-		t.Fatal(e)
-	}
-	if second.Failed != 0 || len(second.Items) != 1 || second.Items[0].Mail.EntryID != "00DD" || len(second.Cursors["00BB"].IDs) != 2 {
-		t.Fatalf("second batch: %+v", second)
-	}
-}

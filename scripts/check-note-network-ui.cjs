@@ -116,11 +116,12 @@ async function waitFor(fn) {
   await page.waitForFunction(() => document.querySelectorAll('.mn.note').length === 0);
   await api('root', { root: listing.root });
   await page.waitForFunction(() => document.querySelectorAll('.mn.note').length === 4);
-  await page.route('**/api/notes', route => route.fulfill({ status: 503, body: '노트 저장 폴더를 읽을 수 없습니다.' }));
+  const listingRoute = /\/api\/notes\/?(?:\?.*)?$/;
+  await page.route(listingRoute, route => route.fulfill({ status: 503, body: '노트 저장 폴더를 읽을 수 없습니다.' }));
   await page.locator('#source-notes').uncheck(); await page.locator('#source-notes').check();
   await page.locator('[data-note-network-refresh]').waitFor();
   assert.equal(await page.locator('.mn.note').count(), 0, 'failed reads never retain stale note edges');
-  await page.unroute('**/api/notes');
+  await page.unroute(listingRoute);
   await page.locator('[data-note-network-refresh]').click();
   await page.waitForFunction(() => document.querySelectorAll('.mn.note').length === 4);
   await noteNode(a).focus(); await noteNode(a).press('Enter');
