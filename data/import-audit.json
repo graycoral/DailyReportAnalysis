@@ -1,7 +1,7 @@
 {
-  "count": 19,
+  "count": 20,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-16",
+  "through_date": "2026-10-19",
   "records": [
     {
       "date": "2026-09-20",
@@ -323,6 +323,23 @@
           "name": "autonomous_driving_daily_2026-10-16.pptx",
           "path": "data/reports/2026-10-16/autonomous_driving_daily_2026-10-16.pptx",
           "sha256": "69cbe0fce3eb7270e241474f0b052e51d27bd5943b66c7661b04eb73f6afede1"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-19",
+      "title": "Waymo 토론토 진출 계획·Element 현지 차량 운영 제휴 확대",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-19.md",
+          "path": "data/reports/2026-10-19/autonomous_driving_daily_2026-10-19.md",
+          "sha256": "a02f69eb676119a5174f33de1dbe7670506173876643d9f09be9a8dfc28896a5"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-19.pptx",
+          "path": "data/reports/2026-10-19/autonomous_driving_daily_2026-10-19.pptx",
+          "sha256": "10035daf03924b69b8c0fc62c0ef0054c200fc47c16ee6c3b8538f451f23d992"
         }
       ]
     }
