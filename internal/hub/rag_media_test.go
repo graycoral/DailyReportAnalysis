@@ -78,4 +78,17 @@ func TestRagMediaProxy(t *testing.T) {
 	if response.Code != 200 || result["path"] != "/map" {
 		t.Fatalf("map proxy: %s", response.Body.String())
 	}
+
+	payload := []byte(`{"doc":"abc123","page":2,"text":"무인 운행"}`)
+	req = httptest.NewRequest("POST", "/api/rag/highlights", bytes.NewReader(payload))
+	req.Host = "127.0.0.1:9000"
+	req.Header.Set("Origin", a.address)
+	req.Header.Set("X-AV-Request", "1")
+	req.AddCookie(&http.Cookie{Name: "av_session", Value: a.secret})
+	response = httptest.NewRecorder()
+	routes.ServeHTTP(response, req)
+	_ = json.Unmarshal(response.Body.Bytes(), &result)
+	if response.Code != 200 || result["path"] != "/highlights" || result["body"] != base64.StdEncoding.EncodeToString(payload) {
+		t.Fatalf("highlight proxy: %s", response.Body.String())
+	}
 }

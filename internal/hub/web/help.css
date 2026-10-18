@@ -30,6 +30,32 @@
 .guide-extra h4{font-size:16px;margin:0 0 8px}
 .guide-extra p{margin:8px 0;color:var(--ink-2);font-size:14px}
 .guide-extra p:last-child{margin-bottom:0}
+.guide-start>p:not(.guide-purpose){color:var(--ink-2)}
+.guide-setup{margin:24px 0}
+.guide-setup h4{font-size:16px;margin:0 0 8px}
+.guide-setup p{margin:8px 0;color:var(--ink-2)}
+.guide-connection{display:grid;gap:4px;padding:14px 16px;background:var(--surface-2);border-left:3px solid var(--accent);font-size:14px}
+.guide-connection b{color:var(--ink)}
+.guide-routes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+.guide-routes a{display:grid;gap:6px;padding:18px;border:1px solid var(--line-2);border-radius:var(--r-sm);text-decoration:none;background:var(--surface)}
+.guide-routes a>b{display:flex;justify-content:space-between;gap:12px;font-size:16px}
+.guide-routes a>span{color:var(--ink-2);font-size:14px}
+.guide-walkthrough{scroll-margin-top:24px}
+.guide-walkthrough h4{font-size:20px;line-height:1.5;margin-bottom:12px}
+.guide-walkthrough h5{font-size:16px;margin:20px 0 12px}
+.guide-walkthrough p{font-size:15px}
+.guide-walkthrough .guide-tip{font-size:14px}
+.guide-walkthrough ol,.guide-walkthrough ul{margin-top:12px}
+.guide-details{margin-top:16px;border:1px solid var(--line);border-radius:var(--r-sm);padding:0 16px}
+.guide-details summary{padding:12px 0;cursor:pointer;color:var(--accent-ink);font-weight:600}
+.guide-details summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.guide-details[open]{padding-bottom:16px}
+.guide-checks{margin:0 0 24px}
+.guide-checks dt{font-weight:600;margin-top:18px}
+.guide-checks dd{color:var(--ink-2);margin:4px 0 0}
+.guide-start a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@media(hover:hover) and (pointer:fine){.guide-routes a:hover{background:var(--accent-soft);border-color:var(--accent)}}
+@media(max-width:640px){.guide-routes{grid-template-columns:1fr}.guide-page{font-size:16px}.guide-walkthrough p,.guide-setup p{font-size:16px}}
 .guide-footer{display:flex;align-items:center;justify-content:space-between;gap:20px;border-top:1px solid var(--line);margin-top:28px;padding:20px 0;color:var(--ink-2);font-size:13px}
 .guide-footer p{margin:0}.guide-footer a{flex-shrink:0;padding:8px 0}
 @media(hover:hover) and (pointer:fine){.guide-home:hover{text-decoration:underline}.guide-jump a:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}}

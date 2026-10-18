@@ -2,9 +2,11 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const app=fs.readFileSync(path.join(__dirname,'../internal/hub/web/app.js'),'utf8');
 const elements=new Map();
-const element=()=>({value:'',checked:false,innerHTML:'',textContent:'',setAttribute(){},classList:{toggle(){}},querySelector(){return element()},querySelectorAll(){return[]}});
+const element=()=>({value:'',checked:false,innerHTML:'',textContent:'',setAttribute(){},setCustomValidity(){},addEventListener(){},classList:{toggle(){}},querySelector(){return element()},querySelectorAll(){return[]}});
 const get=s=>{if(!elements.has(s))elements.set(s,element());return elements.get(s)};
 const context=vm.createContext({document:{querySelector:get,querySelectorAll:()=>[],createTreeWalker:()=>({nextNode:()=>false})},URL,NodeFilter:{SHOW_TEXT:4},renderReportLocal(){},setTimeout(){},clearTimeout(){},localStorage:{getItem:()=>'{"local":false,"outlook":true,"daily":true}'},matchMedia:()=>({matches:false,addEventListener(){}})});
+context.window={};
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../internal/hub/web/report-reading.js'),'utf8'),context);
 vm.runInContext(app.slice(0,app.indexOf('// Tab is mirrored')),context);
 const evaluate=code=>vm.runInContext(code,context),plain=v=>JSON.parse(JSON.stringify(v));
 assert.deepEqual(plain(evaluate('networkSources')),{outlook:true,daily:true,local:false,notes:true});

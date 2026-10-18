@@ -1,0 +1,16 @@
+.selection-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 14px;border-bottom:1px solid var(--line);font-size:12px}
+.selection-toolbar[hidden]{display:none}.selection-hint{flex:1;color:var(--muted)}
+.selection-toolbar [aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
+.multi-selected{outline:2px solid var(--accent,#2877c7);outline-offset:-2px;background:var(--selected-bg,rgba(40,119,199,.14))!important}
+/* Report cards use their shell for selection and focus, avoiding nested rings. */
+.report-card-shell>.report-card.multi-selected{outline:0;background:transparent!important}
+.mn.multi-selected{outline:none;background:none!important}.mn.multi-selected circle{stroke:var(--accent,#2877c7);stroke-width:4px}
+.edge.multi-selected{outline:none}.edge.multi-selected .line{stroke:var(--accent,#2877c7);stroke-width:4px}
+#data-trash-dialog{width:min(720px,92vw);max-height:85vh}#data-trash-list{max-height:50vh;overflow:auto;display:grid;gap:6px;padding:4px}
+.trash-item{display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:12px}.trash-item b{overflow-wrap:anywhere;min-width:0}.trash-item small{white-space:nowrap}
+#data-trash-error{white-space:pre-line}.selection-toolbar button{font-size:12px}
+/* Keep selection tools contextual; preserve the mode and trash entry points. */
+.selection-toolbar{flex-shrink:0;justify-content:flex-end;padding:6px 14px}
+#selection-count{margin-right:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+.selection-hint{order:1;flex-basis:100%;line-height:1.5}
+@media(max-width:580px){.selection-toolbar{gap:6px;padding:6px 12px}.selection-toolbar button{padding:7px 9px;min-height:36px}#selection-count{flex-basis:100%}}

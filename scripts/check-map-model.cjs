@@ -1,7 +1,8 @@
 // Content identity, source switches and saved links must agree in the map.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const elements=new Map(),get=s=>{if(!elements.has(s))elements.set(s,{value:'',checked:true});return elements.get(s)};
-const context=vm.createContext({document:{querySelector:get},URL,matchMedia:()=>({matches:false,addEventListener(){}})});
+const context=vm.createContext({window:{},document:{querySelector:get},URL,matchMedia:()=>({matches:false,addEventListener(){}})});
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../internal/hub/web/report-reading.js'),'utf8'),context);
 const app=fs.readFileSync(path.join(__dirname,'../internal/hub/web/app.js'),'utf8');
 vm.runInContext(app.slice(0,app.indexOf('// Tab is mirrored')),context);
 const run=s=>vm.runInContext(s,context),plain=x=>JSON.parse(JSON.stringify(x));

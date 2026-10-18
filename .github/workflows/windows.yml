@@ -78,6 +78,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Media test dependencies failed' }
           python -m unittest discover -s rag -p test_media.py
           if ($LASTEXITCODE -ne 0) { throw 'Media service tests failed' }
+          python -m unittest discover -s rag -p test_highlights.py
+          if ($LASTEXITCODE -ne 0) { throw 'PDF highlight tests failed' }
           python -m unittest discover -s rag -p test_efficiency.py
           if ($LASTEXITCODE -ne 0) { throw 'Background task and model scheduling tests failed' }
       - name: Test and build self-contained executables
@@ -88,8 +90,9 @@ jobs:
         env:
           AV_NAV_VIEWER: dist/AVReportHub.exe
           AV_NOTES_VIEWER: dist/AVReportHub.exe
+          AV_HELP_VIEWER: dist/AVReportHub.exe
         run: |
-          foreach ($check in @('connections-ui', 'github-choice-ui', 'github-catalog-ui', 'notes-ui', 'notes-performance-ui', 'note-network-ui', 'report-reading-ui', 'hallmark-ui', 'map-ui')) {
+          foreach ($check in @('connections-ui', 'github-choice-ui', 'github-catalog-ui', 'notes-ui', 'notes-performance-ui', 'note-network-ui', 'report-reading-ui', 'report-unread-ui', 'guidelines-ui', 'audit-ui', 'hallmark-ui', 'help-ui', 'rag-layout-ui', 'rag-highlight-ui', 'selection-ui', 'map-ui')) {
             node "scripts/check-$check.cjs"
             if ($LASTEXITCODE -ne 0) { throw "Offline browser test failed: $check" }
           }

@@ -96,7 +96,7 @@ function mount() {
  <section class="notes-main" aria-label="노트 작성"><div class="notes-topbar"><span id="note-status" role="status" aria-live="polite">노트를 선택하세요.</span><button id="note-save">지금 저장</button><button id="note-conflict" hidden>변경 내용 비교</button><select id="note-mode" aria-label="노트 보기 모드"><option value="source">원문 편집</option><option value="split">분할 미리보기</option><option value="read">읽기</option><option value="live">Live Preview</option></select></div>
  <div id="note-empty" class="empty"><h2>리포트에서 생각으로</h2><p>새 노트를 만들고 분석과 아이디어를 기록하세요.<br>작성한 내용은 이 PC의 Markdown 파일로 저장됩니다.</p><button id="note-empty-new" class="primary">첫 노트 작성</button></div>
  <div id="note-document" hidden><div class="note-heading"><label class="sr-only" for="note-title">노트 제목</label><input id="note-title" placeholder="제목 없음" maxlength="120"><div class="note-meta"><label>폴더 <input id="note-folder" list="note-folder-options" placeholder="최상위 폴더"></label><datalist id="note-folder-options"></datalist><label>태그 <input id="note-tags" placeholder="회의, 기업분석"></label><button id="note-history">이전 저장본</button><button id="note-delete" class="note-delete">삭제</button></div></div>
- <div class="note-toolbar" role="toolbar" aria-label="노트 서식"><button data-format="heading" title="제목">제목</button><button data-format="bold" title="굵게"><b>B</b></button><button data-format="italic" title="기울임"><i>I</i></button><button data-format="list">목록</button><button data-format="task">체크박스</button><button data-format="table">표</button><button data-format="link">링크</button><button data-format="wiki">노트 연결</button><button data-format="code">코드</button><button id="note-image">이미지</button><button id="note-undo" aria-label="실행 취소">↶</button><button id="note-redo" aria-label="다시 실행">↷</button><input id="note-image-input" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden></div>
+ <div class="note-toolbar" role="group" aria-label="노트 서식"><button data-format="heading" title="제목">제목</button><button data-format="bold" title="굵게" aria-label="굵게"><b>B</b></button><button data-format="italic" title="기울임" aria-label="기울임"><i>I</i></button><button data-format="list">목록</button><button data-format="task">체크박스</button><button data-format="table">표</button><button data-format="link">링크</button><button data-format="wiki">노트 연결</button><button data-format="code">코드</button><button id="note-image">이미지</button><button id="note-undo" aria-label="실행 취소">↶</button><button id="note-redo" aria-label="다시 실행">↷</button><input id="note-image-input" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden></div>
  <div class="note-writing" data-mode="split"><section class="note-editor-pane" aria-label="Markdown 편집"><div class="note-pane-label" id="note-editor-label">MARKDOWN</div><div id="note-editor"></div></section><section class="note-preview-pane" aria-label="노트 미리보기"><div class="note-pane-label">미리보기</div><article id="note-preview" class="markdown"></article></section></div>
  <footer class="note-connections"><div><h2>연결된 리포트</h2><div class="note-report-add"><select id="note-report-choice" aria-label="연결할 리포트"></select><button id="note-report-add">연결</button></div><div id="note-reports"></div></div><div><h2>이 노트를 참조하는 노트</h2><div id="note-backlinks"></div></div></footer></div></section>`;
   const dialog = document.createElement("dialog");
@@ -738,6 +738,8 @@ async function filesDropped(files) {
     );
 }
 async function remove() {
+  const selection = window.AVSelection?.items().filter(x => x.kind === 'note');
+  if (selection?.length > 1) return window.AVSelection.remove(selection);
   if (!current || !(await flush())) return;
   showDialog(
     "노트를 휴지통으로 이동",
@@ -930,6 +932,21 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden && dirty) flush();
 });
 window.AVNotes = {
+  item(id) { const n = notes.find(n => n.id === id); return n && {kind:'note',id:n.id,title:n.title,version:n.version}; },
+  async removeItem(id, permanent = false) {
+    mount();
+    if (!(await flush())) throw Error('노트 저장을 완료한 뒤 다시 시도하세요.');
+    const data = await listing();
+    const n = current?.id === id ? current : data.notes.find(n => n.id === id);
+    if (!n && !permanent) throw Error('노트를 찾을 수 없습니다.');
+    await api(permanent ? 'purge' : 'delete', {id,version:n?.version});
+    if (current?.id === id) {
+      current = null; dirty = false; conflict = false;
+      if (mounted) { $('#note-document').hidden = true; $('#note-empty').hidden = false; }
+    }
+    await reload();
+  },
+  async refresh() { mount(); return reload(); },
   configure(value) {
     bridge = value;
   },

@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -32,6 +33,7 @@ var mapiHex = regexp.MustCompile(`^[A-Fa-f0-9]+$`)
 func mapiID(s string) bool { return len(s) >= 2 && len(s) <= 4096 && mapiHex.MatchString(s) }
 
 type LocalFile struct {
+	Deleted string   `json:"deleted,omitempty"`
 	ID      string   `json:"id"`
 	Name    string   `json:"name"`
 	Size    int      `json:"size"`
@@ -49,6 +51,7 @@ type MailRef struct {
 	Folder   string `json:"folder"`
 }
 type MailLink struct {
+	Deleted string `json:"deleted,omitempty"`
 	MailRef
 	Report string `json:"report"`
 	Linked string `json:"linked"`
@@ -154,7 +157,10 @@ func (a *App) viewLocal() (LocalIndex, error) {
 	if e := a.localBlocked(); e != nil {
 		return LocalIndex{}, e
 	}
-	return a.loadLocal()
+	x, err := a.loadLocal()
+	x.Files = slices.DeleteFunc(x.Files, func(f LocalFile) bool { return f.Deleted != "" })
+	x.Mails = slices.DeleteFunc(x.Mails, func(m MailLink) bool { return m.Deleted != "" })
+	return x, err
 }
 
 // editLocal applies f to the index under localMu and saves it only when f succeeds.
@@ -276,25 +282,7 @@ func (a *App) readPDF(id string) ([]byte, LocalFile, error) {
 	}
 	return nil, LocalFile{}, missing
 }
-func (a *App) deletePDF(id string) error {
-	e := a.editLocal(func(x *LocalIndex) error {
-		for i, f := range x.Files {
-			if f.ID == id {
-				x.Files = append(x.Files[:i], x.Files[i+1:]...)
-				return nil
-			}
-		}
-		return errors.New("내 자료를 찾을 수 없습니다.")
-	})
-	if e == nil {
-		e = os.Remove(a.blobPath(id))
-		a.pdfCache.discard(a.blobPath(id))
-		if os.IsNotExist(e) {
-			e = nil
-		}
-	}
-	return e
-}
+func (a *App) deletePDF(id string) error { return a.purgePDF(id) }
 func (a *App) linkPDF(id, report string, on bool) error {
 	if on && !a.hasReport(report) {
 		return errors.New("리포트를 찾을 수 없습니다.")
@@ -396,6 +384,7 @@ func localFail(w http.ResponseWriter, op string, e error) {
 	http.Error(w, e.Error(), 400)
 }
 func (a *App) localRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/api/local/trash", a.localTrash)
 	mux.HandleFunc("/api/local", func(w http.ResponseWriter, r *http.Request) {
 		x, e := a.viewLocal()
 		if e != nil {

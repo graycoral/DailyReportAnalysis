@@ -20,7 +20,7 @@ async function stop(){if(!viewer)return;const child=viewer;viewer=null;child.kil
  const page=await browser.newPage({viewport:{width:1560,height:1050}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto(instance.address+'/open?key='+instance.key);
- await page.getByRole('button',{name:'↻ 지금 업데이트',exact:true}).waitFor();
+ await page.getByRole('button',{name:'지금 업데이트',exact:true}).waitFor();
  // The real browser drop path, including its preventDefault handler.
  await page.evaluate(body=>{const transfer=new DataTransfer();transfer.items.add(new File([body],'daily_2026-10-15.md',{type:'text/markdown'}));dispatchEvent(new DragEvent('drop',{dataTransfer:transfer,bubbles:true,cancelable:true}))},fixture);
  await page.locator('#results [data-report="local-2026-10-15"]').waitFor();

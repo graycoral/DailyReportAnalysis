@@ -1,6 +1,7 @@
 // Fast model checks for the offline UI, independent of browser and optional features.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const context=vm.createContext({
+ window:{addEventListener(){}},
  $:()=>({addEventListener(){},open:false}),state:{setup:false},hiddenReports:new Set(),
  networkSources:{daily:true,outlook:true,local:true},networkView:()=>false,matches:()=>true,
  local:{files:[{id:'p1',name:'one.pdf'},{id:'p2',name:'two.pdf'}]},

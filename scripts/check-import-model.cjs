@@ -2,9 +2,11 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../internal/hub/web/app.js'),'utf8');
 const elements=new Map();
-const element=()=>({value:'',checked:true,textContent:'',innerHTML:'',attributes:{},dataset:{},classList:{toggle(){}},setAttribute(k,v){this.attributes[k]=v},querySelectorAll(){return[]},insertAdjacentHTML(){}});
+// Like the DOM, SVG markup contributes no text; the adjacent label still does.
+const element=()=>({value:'',checked:true,innerHTML:'',get textContent(){return this.innerHTML.replace(/<[^>]*>/g,'')},set textContent(value){this.innerHTML=String(value)},attributes:{},dataset:{},classList:{toggle(){}},setAttribute(k,v){this.attributes[k]=v},querySelectorAll(){return[]},insertAdjacentHTML(){}});
 const get=selector=>{if(!elements.has(selector))elements.set(selector,element());return elements.get(selector)};
 const context=vm.createContext({window:{},document:{querySelector:get,querySelectorAll:()=>[]},URL,matchMedia:()=>({matches:false,addEventListener(){}})});
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../internal/hub/web/report-reading.js'),'utf8'),context);
 vm.runInContext(source.slice(0,source.indexOf('// Tab is mirrored')),context);
 const evaluate=code=>vm.runInContext(code,context),plain=value=>JSON.parse(JSON.stringify(value));
 for(const state of ['unavailable','offline','unconfigured']){

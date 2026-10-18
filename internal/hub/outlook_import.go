@@ -25,6 +25,7 @@ type outlookImportStatus struct {
 	Rejected int    `json:"rejected"`
 	Failed   int    `json:"failed"`
 	Limited  int    `json:"limited"`
+	Scanned  int    `json:"scanned"`
 }
 type outlookDocument struct {
 	Mail         MailRef           `json:"mail"`
@@ -85,6 +86,7 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 		a.outlookStatusMu.Unlock()
 		return
 	}
+	previous := a.outlookImportView()
 	s := outlookImportStatus{Busy: true, Message: "지정한 Outlook 폴더 확인 중…"}
 	a.outlookStatusMu.Lock()
 	a.outlookImportStatus = s
@@ -182,13 +184,14 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 			if candidate.Body == "" {
 				continue
 			}
-			r, err := parseReport([]byte(candidate.Body), candidate.Name, companies)
+			r, err := parseOutlookReport([]byte(candidate.Body), candidate.Name, companies)
 			if errors.Is(err, errNoUpdates) {
 				matched = true
 				s.Skipped++
 				continue
 			}
 			if err != nil {
+				matched = true
 				s.Rejected++
 				continue
 			}
@@ -243,6 +246,16 @@ func (a *App) importOutlookWith(run func(context.Context, outlookReq, any) error
 	}
 	s.Pending = batch.Pending
 	s.Failed, s.Limited = batch.Failed, batch.Limited
+	s.Scanned = batch.Scanned
+	if previous.Pending {
+		s.Added += previous.Added
+		s.Updated += previous.Updated
+		s.Skipped += previous.Skipped
+		s.Rejected += previous.Rejected
+		s.Failed += previous.Failed
+		s.Limited += previous.Limited
+		s.Scanned += previous.Scanned
+	}
 	s.Message = fmt.Sprintf("Outlook 확인 완료 · 추가 %d건 · 변경 %d건 · 중복·제외 %d건", s.Added, s.Updated, s.Skipped)
 	if s.Rejected > 0 {
 		s.Message += fmt.Sprintf(" · MD 형식 확인 필요 %d건", s.Rejected)

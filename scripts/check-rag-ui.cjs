@@ -34,27 +34,47 @@ const state=value=>{ctx.nextState=value;evaluate('ragEnvironmentState=nextState'
 (async()=>{
   state(environment);
   assert.match(html(),/id="rag-setup"/);
+  assert.match(html(),/data-state="idle"/);
   assert.doesNotMatch(html(),/환경 설정 완료/);
 
   state({state:'installing',busy:true,message:'패키지 설치 중'});
   assert.match(html(),/환경 설정 중/);
   assert.match(html(),/id="rag-setup" disabled/);
+  assert.match(html(),/data-state="checking"/);
 
   state({state:'ready',ready:true,supported:true,message:'검증 완료'});
   assert.match(html(),/환경 설정 완료/);
   assert.match(html(),/서비스 꺼짐/);
   assert.match(html(),/id="rag-start"/);
+  assert.match(html(),/data-state="ready"/);
+  assert.match(html(),/id="rag-environment-info" hidden/);
+  evaluate('ragEnvironmentInfoOpen=true');
+  assert.match(html(),/aria-expanded="true"/);
+  assert.doesNotMatch(html(),/id="rag-environment-info" hidden/);
+  evaluate('ragEnvironmentInfoOpen=false');
+
+  state({state:'starting',ready:true,busy:true,message:'모델을 불러오는 중'});
+  assert.match(html(),/data-state="checking"/);
+  assert.match(html(),/id="rag-start" disabled/);
+  assert.doesNotMatch(html(),/id="rag-environment-info" hidden/);
+
+  state({state:'error',ready:true,message:'서비스 시작 실패'});
+  assert.match(html(),/data-state="error"/);
+  assert.match(html(),/id="rag-start"/);
+  assert.doesNotMatch(html(),/id="rag-environment-info" hidden/);
 
   ctx.rag.status={ok:true};
   state({state:'missing',supported:true});
   assert.match(html(),/환경 설정 완료/);
   assert.match(html(),/서비스 실행 중/);
+  assert.match(html(),/data-state="ready"/);
   assert.doesNotMatch(html(),/id="rag-setup"|id="rag-start"/);
 
   ctx.rag.status={ok:false};
   state({state:'error',python_required:true,message:'<img src=x onerror=alert(1)>'});
   assert.match(html(),/Python 공식 설치 페이지/);
   assert.match(html(),/환경 설정 다시 시도/);
+  assert.match(html(),/data-state="error"/);
   assert.doesNotMatch(html(),/<img src=x/);
 
   // Polling a stable service updates only the setup card, preserving search inputs.

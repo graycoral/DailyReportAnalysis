@@ -5,7 +5,7 @@ const app=fs.readFileSync(path.join(__dirname,'../internal/hub/web/app.js'),'utf
 const prefix=app.slice(0,app.indexOf('// Tab is mirrored'));
 assert.ok(prefix.length>1000);
 const elements=new Map();
-function element(){return {value:'',checked:false,innerHTML:'',textContent:'',dataset:{},setAttribute(){},classList:{toggle(){}},querySelector(){return element()},querySelectorAll(){return []}}}
+function element(){return {value:'',checked:false,innerHTML:'',textContent:'',dataset:{},setAttribute(){},setCustomValidity(){},addEventListener(){},classList:{toggle(){}},querySelector(){return element()},querySelectorAll(){return []}}}
 function get(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector)}
 function all(selector){
  const pattern=selector==='#results .ml'?/class="ml /g:selector==='#results .mn'?/class="mn /g:null;
@@ -16,6 +16,7 @@ const context=vm.createContext({window:{},
  NodeFilter:{SHOW_TEXT:4},URL,setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},
  renderReportLocal(){},matchMedia:()=>({matches:false,addEventListener(){}}),
 });
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../internal/hub/web/report-reading.js'),'utf8'),context);
 vm.runInContext(prefix,context);
 const evaluate=code=>vm.runInContext(code,context);
 const plain=value=>JSON.parse(JSON.stringify(value));

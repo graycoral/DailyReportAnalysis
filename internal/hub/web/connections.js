@@ -24,8 +24,15 @@ async function loadDocumentConnections(force=false){
 }
 async function openConnections(){
  const dialog=$('#connections-dialog');if(!dialog)return;
+ if(dialog.open)return;
  if(!dialog.open)dialog.showModal();
  connectionDraftDirty=false;connectionLimit=30;connectionFeedback('');await loadDocumentConnections(true);
+}
+function closeConnections(){
+ const dialog=$('#connections-dialog');if(!dialog?.open)return true;
+ if(connectionSaving){connectionFeedback('저장 중입니다. 완료된 뒤 닫아 주세요.');return false}
+ if(connectionDraftDirty&&!confirm('저장하지 않은 사전 변경을 버리고 닫을까요? 취소하면 계속 편집할 수 있습니다.'))return false;
+ connectionDraftDirty=false;dialog.close();return true;
 }
 function connectionFeedback(message,error=false){const el=$('#connections-feedback');el.textContent=message;el.classList.toggle('error',error)}
 function connectionDocButton(d){
@@ -37,7 +44,7 @@ function bindConnectionDocuments(root){
   try{
    if(d.kind==='mail'){b.disabled=true;await api('/api/outlook/open',{mail:d.mail})}
    else if(d.kind==='pdf')window.open('/api/local/file?id='+encodeURIComponent(d.file_id)+'&view=1','_blank','noopener');
-   else {$('#connections-dialog')?.close();networkSelection=null;selectReport(d.report_id,{fromDetail:true,exactSource:true})}
+   else {if(!closeConnections())return;networkSelection=null;selectReport(d.report_id,{fromDetail:true,exactSource:true})}
   }catch(e){toast(e.message)}finally{b.disabled=false}
  });
 }
@@ -55,7 +62,7 @@ function renderConnectionsList(){
  status.textContent=`자료 ${byID.size}개 · 메일 ${v.indexed_mails||0}개 · 추천 ${all.filter(c=>c.status==='suggested').length}개 · 확정 ${all.filter(c=>c.status==='accepted').length}개 · 제외 ${all.filter(c=>c.status==='rejected').length}개${v.truncated?' · 후보가 많아 근거가 강한 최대 300개를 우선 표시합니다.':''}`;
  root.innerHTML=rows.slice(0,connectionLimit).map(c=>`<article class="connection-card" data-connection="${esc(c.id)}"><div class="connection-card-head"><span class="chip ${c.status==='accepted'?'teal':''}">${connectionStatus(c.status)}</span><span class="small-note">${c.score>=85?'강한 일치 근거':'복합 일치 근거'}</span></div><div class="connection-pair">${connectionDocButton(byID.get(c.from))}<span aria-hidden="true">↔</span>${connectionDocButton(byID.get(c.to))}</div><ul class="connection-reasons">${c.reasons.map(r=>`<li>${esc(r.text)}</li>`).join('')}</ul>${c.decided?`<p class="small-note">판단 저장 ${esc(c.decided.slice(0,10))} · 당시 연결 근거</p>`:''}<div class="form-actions">${c.status==='suggested'?'<button type="button" class="primary" data-connection-action="accepted">연결 확정</button><button type="button" data-connection-action="rejected">추천 제외</button>':'<button type="button" data-connection-action="reset">판단 취소 · 다시 추천</button>'}</div></article>`).join('')||`<div class="empty">${connectionFilter==='suggested'?'현재 조건에 연결 후보가 없습니다.':'표시할 '+connectionStatus(connectionFilter)+' 기록이 없습니다.'}<br><small>Outlook에서 폴더를 선택해 가져오거나 기업·프로젝트 사전을 보완해 보세요.</small></div>`;
  if(rows.length>connectionLimit)root.insertAdjacentHTML('beforeend',`<button type="button" id="connections-more">더 보기 (${rows.length-connectionLimit}개 남음)</button>`);
- $('#connections-more')?.addEventListener('click',()=>{connectionLimit+=30;renderConnectionsList()});
+ $('#connections-more')?.addEventListener('click',()=>{const next=connectionLimit;connectionLimit+=30;renderConnectionsList();(root.querySelectorAll('.connection-card')[next]?.querySelector('button')||$('#connections-status')).focus()});
  bindConnectionDocuments(root);
  root.querySelectorAll('[data-connection-action]').forEach(b=>{b.disabled=connectionSaving;b.onclick=()=>saveConnectionDecision(b.closest('[data-connection]').dataset.connection,b.dataset.connectionAction)});
 }
@@ -112,7 +119,9 @@ function renderConnectionNetworkDetail(link){
  bindConnectionDocuments($('#detail'));$('#connection-review').onclick=()=>{connectionFilter='accepted';$('#connections-filter').value='accepted';openConnections()};return true;
 }
 $('#connections-open')?.addEventListener('click',openConnections);
-$('#connections-close')?.addEventListener('click',()=>$('#connections-dialog').close());
+$('#connections-close')?.addEventListener('click',closeConnections);
+$('#connections-dialog')?.addEventListener('cancel',e=>{e.preventDefault();closeConnections()});
+window.addEventListener('beforeunload',e=>{if(connectionDraftDirty||connectionSaving){e.preventDefault();e.returnValue=''}});
 $('#connections-refresh')?.addEventListener('click',()=>loadDocumentConnections(true));
 $('#connections-filter')?.addEventListener('change',e=>{connectionFilter=e.target.value;connectionLimit=30;renderConnectionsList()});
 $('#connections-query')?.addEventListener('input',e=>{connectionQuery=e.target.value;connectionLimit=30;renderConnectionsList()});
