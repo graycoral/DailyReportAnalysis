@@ -61,6 +61,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Note link extraction tests failed' }
           node scripts/check-note-listing.cjs
           if ($LASTEXITCODE -ne 0) { throw 'Incremental note listing tests failed' }
+          node scripts/check-map-model.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Map identity and source-link tests failed' }
       - name: Test release retry and verification
         shell: pwsh
         run: node scripts/check-release.cjs
@@ -87,7 +89,7 @@ jobs:
           AV_NAV_VIEWER: dist/AVReportHub.exe
           AV_NOTES_VIEWER: dist/AVReportHub.exe
         run: |
-          foreach ($check in @('connections-ui', 'github-choice-ui', 'github-catalog-ui', 'notes-ui', 'notes-performance-ui', 'note-network-ui', 'report-reading-ui', 'hallmark-ui')) {
+          foreach ($check in @('connections-ui', 'github-choice-ui', 'github-catalog-ui', 'notes-ui', 'notes-performance-ui', 'note-network-ui', 'report-reading-ui', 'hallmark-ui', 'map-ui')) {
             node "scripts/check-$check.cjs"
             if ($LASTEXITCODE -ne 0) { throw "Offline browser test failed: $check" }
           }

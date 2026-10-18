@@ -24,7 +24,8 @@ get('#sort').value='desc';
 for(const view of ['graph','map'])for(let mask=0;mask<16;mask++){
  evaluate(`tab='${view}';networkSources={daily:${!!(mask&1)},outlook:${!!(mask&2)},local:${!!(mask&4)},notes:${!!(mask&8)}}`);
  const catalog=plain(evaluate('catalog()')),model=plain(evaluate('buildDocumentNetwork(filtered())'));
- assert.deepEqual(catalog.reports.map(r=>r.id).sort(),[...(mask&1?['published','manual']:[]),...(mask&2?['outlook']:[])].sort());
+ const merged=view==='map'&&!!(mask&1)&&!!(mask&2);
+ assert.deepEqual(catalog.reports.map(r=>r.id).sort(),[...(mask&1?['published','manual']:[]),...(mask&2&&!merged?['outlook']:[])].sort());
  assert.equal(catalog.relations.length,mask&1?1:0,'only the published report supplies the published fact');
  const ids=new Set(model.nodes.map(n=>n.id));
  assert.ok(model.links.every(l=>ids.has(l.from)&&ids.has(l.to)&&l.evidence),'no dangling or unsupported source links');
@@ -32,10 +33,11 @@ for(const view of ['graph','map'])for(let mask=0;mask<16;mask++){
  assert.equal(model.nodes.some(n=>n.kind==='mail'),!!(mask&2));
  assert.equal(model.links.some(l=>l.id==='origin:outlook'),!!(mask&2));
  assert.equal(model.links.some(l=>l.id==='pdf-link:pdf:published'),!!(mask&1)&&!!(mask&4));
- assert.equal(model.links.some(l=>l.id==='pdf-link:pdf:outlook'),!!(mask&2)&&!!(mask&4));
+ assert.equal(model.links.some(l=>l.id==='pdf-link:pdf:outlook'),!!(mask&2)&&!!(mask&4)&&!merged);
  assert.equal(model.nodes.some(n=>n.kind==='note'),!!(mask&8));
  assert.equal(model.links.some(l=>l.id==='note-link:a:b'),!!(mask&8));
  assert.equal(model.links.some(l=>l.id==='note-report:a:published'),!!(mask&1)&&!!(mask&8));
+ if(merged)assert.equal(model.links.find(l=>l.id==='origin:outlook').to,'r:published','original mail stays connected to the shared report');
 }
 get('#query').value='유일한검색어';
 assert.deepEqual(plain(evaluate('buildDocumentNetwork(filtered()).nodes.map(n=>n.id)')),['note:b']);
