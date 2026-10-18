@@ -382,7 +382,7 @@ async function waitFor(fn) {
     )
     .click();
   await page.locator("#note-dialog").waitFor({ state: "hidden" });
-  assert.equal((await api()).root, vault);
+  assert.equal((await api()).root, fs.realpathSync.native(vault));
   assert.ok(fs.existsSync(file));
   // The notes and chosen storage directory survive a complete viewer restart.
   await api("root", { root: path.join(profile, "notes") });
@@ -406,7 +406,7 @@ async function waitFor(fn) {
   );
   await page.locator("#tab-notes").click();
   await page.locator("[data-note-id]").first().waitFor();
-  assert.equal((await api()).root, path.join(profile, "notes"));
+  assert.equal((await api()).root, fs.realpathSync.native(path.join(profile, "notes")));
   assert.ok(
     (await api()).notes.some(
       (n) => n.title === "외부 노트" && n.body === "한글 조합 확인",
