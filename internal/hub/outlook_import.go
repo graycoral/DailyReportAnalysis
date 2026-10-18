@@ -14,16 +14,16 @@ import (
 const outlookReaderVersion = 1
 
 type outlookImportStatus struct {
-	Busy    bool   `json:"busy"`
-	Pending bool   `json:"pending"`
-	Message string `json:"message"`
-	Checked string `json:"checked"`
-	Added   int    `json:"added"`
-	Updated int    `json:"updated"`
-	Skipped int    `json:"skipped"`
-	Rejected int   `json:"rejected"`
-	Failed int     `json:"failed"`
-	Limited int    `json:"limited"`
+	Busy     bool   `json:"busy"`
+	Pending  bool   `json:"pending"`
+	Message  string `json:"message"`
+	Checked  string `json:"checked"`
+	Added    int    `json:"added"`
+	Updated  int    `json:"updated"`
+	Skipped  int    `json:"skipped"`
+	Rejected int    `json:"rejected"`
+	Failed   int    `json:"failed"`
+	Limited  int    `json:"limited"`
 }
 type outlookDocument struct {
 	Mail         MailRef           `json:"mail"`

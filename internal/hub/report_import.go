@@ -206,9 +206,9 @@ type importedReport struct {
 	Mail     *MailRef `json:"mail,omitempty"`
 }
 type outlookCursor struct {
-	Time string   `json:"time"`
-	IDs  []string `json:"ids"`
-	ReaderVersion int `json:"reader_version,omitempty"`
+	Time          string   `json:"time"`
+	IDs           []string `json:"ids"`
+	ReaderVersion int      `json:"reader_version,omitempty"`
 }
 type reportArchive struct {
 	Reports []importedReport         `json:"reports"`
