@@ -10,6 +10,7 @@ import secrets
 import sys
 import tempfile
 import threading
+import time
 from pathlib import Path
 from urllib.parse import quote
 from urllib.request import Request, urlopen
@@ -41,7 +42,16 @@ with tempfile.TemporaryDirectory(prefix="avhub-rag-check-") as folder:
         if isinstance(body, dict):
             body = json.dumps(body).encode()
         with urlopen(Request(address + path, data=body, headers=headers), timeout=120) as response:
-            return response.read() if raw else json.load(response)
+            result = response.read() if raw else json.load(response)
+        while not raw and 'job' in result:
+            if result['state'] == 'error':
+                raise RuntimeError(result['error'])
+            if result['state'] == 'done':
+                return result['result']
+            time.sleep(.1)
+            with urlopen(Request(address + '/jobs?id=' + result['job'], headers={'X-RAG-Key': service.H.key}), timeout=5) as response:
+                result = json.load(response)
+        return result
 
     try:
         picture = Image.new("RGB", (320, 240), "white")

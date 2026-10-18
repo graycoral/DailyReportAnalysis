@@ -24,6 +24,7 @@ from urllib.parse import urlparse, parse_qs, unquote
 import numpy as np
 import embed_core as ec
 import media
+from tasks import Jobs, ModelGate
 
 DATA_DIR = ec.DATA_DIR
 SERVICE_FILE = DATA_DIR / "rag-service.json"
@@ -31,7 +32,9 @@ DOCS = ec.INDEX_DIR / "docs"
 META = ec.INDEX_DIR / "index.json"
 MAX_FILE = 50 << 20
 state = {"model": None, "info": None, "docs": {}, "vecs": {}, "lock": threading.Lock(),
-         "model_lock": threading.Lock(), "revision": 0, "map_cache": None}
+         "model_gate": ModelGate(), "index_lock": threading.Lock(), "map_lock": threading.Lock(),
+         "revision": 0, "map_cache": None, "pair_cache": {}}
+jobs = Jobs()
 
 
 def load_index():
@@ -45,16 +48,17 @@ def load_index():
                 state["docs"].pop(d)
     state["revision"] += 1
     state["map_cache"] = None
+    state["pair_cache"] = {}
 
 
 def save_index():
     ec.save_json(META, state["docs"])
 
 
-def index_file(name, data):
+def index_file(name, data, progress=lambda pages: None):
     doc_id = hashlib.sha256(data).hexdigest()[:16]
-    # Serialize model use and duplicate uploads; publish only a fully decoded/embedded file.
-    with state["model_lock"]:
+    # Serialize file publication, but let queued queries run between page embeddings.
+    with state["index_lock"]:
         with state["lock"]:
             if doc_id in state["docs"]:
                 return doc_id, state["docs"][doc_id], False
@@ -68,9 +72,11 @@ def index_file(name, data):
             path.write_bytes(data)
             vecs = []
             for n, img in media.pages(path, info):
-                v, _ = ec.embed_image(state["model"], img)
+                with state["model_gate"].use():
+                    v, _ = ec.embed_image(state["model"], img)
                 vecs.append(v)
                 (stage / f"{doc_id}-{n}.png").write_bytes(ec.png_bytes(img, max_side=1200))
+                progress(n)
             if not vecs:
                 raise ValueError("색인할 페이지나 이미지가 없습니다.")
             arr = np.stack(vecs).astype(np.float32)
@@ -104,29 +110,47 @@ def index_file(name, data):
         return doc_id, meta, True
 
 
+def compare_documents(a, b, va, vb):
+    best, page_a, page_b = -1.0, 0, 0
+    for x in range(0, len(va), 128):
+        for y in range(0, len(vb), 128):
+            scores = va[x:x + 128] @ vb[y:y + 128].T
+            row, col = np.unravel_index(np.argmax(scores), scores.shape)
+            score = float(scores[row, col])
+            if score > best:
+                best, page_a, page_b = score, x + int(row) + 1, y + int(col) + 1
+    if best >= 0.6:
+        return {"from": a, "to": b, "from_page": page_a, "to_page": page_b,
+                "similarity": round(min(best, 1.0), 4), "kind": "similarity"}
+    return None
+
+
 def map_data():
+    # One calculation per revision even when several windows request the map.
+    with state["map_lock"]:
+        return build_map()
+
+
+def build_map():
     """Similarity is retrieval evidence, never a verified company/event relationship."""
     with state["lock"]:
         if state["map_cache"] is not None:
             return state["map_cache"]
         revision = state["revision"]
         docs, vecs = dict(state["docs"]), dict(state["vecs"])
+        pairs = dict(state["pair_cache"])
     candidates = []
     ids = sorted(docs)
     for i, a in enumerate(ids):
         for b in ids[i + 1:]:
-            best, page_a, page_b = -1.0, 0, 0
-            # Bound temporary matrices even for long PDFs. Stored vectors are normalized.
-            for x in range(0, len(vecs[a]), 128):
-                for y in range(0, len(vecs[b]), 128):
-                    scores = vecs[a][x:x + 128] @ vecs[b][y:y + 128].T
-                    row, col = np.unravel_index(np.argmax(scores), scores.shape)
-                    score = float(scores[row, col])
-                    if score > best:
-                        best, page_a, page_b = score, x + int(row) + 1, y + int(col) + 1
-            if best >= 0.6:
-                candidates.append({"from": a, "to": b, "from_page": page_a, "to_page": page_b,
-                                   "similarity": round(min(best, 1.0), 4), "kind": "similarity"})
+            key = (a, b)
+            prior = pairs.get(key)
+            # Vectors are immutable after publication. Cache non-matches too.
+            if prior is None or prior[0] is not vecs[a] or prior[1] is not vecs[b]:
+                prior = (vecs[a], vecs[b], compare_documents(a, b, vecs[a], vecs[b]))
+                pairs[key] = prior
+            if prior[2] is not None:
+                candidates.append(prior[2])
     # At most three nearest sources per node; preserve evidence for both endpoints.
     candidates.sort(key=lambda item: (-item["similarity"], item["from"], item["to"]))
     degrees, links = {}, []
@@ -139,13 +163,15 @@ def map_data():
     result = {"ok": True, "docs": [{"id": k, **v} for k, v in docs.items()], "links": links,
               "threshold": 0.6, "method": "max_page_cosine", "model": state["info"]}
     with state["lock"]:
+        state["pair_cache"] = {key: value for key, value in pairs.items()
+                               if state["vecs"].get(key[0]) is value[0] and state["vecs"].get(key[1]) is value[1]}
         if revision == state["revision"]:
             state["map_cache"] = result
     return result
 
 
 def query(text, top_k=5):
-    with state["model_lock"]:
+    with state["model_gate"].use(interactive=True):
         q = ec.embed_query(state["model"], text).astype(np.float32)
     hits = []
     with state["lock"]:
@@ -167,11 +193,8 @@ def demo(fresh=False):
     if cache.exists() and not fresh:
         return json.loads(cache.read_text(encoding="utf-8"))
     import test_embed
-    import io, contextlib
-    buf = io.StringIO()
-    with contextlib.redirect_stdout(buf):
-        test_embed.run(ec.DOCS_DIR, as_json=True)
-    return json.loads(buf.getvalue())
+    return test_embed.run(ec.DOCS_DIR, model=state["model"], info=state["info"],
+                          model_call=state["model_gate"].call, return_result=True)
 
 
 class Server(ThreadingHTTPServer):
@@ -201,14 +224,28 @@ class H(BaseHTTPRequestHandler):
         if not self._auth():
             return self._err("unauthorized", 403)
         u = urlparse(self.path); qs = parse_qs(u.query)
+        if u.path == "/jobs":
+            job = jobs.get(qs.get("id", [""])[0])
+            return self._json(job) if job else self._err("작업을 찾을 수 없습니다. 서비스가 재시작되었는지 확인하세요.", 404)
         if u.path == "/health":
             return self._json({"ok": True, "model": state["info"], "docs": [{"id": k, **v} for k, v in state["docs"].items()],
                                "docs_dir": str(ec.DOCS_DIR), "index_dir": str(ec.INDEX_DIR)})
         if u.path == "/map":
-            return self._json(map_data())
+            with state["lock"]:
+                cached, revision = state["map_cache"], state["revision"]
+            if cached is not None:
+                return self._json(cached)
+            try:
+                return self._json(jobs.start(f"map:{revision}", lambda progress: map_data()), 202)
+            except ValueError as e:
+                return self._err(str(e), 429)
         if u.path == "/demo":
             try:
-                return self._json(demo(fresh=qs.get("fresh", ["0"])[0] == "1"))
+                fresh = qs.get("fresh", ["0"])[0] == "1"
+                cache = ec.INDEX_DIR / "last-demo.json"
+                if cache.exists() and not fresh:
+                    return self._json(demo())
+                return self._json(jobs.start("demo", lambda progress: demo(fresh=True)), 202)
             except Exception as e:
                 return self._err(f"demo failed: {e}", 500)
         if u.path == "/page":
@@ -237,8 +274,10 @@ class H(BaseHTTPRequestHandler):
                 if self.headers.get("X-File-Name-Encoding") == "percent-utf8":
                     name = unquote(name)
                 name = Path(name).name or "upload.pdf"
-                doc_id, meta, created = index_file(name, body)
-                return self._json({"ok": True, "id": doc_id, "created": created, **meta})
+                def work(progress):
+                    doc_id, meta, created = index_file(name, body, progress)
+                    return {"ok": True, "id": doc_id, "created": created, **meta}
+                return self._json(jobs.start("index:" + hashlib.sha256(body).hexdigest(), work), 202)
             if u.path == "/query":
                 j = json.loads(body or b"{}")
                 text = (j.get("text") or "").strip()
@@ -252,6 +291,7 @@ class H(BaseHTTPRequestHandler):
                         state["docs"].pop(d); state["vecs"].pop(d, None); save_index()
                         state["revision"] += 1
                         state["map_cache"] = None
+                        state["pair_cache"] = {k: v for k, v in state["pair_cache"].items() if d not in k}
                         for f in list(DOCS.glob(f"{d}*")) + [ec.INDEX_DIR / f"{d}.npy"]:
                             f.unlink(missing_ok=True)
                 return self._json({"ok": True})

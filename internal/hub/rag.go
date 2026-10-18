@@ -26,7 +26,7 @@ type ragService struct {
 
 const ragMax = 50 << 20
 
-var errRagDown = errors.New("멀티모달 검색 서비스가 실행 중이 아닙니다. rag/rag_server.py를 먼저 실행하세요.")
+var errRagDown = errors.New("AI 검색 서비스가 실행 중이 아닙니다. rag/rag_server.py를 먼저 실행하세요.")
 
 func (a *App) ragServiceInfo() (ragService, error) {
 	b, e := os.ReadFile(filepath.Join(a.dir, "rag-service.json"))
@@ -78,14 +78,22 @@ func (a *App) ragRoutes(mux *http.ServeMux) {
 		a.ragProxy(w, r, "GET", "/health", nil, "", "", 5*time.Second)
 	})
 	mux.HandleFunc("/api/rag/map", func(w http.ResponseWriter, r *http.Request) {
-		a.ragProxy(w, r, "GET", "/map", nil, "", "", 2*time.Minute)
+		a.ragProxy(w, r, "GET", "/map", nil, "", "", 30*time.Second)
+	})
+	mux.HandleFunc("/api/rag/job", func(w http.ResponseWriter, r *http.Request) {
+		id := r.URL.Query().Get("id")
+		if !localIDPattern.MatchString(id) {
+			http.Error(w, "잘못된 작업 번호입니다.", 400)
+			return
+		}
+		a.ragProxy(w, r, "GET", "/jobs?id="+id, nil, "", "", 5*time.Second)
 	})
 	mux.HandleFunc("/api/rag/demo", func(w http.ResponseWriter, r *http.Request) {
 		q := ""
 		if r.URL.Query().Get("fresh") == "1" {
 			q = "?fresh=1"
 		}
-		a.ragProxy(w, r, "GET", "/demo"+q, nil, "", "", 10*time.Minute)
+		a.ragProxy(w, r, "GET", "/demo"+q, nil, "", "", 30*time.Second)
 	})
 	mux.HandleFunc("/api/rag/page", func(w http.ResponseWriter, r *http.Request) {
 		a.ragProxy(w, r, "GET", "/page?"+r.URL.RawQuery, nil, "", "", 10*time.Second)
@@ -110,7 +118,7 @@ func (a *App) ragRoutes(mux *http.ServeMux) {
 			return
 		}
 		log.Printf("rag: index %d bytes", len(b))
-		a.ragProxy(w, r, "POST", "/index", bytes.NewReader(b), contentType, name, 30*time.Minute)
+		a.ragProxy(w, r, "POST", "/index", bytes.NewReader(b), contentType, name, 30*time.Second)
 	})
 	for _, p := range []string{"query", "delete"} {
 		path := p

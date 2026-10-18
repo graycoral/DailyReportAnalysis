@@ -50,22 +50,24 @@ func (a *App) changeReportVisibility(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var input struct {
-		Action   string `json:"action"`
-		ReportID string `json:"report_id"`
+		Action    string   `json:"action"`
+		ReportID  string   `json:"report_id"`
+		ReportIDs []string `json:"report_ids"`
 	}
-	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4096)).Decode(&input); err != nil {
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&input); err != nil {
 		http.Error(w, "잘못된 숨김 요청입니다.", http.StatusBadRequest)
 		return
 	}
-	if input.Action != "hide" && input.Action != "restore-all" {
+	if input.Action != "hide" && input.Action != "restore" && input.Action != "restore-all" {
 		http.Error(w, "지원하지 않는 숨김 요청입니다.", http.StatusBadRequest)
 		return
 	}
+	if input.Action == "restore" && len(input.ReportIDs) == 0 {
+		http.Error(w, "복원할 리포트를 선택하세요.", http.StatusBadRequest)
+		return
+	}
 	if input.Action == "hide" {
-		a.mu.RLock()
-		exists := slices.ContainsFunc(a.snapshot.Catalog.Reports, func(r Report) bool { return r.ID == input.ReportID })
-		a.mu.RUnlock()
-		if !exists {
+		if !a.hasReport(input.ReportID) {
 			http.Error(w, "리포트를 찾을 수 없습니다.", http.StatusNotFound)
 			return
 		}
@@ -73,15 +75,22 @@ func (a *App) changeReportVisibility(w http.ResponseWriter, r *http.Request) {
 	a.visibilityMu.Lock()
 	defer a.visibilityMu.Unlock()
 	v := reportVisibility{HiddenReports: []string{}}
-	if input.Action == "hide" {
+	if input.Action != "restore-all" {
 		var err error
 		v, err = a.loadReportVisibility()
 		if err != nil {
 			http.Error(w, "숨김 설정을 읽지 못해 변경하지 않았습니다. 전체 복원 후 다시 시도하세요.", http.StatusInternalServerError)
 			return
 		}
-		if !slices.Contains(v.HiddenReports, input.ReportID) {
+		if input.Action == "hide" && !slices.Contains(v.HiddenReports, input.ReportID) {
 			v.HiddenReports = append(v.HiddenReports, input.ReportID)
+		}
+		if input.Action == "restore" {
+			chosen := make(map[string]bool, len(input.ReportIDs))
+			for _, id := range input.ReportIDs {
+				chosen[id] = true
+			}
+			v.HiddenReports = slices.DeleteFunc(v.HiddenReports, func(id string) bool { return chosen[id] })
 		}
 	}
 	if err := writeJSON(filepath.Join(a.dir, "report-visibility.json"), v); err != nil {

@@ -17,7 +17,7 @@ const context=vm.createContext({document:{querySelector:get,querySelectorAll:all
  fetch:async(url,options)=>{calls.push({url,options});return {ok:true,json:async()=>({created:true,pages:1})}},
 });
 vm.runInContext(app.slice(0,app.indexOf('// Tab is mirrored')),context);
-vm.runInContext(app.slice(app.indexOf('// ---- 멀티모달 검색'),app.indexOf('// Environment setup is separate')),context);
+vm.runInContext(app.slice(app.indexOf('// ---- AI 검색'),app.indexOf('// Environment setup is separate')),context);
 const evaluate=code=>vm.runInContext(code,context);
 const raw={reports:[{id:'r',date:'2026-10-14',title:'기존 리포트',tags:[],summary:'새 소식',body_markdown:'본문',companies:[],sources:[],attachments:[]}],entities:[],events:[],relations:[],related:[]};
 context.raw=raw;

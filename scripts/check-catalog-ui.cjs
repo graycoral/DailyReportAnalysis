@@ -101,7 +101,7 @@ get('#category').value='';
  evaluate('api=visibilityAPI;applyReportVisibility({hidden_reports:["kept","body","empty","old-id"]});updateCatalogView()');
  assert.equal(evaluate('selected'),'');
  get('#query').value='새로운';
- await get('#restore-reports').onclick();
+ await get('#restore-all-settings').onclick();
  assert.equal(get('#query').value,'새로운');
  assert.deepEqual(plain(evaluate('catalog().reports.map(r=>r.id)')),['kept','body']);
  assert.equal(get('#restore-reports').disabled,true);

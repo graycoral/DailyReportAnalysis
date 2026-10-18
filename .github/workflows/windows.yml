@@ -21,7 +21,7 @@ jobs:
         with:
           go-version: '1.27.2'
           cache: false
-      - name: Check catalog and Outlook UI
+      - name: Check catalog, local and multimodal UI
         shell: pwsh
         run: |
           node --check internal/hub/web/app.js
@@ -29,11 +29,18 @@ jobs:
           node scripts/check-catalog-ui.cjs
           if ($LASTEXITCODE -ne 0) { throw 'Catalog visibility UI tests failed' }
           node scripts/check-rag-ui.cjs
-          if ($LASTEXITCODE -ne 0) { throw 'RAG environment UI tests failed' }
+          if ($LASTEXITCODE -ne 0) { throw 'RAG setup UI tests failed' }
           node scripts/check-rag-media-ui.cjs
           if ($LASTEXITCODE -ne 0) { throw 'RAG media/map UI tests failed' }
           node scripts/check-outlook-ui.cjs
           if ($LASTEXITCODE -ne 0) { throw 'Outlook path UI tests failed' }
+          node scripts/check-import-model.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Local report import UI tests failed' }
+          node scripts/check-source-layers.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Map source visibility tests failed' }
+      - name: Test release retry and verification
+        shell: pwsh
+        run: node scripts/check-release.cjs
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -46,9 +53,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Media test dependencies failed' }
           python -m unittest discover -s rag -p test_media.py
           if ($LASTEXITCODE -ne 0) { throw 'Media service tests failed' }
-      - name: Test release retry and verification
-        shell: pwsh
-        run: node scripts/check-release.cjs
+          python -m unittest discover -s rag -p test_efficiency.py
+          if ($LASTEXITCODE -ne 0) { throw 'Background task and model scheduling tests failed' }
       - name: Test and build self-contained executables
         shell: pwsh
         run: ./scripts/build.ps1
