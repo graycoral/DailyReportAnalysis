@@ -2103,6 +2103,27 @@
           "url": "https://www.theverge.com/transportation/997091/waymo-singapore-robotaxi-launch-2027"
         }
       ]
+    },
+    {
+      "id": "waymo-toronto-plan-20261016",
+      "date": "2026-10-16",
+      "title": "Waymo 토론토 진출 및 Element 제휴 확대 발표",
+      "status": "계획",
+      "report_id": "2026-10-19",
+      "detail": "Waymo가 토론토에서 수동 지도 구축·안전요원 동승 시험을 준비하고 2028년 첫 승객을 목표로 발표했다. Element는 현장 차량 운영·정비·충전 등을 담당할 계획이다. 실제 무인 상용 개시·차량 수·상용 허가 달성은 미확인.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "Waymo: Hello Toronto! Waymo is En Route",
+          "url": "https://www.waymo.com/blog/2026/10/waymo-in-toronto/"
+        },
+        {
+          "title": "Element Fleet Management: Element expands strategic partnership with Waymo as autonomous mobility arrives in Canada",
+          "url": "https://www.elementfleet.com/about/news/element-expands-strategic-partnership-with-waymo-as-autonomous-mobility-arrives-in-canada"
+        }
+      ]
     }
   ],
   "entities": [
@@ -2160,6 +2181,16 @@
       "id": "manchester",
       "label": "Manchester",
       "kind": "지역"
+    },
+    {
+      "id": "waymo",
+      "label": "Waymo",
+      "kind": "기업"
+    },
+    {
+      "id": "element-fleet-management",
+      "label": "Element Fleet Management",
+      "kind": "기업"
     }
   ],
   "relations": [
@@ -2292,6 +2323,25 @@
         {
           "title": "Pony.ai 공식 LinkedIn · Manchester testing with Uber and Verne 발표 · 2026-10-14",
           "url": "https://jp.linkedin.com/company/pony-ai/"
+        }
+      ]
+    },
+    {
+      "id": "waymo-element-toronto-20261016",
+      "from": "waymo",
+      "to": "element-fleet-management",
+      "label": "토론토 차량 운영 제휴 확대",
+      "status": "계획",
+      "report_id": "2026-10-19",
+      "evidence": "2026-10-16 양사 공식 발표에서 Element가 Waymo 토론토 fleet의 현장 운영·차량 준비·정비·충전 등을 담당할 계획임을 명시했다. 상용 서비스는 2028년 목표이며 실제 개시는 미확인.",
+      "sources": [
+        {
+          "title": "Waymo: Hello Toronto! Waymo is En Route",
+          "url": "https://www.waymo.com/blog/2026/10/waymo-in-toronto/"
+        },
+        {
+          "title": "Element Fleet Management: Element expands strategic partnership with Waymo as autonomous mobility arrives in Canada",
+          "url": "https://www.elementfleet.com/about/news/element-expands-strategic-partnership-with-waymo-as-autonomous-mobility-arrives-in-canada"
         }
       ]
     }
