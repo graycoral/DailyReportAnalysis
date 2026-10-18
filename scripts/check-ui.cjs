@@ -9,7 +9,7 @@ const env={...process.env,AV_NAV_VIEWER:viewer,AV_HELP_VIEWER:viewer,AV_NOTES_VI
 const checks=[
  'connections-ui','github-choice-ui','github-catalog-ui','notes-ui','note-network-ui',
  'navigation-ui','settings-ui','report-reading-ui','hallmark-ui','help-ui',
- 'outlook-sources-ui','import-ui','pdf-preview-ui','list-actions-ui',
+ 'outlook-sources-ui','import-ui','pdf-preview-ui','list-actions-ui','selection-ui',
 ];
 for(const check of checks){
  console.log('Running '+check);

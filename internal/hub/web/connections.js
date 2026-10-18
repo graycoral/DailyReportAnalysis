@@ -24,8 +24,15 @@ async function loadDocumentConnections(force=false){
 }
 async function openConnections(){
  const dialog=$('#connections-dialog');if(!dialog)return;
+ if(dialog.open)return;
  if(!dialog.open)dialog.showModal();
  connectionDraftDirty=false;connectionLimit=30;connectionFeedback('');await loadDocumentConnections(true);
+}
+function closeConnections(){
+ const dialog=$('#connections-dialog');if(!dialog?.open)return true;
+ if(connectionSaving){connectionFeedback('저장 중입니다. 완료된 뒤 닫아 주세요.');return false}
+ if(connectionDraftDirty&&!confirm('저장하지 않은 사전 변경을 버리고 닫을까요? 취소하면 계속 편집할 수 있습니다.'))return false;
+ connectionDraftDirty=false;dialog.close();return true;
 }
 function connectionFeedback(message,error=false){const el=$('#connections-feedback');el.textContent=message;el.classList.toggle('error',error)}
 function connectionDocButton(d){
@@ -37,7 +44,7 @@ function bindConnectionDocuments(root){
   try{
    if(d.kind==='mail'){b.disabled=true;await api('/api/outlook/open',{mail:d.mail})}
    else if(d.kind==='pdf')window.open('/api/local/file?id='+encodeURIComponent(d.file_id)+'&view=1','_blank','noopener');
-   else {$('#connections-dialog')?.close();networkSelection=null;selectReport(d.report_id,{fromDetail:true,exactSource:true})}
+   else {if(!closeConnections())return;networkSelection=null;selectReport(d.report_id,{fromDetail:true,exactSource:true})}
   }catch(e){toast(e.message)}finally{b.disabled=false}
  });
 }
@@ -112,7 +119,9 @@ function renderConnectionNetworkDetail(link){
  bindConnectionDocuments($('#detail'));$('#connection-review').onclick=()=>{connectionFilter='accepted';$('#connections-filter').value='accepted';openConnections()};return true;
 }
 $('#connections-open')?.addEventListener('click',openConnections);
-$('#connections-close')?.addEventListener('click',()=>$('#connections-dialog').close());
+$('#connections-close')?.addEventListener('click',closeConnections);
+$('#connections-dialog')?.addEventListener('cancel',e=>{e.preventDefault();closeConnections()});
+window.addEventListener('beforeunload',e=>{if(connectionDraftDirty||connectionSaving){e.preventDefault();e.returnValue=''}});
 $('#connections-refresh')?.addEventListener('click',()=>loadDocumentConnections(true));
 $('#connections-filter')?.addEventListener('change',e=>{connectionFilter=e.target.value;connectionLimit=30;renderConnectionsList()});
 $('#connections-query')?.addEventListener('input',e=>{connectionQuery=e.target.value;connectionLimit=30;renderConnectionsList()});

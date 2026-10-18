@@ -5,7 +5,7 @@ Loads google/embeddinggemma-2 through sentence-transformers with the audio encod
 (text + vision, ~440M parameters) and turns PDF pages into images for embedding.
 Nothing here is part of the shipped AVReportHub.exe.
 """
-import io, json, os, re, shutil, sys, time
+import io, json, os, re, shutil, sys, time, threading
 from pathlib import Path
 
 os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
@@ -16,6 +16,7 @@ DATA_DIR = Path(os.environ.get("AVHUB_DATA_DIR") or Path(os.environ.get("LOCALAP
 INDEX_DIR = Path(os.environ.get("RAG_INDEX", DATA_DIR / "rag" / "index"))
 DOCS_DIR = Path(os.environ.get("RAG_DOCS", DATA_DIR / "rag" / "demo"))
 RENDER_SCALE = float(os.environ.get("RAG_RENDER_SCALE", "1.5"))  # 72dpi * 1.5 = 108dpi
+PDF_LOCK = threading.RLock()
 
 
 def log(msg):
@@ -70,17 +71,26 @@ def load_model(offline=False):
 def pdf_pages(pdf_path, first_only=False):
     """Yield (page_number, PIL.Image) for a PDF."""
     import pypdfium2 as pdfium
-    doc = pdfium.PdfDocument(str(pdf_path))
-    try:
+    with PDF_LOCK:
+        doc = pdfium.PdfDocument(str(pdf_path))
         n = 1 if first_only else len(doc)
+    try:
         for i in range(n):
-            page = doc[i]
-            try:
-                yield i + 1, page.render(scale=RENDER_SCALE).to_pil().convert("RGB")
-            finally:
-                page.close()
+            with PDF_LOCK:
+                page = doc[i]
+                try:
+                    bitmap = page.render(scale=RENDER_SCALE)
+                    try:
+                        image = bitmap.to_pil().convert("RGB")
+                    finally:
+                        bitmap.close()
+                finally:
+                    page.close()
+            # Embedding can take seconds; do not hold PDFium's lock while yielding.
+            yield i + 1, image
     finally:
-        doc.close()
+        with PDF_LOCK:
+            doc.close()
 
 
 def png_bytes(img, max_side=None):
@@ -105,6 +115,11 @@ def embed_document_text(model, text):
 
 def pdf_text(pdf_path, page_number=1, limit=1200):
     """Plain text of one page (used only to help craft demo sentences). May be empty for scanned PDFs."""
+    with PDF_LOCK:
+        return _pdf_text(pdf_path, page_number, limit)
+
+
+def _pdf_text(pdf_path, page_number, limit):
     import pypdfium2 as pdfium
     doc = pdfium.PdfDocument(str(pdf_path))
     try:

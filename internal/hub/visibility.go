@@ -12,8 +12,9 @@ import (
 // Display preferences live in the current user's data directory, separately from
 // the published snapshot, database, attachments and local document links.
 type reportVisibility struct {
-	HiddenReports []string `json:"hidden_reports"`
-	Error         string   `json:"error,omitempty"`
+	HiddenReports  []string `json:"hidden_reports"`
+	DeletedReports []string `json:"deleted_reports,omitempty"`
+	Error          string   `json:"error,omitempty"`
 }
 
 // Caller holds visibilityMu. Never replace unreadable preferences when hiding.
@@ -67,23 +68,37 @@ func (a *App) changeReportVisibility(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if input.Action == "hide" {
-		if !a.hasReport(input.ReportID) {
-			http.Error(w, "리포트를 찾을 수 없습니다.", http.StatusNotFound)
+		if input.ReportID != "" {
+			input.ReportIDs = append(input.ReportIDs, input.ReportID)
+		}
+		if len(input.ReportIDs) == 0 {
+			http.Error(w, "삭제할 리포트를 선택하세요.", 400)
 			return
+		}
+		for _, id := range input.ReportIDs {
+			if !a.hasReport(id) {
+				http.Error(w, "리포트를 찾을 수 없습니다.", http.StatusNotFound)
+				return
+			}
 		}
 	}
 	a.visibilityMu.Lock()
 	defer a.visibilityMu.Unlock()
-	v := reportVisibility{HiddenReports: []string{}}
+	v, loadErr := a.loadReportVisibility()
+	if loadErr != nil && input.Action != "restore-all" {
+		http.Error(w, "숨김 설정을 읽지 못했습니다.", 500)
+		return
+	}
+	if input.Action == "restore-all" {
+		v.HiddenReports = []string{}
+	}
 	if input.Action != "restore-all" {
-		var err error
-		v, err = a.loadReportVisibility()
-		if err != nil {
-			http.Error(w, "숨김 설정을 읽지 못해 변경하지 않았습니다. 전체 복원 후 다시 시도하세요.", http.StatusInternalServerError)
-			return
-		}
-		if input.Action == "hide" && !slices.Contains(v.HiddenReports, input.ReportID) {
-			v.HiddenReports = append(v.HiddenReports, input.ReportID)
+		if input.Action == "hide" {
+			for _, id := range input.ReportIDs {
+				if !slices.Contains(v.HiddenReports, id) && !slices.Contains(v.DeletedReports, id) {
+					v.HiddenReports = append(v.HiddenReports, id)
+				}
+			}
 		}
 		if input.Action == "restore" {
 			chosen := make(map[string]bool, len(input.ReportIDs))

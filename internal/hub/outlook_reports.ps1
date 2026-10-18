@@ -79,7 +79,7 @@
                   [void]$attachments.Add(@{name=$file.Name; body=$file.Body})
                   $sha = [Security.Cryptography.SHA256]::Create()
                   try { $hash = ([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($file.Body)))).Replace('-', '').ToLowerInvariant() } finally { $sha.Dispose() }
-                  [void]$fingerprints.Add(@{name=$file.Name; sha256=$hash})
+                  if ($fingerprints.Count -lt 32) { [void]$fingerprints.Add(@{name=$file.Name; sha256=$hash}) }
                 }
                 $limited += $inner.Limited
                 $failed += $inner.Failed

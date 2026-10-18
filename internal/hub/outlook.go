@@ -28,6 +28,10 @@ var outlookReportScript string
 //go:embed outlook_embedded.cs
 var outlookEmbeddedSource string
 
+var outlookPowerShell = func() string {
+	return filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+}
+
 type outlookReq struct {
 	Op      string                   `json:"op"`
 	Sources []OutlookSource          `json:"sources,omitempty"`
@@ -63,7 +67,7 @@ func runOutlook(ctx context.Context, req outlookReq, out any) error {
 	}
 	script := strings.Replace(outlookScript, "# REPORT_IMPORT_CASE", outlookReportScript, 1)
 	script = strings.Replace(script, "# EMBEDDED_REPORT_SOURCE", base64.StdEncoding.EncodeToString([]byte(outlookEmbeddedSource)), 1)
-	ps := filepath.Join(os.Getenv("SystemRoot"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe")
+	ps := outlookPowerShell()
 	cmd := exec.CommandContext(ctx, ps, "-NoProfile", "-NonInteractive", "-Command", "$s=[Console]::ReadLine(); & ([scriptblock]::Create([Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($s))))")
 	cmd.Stdin = strings.NewReader(base64.StdEncoding.EncodeToString([]byte(script)) + "\n" + base64.StdEncoding.EncodeToString(in))
 	hideCommand(cmd)

@@ -120,7 +120,7 @@ func (a *App) ragRoutes(mux *http.ServeMux) {
 		log.Printf("rag: index %d bytes", len(b))
 		a.ragProxy(w, r, "POST", "/index", bytes.NewReader(b), contentType, name, 30*time.Second)
 	})
-	for _, p := range []string{"query", "delete"} {
+	for _, p := range []string{"query", "highlights", "delete", "trash", "restore"} {
 		path := p
 		mux.HandleFunc("/api/rag/"+path, func(w http.ResponseWriter, r *http.Request) {
 			if !post(w, r) {

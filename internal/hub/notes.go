@@ -789,6 +789,42 @@ func (a *App) notesHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		e = a.noteCommit(root, []noteChange{{n.Path, n.raw, nil}})
 		respond(map[string]bool{"ok": true}, e)
+	case "purge":
+		if !noteIDPattern.MatchString(in.ID) {
+			fail(errors.New("잘못된 노트 ID입니다."))
+			return
+		}
+		// Resolve and check the exact, ID-scoped folders before any removal.
+		paths := []string{}
+		for _, sub := range []string{"trash", "history"} {
+			p, err := notePath(root, ".avhub/"+sub+"/"+in.ID)
+			if err != nil {
+				fail(err)
+				return
+			}
+			paths = append(paths, p)
+		}
+		n, err := a.noteGet(root, in.ID)
+		if err == nil {
+			if n.Version != in.Version {
+				fail(errNoteConflict)
+				return
+			}
+			if err = a.noteCommit(root, []noteChange{{n.Path, n.raw, nil}}); err != nil {
+				fail(err)
+				return
+			}
+		} else if !os.IsNotExist(err) {
+			fail(err)
+			return
+		}
+		for _, p := range paths {
+			if err = os.RemoveAll(p); err != nil {
+				fail(err)
+				return
+			}
+		}
+		respond(map[string]bool{"ok": true}, nil)
 	case "trash":
 		items := []noteTrash{}
 		p, e := notePath(root, ".avhub/trash")

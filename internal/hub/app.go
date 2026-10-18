@@ -1,6 +1,7 @@
 package hub
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
@@ -25,6 +26,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	branding "avreporthub/assets"
 )
 
 //go:embed web/* seed/*
@@ -43,6 +46,7 @@ type App struct {
 	notesCache           *noteCache
 	pdfCache             pdfCache
 	visibilityMu         sync.Mutex
+	readingMu            sync.Mutex
 	syncing              bool
 	status               string
 	syncState            string
@@ -201,6 +205,11 @@ func (a *App) routes() http.Handler {
 	web, _ := fs.Sub(assets, "web")
 	styleNonce := noteRandom()
 	static := http.FileServer(http.FS(web))
+	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/x-icon")
+		w.Header().Set("Cache-Control", "no-cache")
+		http.ServeContent(w, r, "favicon.ico", time.Time{}, bytes.NewReader(branding.Icon))
+	})
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
 			b, _ := assets.ReadFile("web/index.html")
@@ -280,6 +289,8 @@ func (a *App) routes() http.Handler {
 		w.Write(b)
 	})
 	mux.HandleFunc("/api/report-visibility", a.changeReportVisibility)
+	mux.HandleFunc("/api/reports/delete", a.permanentlyDeleteReports)
+	mux.HandleFunc("/api/report-reading", a.handleReportReading)
 	a.localRoutes(mux)
 	a.reportImportRoutes(mux)
 	a.connectionsRoutes(mux)

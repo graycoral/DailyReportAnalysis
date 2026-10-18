@@ -243,6 +243,12 @@ func (a *App) syncData() {
 	}
 	snap.ETag = etag
 	snap.SyncedAt = time.Now().In(kst).Format(time.RFC3339)
+	v := a.reportVisibility()
+	if v.Error != "" {
+		err = errors.New(v.Error)
+		return
+	}
+	snap.Catalog = withoutReports(snap.Catalog, v.DeletedReports)
 	if e = a.ensureDatabase(ctx, snap, g); e != nil {
 		err = e
 		return
@@ -259,7 +265,8 @@ func (a *App) syncData() {
 }
 
 // Remove cached DB/attachment files the current catalog no longer references.
-func (a *App) pruneCache(c Catalog) {
+func (a *App) pruneCache(c Catalog) error {
+	var failures []error
 	keep := map[string]bool{}
 	if c.Database != nil {
 		keep[c.Database.SHA256+".sqlite"] = true
@@ -272,6 +279,9 @@ func (a *App) pruneCache(c Catalog) {
 	for _, sub := range []string{"databases", "attachments"} {
 		entries, e := os.ReadDir(filepath.Join(a.dir, sub))
 		if e != nil {
+			if !os.IsNotExist(e) {
+				failures = append(failures, e)
+			}
 			continue
 		}
 		for _, en := range entries {
@@ -280,9 +290,12 @@ func (a *App) pruneCache(c Catalog) {
 			}
 			if e := os.Remove(filepath.Join(a.dir, sub, en.Name())); e == nil {
 				log.Printf("pruned %s/%s", sub, en.Name())
+			} else if !os.IsNotExist(e) {
+				failures = append(failures, e)
 			}
 		}
 	}
+	return errors.Join(failures...)
 }
 
 // Keep immutable SQLite snapshots alongside the matching JSON display projection.

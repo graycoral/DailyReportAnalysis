@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -27,10 +28,25 @@ var reportDate = regexp.MustCompile(`\b\d{4}-\d{2}-\d{2}\b`)
 var reportHeading = regexp.MustCompile(`^#{1,2}\s+(.+?)\s*$`)
 var refDefinition = regexp.MustCompile(`(?m)^\[R(\d+)\]:\s*(https://\S+)\s*$`)
 var refUse = regexp.MustCompile(`\[R(\d+)(?:[–—-]R?(\d+))?\]`)
+var legacyReferenceURL = regexp.MustCompile(`https://[^\s<>"\x60]+`)
 
 // This is a structural importer, not an analysis or fact-checking step. Tags use
 // only explicit titles and the selected Outlook folder; never infer from a body.
 func parseReport(b []byte, name string, companies []string) (Report, error) {
+	return parseReportFormat(b, name, companies, false)
+}
+
+// Mail archives include reports written before REPORT_FORMAT.md. Keep manual
+// imports strict; recognize the older daily format without rewriting its body.
+func parseOutlookReport(b []byte, name string, companies []string) (Report, error) {
+	r, err := parseReport(b, name, companies)
+	if err == nil || errors.Is(err, errNoUpdates) {
+		return r, err
+	}
+	return parseReportFormat(b, name, companies, true)
+}
+
+func parseReportFormat(b []byte, name string, companies []string, legacy bool) (Report, error) {
 	r := Report{Companies: []string{}, Tags: []string{"동향"}, Sources: []Source{}, Attachments: []Attachment{}}
 	if len(b) > reportMax || !utf8.Valid(b) || strings.ContainsRune(string(b), 0) {
 		return r, errors.New("MD는 UTF-8 텍스트이며 2MB 이하여야 합니다.")
@@ -59,13 +75,29 @@ func parseReport(b []byte, name string, companies []string) (Report, error) {
 		return r, errors.New("머리말의 title·info와 닫는 ---를 확인하세요.")
 	}
 	r.Title = fm["info"]
+	r.Date = reportDate.FindString(fm["title"])
+	if legacy {
+		koreanDaily := strings.Contains(fm["title"], "자율주행") && strings.Contains(fm["title"], "데일리")
+		if !koreanDaily && !strings.Contains(strings.ToLower(fm["title"]), "autonomous driving daily report") {
+			return r, errors.New("이전 형식의 자율주행 데일리 리포트 머리말이 필요합니다.")
+		}
+		infoDate := reportDate.FindString(fm["info"])
+		if r.Date == "" {
+			r.Date = infoDate
+		} else if infoDate != "" && infoDate != r.Date {
+			return r, errors.New("title과 info의 보고일이 다릅니다.")
+		}
+		r.Title = strings.Trim(strings.ReplaceAll(r.Title, r.Date, ""), " ·|-:")
+		if r.Title == "" {
+			r.Title = strings.TrimSpace(strings.ReplaceAll(fm["title"], r.Date, ""))
+		}
+	}
 	if strings.Join(strings.Fields(r.Title), "") == "주요신규업데이트없음" {
 		return r, errNoUpdates
 	}
 	if reportDate.MatchString(r.Title) {
 		return r, errors.New("info에는 날짜 대신 핵심 주제를 적으세요.")
 	}
-	r.Date = reportDate.FindString(fm["title"])
 	if _, e := time.Parse("2006-01-02", r.Date); e != nil {
 		return r, errors.New("title에 유효한 보고일 YYYY-MM-DD가 필요합니다.")
 	}
@@ -73,6 +105,12 @@ func parseReport(b []byte, name string, companies []string) (Report, error) {
 		return r, errors.New("파일명 날짜와 title의 보고일이 다릅니다.")
 	}
 	required := []string{"Executive Summary", "주요 신규 업데이트", "기업/지역별 상세 내용", "지정 6개사 L4 점검", "May Mobility 심층 점검", "규제·안전", "기술·공급망", "Reference"}
+	if legacy {
+		required = []string{"Executive Summary", "주요 신규 업데이트", "기업/지역별 상세 내용", "규제·안전", "기술·공급망", "Reference"}
+	}
+	seen := map[string]bool{}
+	references := []string{}
+	inReferences := false
 	next, fenced, summaryDate := 0, false, false
 	for _, line := range lines[end+1:] {
 		if strings.HasPrefix(strings.TrimSpace(line), "```") || strings.HasPrefix(strings.TrimSpace(line), "~~~") {
@@ -87,11 +125,29 @@ func parseReport(b []byte, name string, companies []string) (Report, error) {
 		}
 		m := reportHeading.FindStringSubmatch(line)
 		if m == nil {
+			if inReferences {
+				references = append(references, line)
+			}
 			continue
 		}
 		// The reference report named in REPORT_FORMAT.md splits May Mobility
 		// over two slides and combines regulation/supply-chain on one slide.
 		name := m[1]
+		if legacy {
+			switch name {
+			case "기업·지역별 상세 내용", "기업·지역별 동향", "기업·지역별 상세", "기업별 L4 점검":
+				name = "기업/지역별 상세 내용"
+			case "기술/공급망":
+				name = "기술·공급망"
+			case "References":
+				name = "Reference"
+			case "규제·안전 및 기술/공급망":
+				seen["규제·안전"], seen["기술·공급망"] = true, true
+			}
+			seen[name] = true
+			inReferences = name == "Reference"
+			continue
+		}
 		if name == "May Mobility 심층 조사" {
 			name = "May Mobility 심층 점검"
 		}
@@ -121,10 +177,16 @@ func parseReport(b []byte, name string, companies []string) (Report, error) {
 			}
 		}
 	}
-	if next != len(required) {
+	if legacy {
+		for _, heading := range required {
+			if !seen[heading] {
+				return r, fmt.Errorf("필수 섹션이 없습니다: %s", heading)
+			}
+		}
+	} else if next != len(required) {
 		return r, fmt.Errorf("필수 섹션이 없습니다: %s", required[next])
 	}
-	if !summaryDate {
+	if !legacy && !summaryDate {
 		return r, errors.New("Executive Summary 아래에 title과 같은 보고일(## YYYY-MM-DD · 주제)이 필요합니다.")
 	}
 	defs := map[int]string{}
@@ -138,6 +200,20 @@ func parseReport(b []byte, name string, companies []string) (Report, error) {
 			return r, errors.New("같은 출처 번호에 서로 다른 URL이 있습니다.")
 		}
 		defs[n] = m[2]
+	}
+	if legacy && len(defs) == 0 && !refUse.MatchString(body) {
+		urls := map[string]bool{}
+		for _, raw := range legacyReferenceURL.FindAllString(strings.Join(references, "\n"), -1) {
+			raw = strings.TrimRight(raw, ").,;]")
+			u, err := url.Parse(raw)
+			if err != nil || u.Host == "" || u.User != nil {
+				return r, errors.New("Reference URL을 확인하세요.")
+			}
+			if !urls[raw] {
+				defs[len(defs)+1] = raw
+				urls[raw] = true
+			}
+		}
 	}
 	if len(defs) == 0 {
 		return r, errors.New("Reference에 [R1]: https://... 형식의 출처가 필요합니다.")
@@ -300,6 +376,16 @@ func (a *App) loadReports() (reportArchive, error) {
 	return x, nil
 }
 func (a *App) saveReports(x reportArchive) error {
+	// Atomic preferences can be read without visibilityMu, already owned by deletion.
+	if raw, err := os.ReadFile(filepath.Join(a.dir, "report-visibility.json")); err == nil {
+		var v reportVisibility
+		if err = json.Unmarshal(raw, &v); err != nil {
+			return err
+		}
+		x.Reports = slices.DeleteFunc(x.Reports, func(r importedReport) bool { return slices.Contains(v.DeletedReports, r.ID) })
+	} else if !os.IsNotExist(err) {
+		return err
+	}
 	b, e := json.Marshal(x)
 	if e != nil {
 		return e

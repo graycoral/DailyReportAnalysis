@@ -12,18 +12,20 @@ Endpoints (all JSON unless noted):
   GET  /map                    indexed sources + labelled embedding similarities
   POST /index  (PDF or image, X-File-Name)    decode → embed → store under index/
   POST /query  {"text": "...", "top_k": 5}      top pages with similarity + thumbnail
+  POST /highlights {"doc": "<id>", "page": 1, "text": "..."}  literal PDF text locations
   GET  /page?doc=<id>&page=<n>  PNG of that page
   POST /delete {"doc": "<id>"}
 Indexed PDFs are stored unencrypted under %LOCALAPPDATA%\AVReportHub\rag\index\docs\ (never inside a git
 work tree; startup refuses that). The UI warns before upload.
 """
-import argparse, hashlib, json, os, secrets, signal, sys, threading, time, base64, tempfile
+import argparse, hashlib, json, os, secrets, signal, sys, threading, time, base64, tempfile, re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs, unquote
 import numpy as np
 import embed_core as ec
 import media
+import pdf_highlights
 from tasks import Jobs, ModelGate
 
 DATA_DIR = ec.DATA_DIR
@@ -61,6 +63,16 @@ def index_file(name, data, progress=lambda pages: None):
     with state["index_lock"]:
         with state["lock"]:
             if doc_id in state["docs"]:
+                if state["docs"][doc_id].get("deleted"):
+                    prior = state["docs"][doc_id]
+                    state["docs"][doc_id] = {k: v for k, v in prior.items() if k != "deleted"}
+                    try:
+                        save_index()
+                    except Exception:
+                        state["docs"][doc_id] = prior
+                        raise
+                    state["revision"] += 1
+                    state["map_cache"] = None
                 return doc_id, state["docs"][doc_id], False
         info = media.describe(data)
         ec.INDEX_DIR.mkdir(parents=True, exist_ok=True)
@@ -137,7 +149,8 @@ def build_map():
         if state["map_cache"] is not None:
             return state["map_cache"]
         revision = state["revision"]
-        docs, vecs = dict(state["docs"]), dict(state["vecs"])
+        docs = {k: v for k, v in state["docs"].items() if not v.get("deleted")}
+        vecs = {k: state["vecs"][k] for k in docs}
         pairs = dict(state["pair_cache"])
     candidates = []
     ids = sorted(docs)
@@ -170,12 +183,34 @@ def build_map():
     return result
 
 
+def highlights(doc_id, page_number, text):
+    if not isinstance(doc_id, str) or not re.fullmatch(r"[A-Za-z0-9]{1,64}", doc_id):
+        raise ValueError("잘못된 자료 번호입니다.")
+    if type(page_number) is not int or not isinstance(text, str) or len(text) > 2000:
+        raise ValueError("페이지 번호와 검색어를 확인해 주세요.")
+    with state["lock"]:
+        meta = state["docs"].get(doc_id)
+        if meta is None or meta.get("deleted") or not 1 <= page_number <= meta["pages"]:
+            raise ValueError("자료 또는 페이지를 찾을 수 없습니다.")
+        kind = meta.get("kind", "pdf")
+    empty = {"rects": [], "matches": 0, "truncated": False}
+    if kind != "pdf":
+        return {**empty, "reason": "image"}
+    try:
+        return pdf_highlights.page_highlights(DOCS / (doc_id + ".pdf"), page_number, text)
+    except Exception:
+        # A missing text layer/source must never turn a successful semantic query into an error.
+        return {**empty, "reason": "unavailable"}
+
+
 def query(text, top_k=5):
     with state["model_gate"].use(interactive=True):
         q = ec.embed_query(state["model"], text).astype(np.float32)
     hits = []
     with state["lock"]:
         for d, arr in state["vecs"].items():
+            if state["docs"][d].get("deleted"):
+                continue
             sims = arr @ q
             for i in np.argsort(-sims)[:top_k]:
                 hits.append({"doc": d, "name": state["docs"][d]["name"], "kind": state["docs"][d].get("kind", "pdf"),
@@ -185,6 +220,10 @@ def query(text, top_k=5):
     for h in hits:
         p = DOCS / f"{h['doc']}-{h['page']}.png"
         h["thumb"] = "data:image/png;base64," + base64.b64encode(p.read_bytes()).decode() if p.exists() else ""
+        try:
+            h["highlight"] = highlights(h["doc"], h["page"], text)
+        except ValueError:
+            h["highlight"] = {"rects": [], "matches": 0, "reason": "unavailable"}
     return hits
 
 
@@ -228,7 +267,10 @@ class H(BaseHTTPRequestHandler):
             job = jobs.get(qs.get("id", [""])[0])
             return self._json(job) if job else self._err("작업을 찾을 수 없습니다. 서비스가 재시작되었는지 확인하세요.", 404)
         if u.path == "/health":
-            return self._json({"ok": True, "model": state["info"], "docs": [{"id": k, **v} for k, v in state["docs"].items()],
+            with state["lock"]:
+                docs = list(state["docs"].items())
+            return self._json({"ok": True, "model": state["info"], "docs": [{"id": k, **v} for k, v in docs if not v.get("deleted")],
+                               "trash": [{"id": k, **v} for k, v in docs if v.get("deleted")],
                                "docs_dir": str(ec.DOCS_DIR), "index_dir": str(ec.INDEX_DIR)})
         if u.path == "/map":
             with state["lock"]:
@@ -252,6 +294,10 @@ class H(BaseHTTPRequestHandler):
             d, n = qs.get("doc", [""])[0], qs.get("page", ["1"])[0]
             if not d.isalnum() or not n.isdigit():
                 return self._err("bad request")
+            with state["lock"]:
+                meta = state["docs"].get(d)
+                if not meta or meta.get("deleted"):
+                    return self._err("not found", 404)
             p = DOCS / f"{d}-{int(n)}.png"
             if not p.exists():
                 return self._err("not found", 404)
@@ -283,17 +329,41 @@ class H(BaseHTTPRequestHandler):
                 text = (j.get("text") or "").strip()
                 if not text:
                     return self._err("검색 문장을 입력하세요.")
+                if len(text) > 2000:
+                    return self._err("검색어는 2,000자 이내로 입력해 주세요.")
                 return self._json({"ok": True, "hits": query(text, max(1, min(30, int(j.get("top_k", 5)))))})
-            if u.path == "/delete":
+            if u.path == "/highlights":
+                j = json.loads(body or b"{}")
+                return self._json({"ok": True, **highlights(j.get("doc"), j.get("page", 1), j.get("text", ""))})
+            if u.path in ("/delete", "/trash", "/restore"):
                 j = json.loads(body or b"{}"); d = j.get("doc", "")
-                with state["lock"]:
+                if not isinstance(d, str) or not re.fullmatch(r"[a-f0-9]{16}", d):
+                    return self._err("잘못된 자료 번호입니다.")
+                # A Windows PDF handle must be closed before removing its source file.
+                with state["index_lock"], ec.PDF_LOCK, state["lock"]:
                     if d in state["docs"]:
-                        state["docs"].pop(d); state["vecs"].pop(d, None); save_index()
+                        prior = dict(state["docs"][d])
+                        if u.path == "/delete":
+                            files = [f for f in DOCS.iterdir() if f.name.startswith(d + ".") or f.name.startswith(d + "-")]
+                            for f in files + [ec.INDEX_DIR / f"{d}.npy"]:
+                                f.unlink(missing_ok=True)
+                            state["docs"].pop(d)
+                        elif u.path == "/trash":
+                            state["docs"][d] = {**prior, "deleted": time.time()}
+                        else:
+                            state["docs"][d] = {k: v for k, v in prior.items() if k != "deleted"}
+                        try:
+                            save_index()
+                        except Exception:
+                            state["docs"][d] = prior
+                            raise
+                        if u.path == "/delete":
+                            state["vecs"].pop(d, None)
                         state["revision"] += 1
                         state["map_cache"] = None
                         state["pair_cache"] = {k: v for k, v in state["pair_cache"].items() if d not in k}
-                        for f in list(DOCS.glob(f"{d}*")) + [ec.INDEX_DIR / f"{d}.npy"]:
-                            f.unlink(missing_ok=True)
+                    else:
+                        return self._err("자료를 찾을 수 없습니다.", 404)
                 return self._json({"ok": True})
         except ValueError as e:
             return self._err(str(e), 400)
