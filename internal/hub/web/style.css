@@ -12,50 +12,52 @@
   --drop-backdrop:rgba(0,0,0,.45);--dialog-backdrop:rgba(0,0,0,.4);
   color:var(--ink);background:var(--bg);
 }
-/* ---------- Apple 라이트 (기본) ---------- */
+/* 현대자동차 CI 기반: Blue #002c5f, Light Sand #f6f3f2, Sky Blue #aacae6.
+   보조색은 문서 가독성에 맞춘 UI 색상. 저장된 테마 키는 호환성을 위해 유지한다. */
+/* ---------- 블루 라이트 (기본) ---------- */
 :root,:root[data-theme="apple"]{
   color-scheme:light;
-  --bg:#f4f6f7;--surface:#ffffff;--surface-2:#f4f6f7;--ink:#243746;--ink-2:#3b5060;--heading-ink:#172b3a;--muted:#61717d;--line:#dce3e7;--line-2:#83959f;
-  --accent:#0b726b;--accent-ink:#0b726b;--accent-soft:#eaf4f1;--accent-contrast:#fff;--amber:#c77d0a;--amber-ink:#8b5e20;--amber-soft:#f6efdf;
-  --primary-bg:#0b726b;--primary-hover:#085e58;--primary-ink:var(--on-solid);--danger-fill:#d70015;
+  --bg:#f6f3f2;--surface:#ffffff;--surface-2:#f6f3f2;--ink:#243746;--ink-2:#3b5060;--heading-ink:#002c5f;--muted:#596875;--line:#e4dcd3;--line-2:#788a99;
+  --accent:#002c5f;--accent-ink:#002c5f;--accent-soft:#e9f2f8;--accent-contrast:#fff;--amber:#c77d0a;--amber-ink:#8b5e20;--amber-soft:#f6efdf;
+  --primary-bg:#002c5f;--primary-hover:#001f45;--primary-ink:var(--on-solid);--danger-fill:#d70015;
   --danger:#d70015;--danger-soft:#fde8ea;--mark:#ffe27a;
-  --header-bg:rgba(255,255,255,.78);--header-blur:saturate(180%) blur(20px);--header-ink:#172b3a;--header-muted:#61717d;--header-line:#dce3e7;
+  --header-bg:rgba(255,255,255,.94);--header-blur:saturate(180%) blur(20px);--header-ink:#002c5f;--header-muted:#596875;--header-line:#e4dcd3;
   --header-btn-bg:rgba(0,0,0,.04);--header-btn-border:transparent;--header-btn-hover:rgba(0,0,0,.08);
-  --tab-track:#eaf4f1;--tab-ink:#243746;--tab-active-bg:#fff;--tab-active-ink:#172b3a;--tab-active-shadow:0 1px 3px rgba(0,0,0,.12),0 3px 8px rgba(0,0,0,.06);
+  --tab-track:#e9f2f8;--tab-ink:#243746;--tab-active-bg:#fff;--tab-active-ink:#002c5f;--tab-active-shadow:0 1px 3px rgba(0,0,0,.12),0 3px 8px rgba(0,0,0,.06);
   --shadow:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.04);--shadow-hover:0 4px 16px rgba(0,0,0,.08);--shadow-lg:0 24px 60px -16px rgba(0,0,0,.3);
-  --chip-bg:#eef1f3;--chip-ink:#3b5060;--chip-active-bg:#172b3a;--chip-active-ink:#fff;
-  --stat-ink:#172b3a;--c-note:#9254b9;--c-report:#0e9aa0;--c-company:#0071e3;--c-tag:#c77d0a;--edge:#8e8e93;--map-line:#aeaeb2;--map-tag-line:#d4b27a;
-  --graph-bg:radial-gradient(ellipse at 50% 40%,#fff 0,#f4f6f7 75%);--node-fill:#fff;--code-bg:#eef1f3;--th-bg:#f4f6f7;--selected-bg:#eaf4f1;
+  --chip-bg:#eef1f3;--chip-ink:#3b5060;--chip-active-bg:#002c5f;--chip-active-ink:#fff;
+  --stat-ink:#002c5f;--c-note:#9254b9;--c-report:#0e9aa0;--c-company:#0071e3;--c-tag:#c77d0a;--edge:#8e8e93;--map-line:#aeaeb2;--map-tag-line:#d4b27a;
+  --graph-bg:radial-gradient(ellipse at 50% 40%,#fff 0,#f6f3f2 75%);--node-fill:#fff;--code-bg:#eef1f3;--th-bg:#f6f3f2;--selected-bg:#e9f2f8;
 }
-/* ---------- Apple 다크 ---------- */
+/* ---------- 블루 다크 ---------- */
 :root[data-theme="apple-dark"]{
   color-scheme:dark;
-  --bg:#101b24;--surface:#172b3a;--surface-2:#243746;--ink:#f1f5f6;--ink-2:#d0dce2;--heading-ink:#f1f5f6;--muted:#a6bac4;--line:rgba(255,255,255,.1);--line-2:rgba(255,255,255,.3);
-  --accent:#60c8bb;--accent-ink:#8cdbd0;--accent-soft:#163f3b;--accent-contrast:#172b3a;--amber:#ff9f0a;--amber-ink:#ffb340;--amber-soft:rgba(255,159,10,.18);
-  --primary-bg:#0b726b;--primary-hover:#085e58;--primary-ink:var(--on-solid);--danger-fill:#bf332b;
+  --bg:#0f1b2b;--surface:#16283d;--surface-2:#20364d;--ink:#f3f6fa;--ink-2:#d0dce8;--heading-ink:#f3f6fa;--muted:#a9bbcc;--line:#33495e;--line-2:#7c8fa3;
+  --accent:#aacae6;--accent-ink:#aacae6;--accent-soft:#203c58;--accent-contrast:#002c5f;--amber:#ff9f0a;--amber-ink:#ffb340;--amber-soft:rgba(255,159,10,.18);
+  --primary-bg:#aacae6;--primary-hover:#c1dbef;--primary-ink:#002c5f;--danger-fill:#bf332b;
   --danger:#ff453a;--danger-soft:rgba(255,69,58,.18);--mark:#8a6d00;
-  --header-bg:rgba(23,43,58,.72);--header-blur:saturate(180%) blur(20px);--header-ink:#f1f5f6;--header-muted:#a6bac4;--header-line:rgba(255,255,255,.1);
+  --header-bg:rgba(22,40,61,.94);--header-blur:saturate(180%) blur(20px);--header-ink:#f3f6fa;--header-muted:#a9bbcc;--header-line:#33495e;
   --header-btn-bg:rgba(255,255,255,.08);--header-btn-border:transparent;--header-btn-hover:rgba(255,255,255,.14);
-  --tab-track:rgba(118,118,128,.24);--tab-ink:#f5f5f7;--tab-active-bg:#636366;--tab-active-ink:#fff;--tab-active-shadow:0 1px 3px rgba(0,0,0,.4);
+  --tab-track:#203c58;--tab-ink:#d0dce8;--tab-active-bg:#aacae6;--tab-active-ink:#002c5f;--tab-active-shadow:0 1px 3px rgba(0,0,0,.4);
   --shadow:0 1px 2px rgba(0,0,0,.3);--shadow-hover:0 6px 20px rgba(0,0,0,.5);--shadow-lg:0 24px 60px -16px rgba(0,0,0,.8);
-  --chip-bg:rgba(255,255,255,.08);--chip-ink:#d1d1d6;--chip-active-bg:#f5f5f7;--chip-active-ink:#1d1d1f;
-  --stat-ink:#f5f5f7;--c-note:#ce92ed;--c-report:#1c9ca3;--c-company:#5d73f0;--c-tag:#c07c12;--edge:#8e8e93;--map-line:#48484a;--map-tag-line:#6b5a3a;
-  --graph-bg:radial-gradient(ellipse at 50% 40%,#243746 0,#172b3a 75%);--node-fill:#243746;--code-bg:rgba(255,255,255,.08);--th-bg:#243746;--selected-bg:#163f3b;
+  --chip-bg:rgba(255,255,255,.08);--chip-ink:#d0dce8;--chip-active-bg:#aacae6;--chip-active-ink:#002c5f;
+  --stat-ink:#f3f6fa;--c-note:#ce92ed;--c-report:#1c9ca3;--c-company:#5d73f0;--c-tag:#c07c12;--edge:#8e8e93;--map-line:#48484a;--map-tag-line:#6b5a3a;
+  --graph-bg:radial-gradient(ellipse at 50% 40%,#20364d 0,#16283d 75%);--node-fill:#20364d;--code-bg:rgba(255,255,255,.08);--th-bg:#20364d;--selected-bg:#203c58;
 }
-/* ---------- 클래식 (처음 디자인: 네이비 헤더 + 청록) ---------- */
+/* ---------- 블루 클래식 (진한 현대 블루 헤더) ---------- */
 :root[data-theme="classic"]{
   color-scheme:light;--r:12px;--r-sm:8px;
-  --bg:#f4f6f7;--surface:#ffffff;--surface-2:#f4f6f7;--ink:#243746;--ink-2:#3b5060;--heading-ink:#172b3a;--muted:#61717d;--line:#dce3e7;--line-2:#83959f;
-  --accent:#0b726b;--accent-ink:#0b726b;--accent-soft:#eaf4f1;--accent-contrast:#fff;--amber:#c77d0a;--amber-ink:#8b5e20;--amber-soft:#f6efdf;
-  --primary-bg:#0b726b;--primary-hover:#085e58;--primary-ink:var(--on-solid);--danger-fill:#b42318;
+  --bg:#f6f3f2;--surface:#ffffff;--surface-2:#f6f3f2;--ink:#243746;--ink-2:#3b5060;--heading-ink:#002c5f;--muted:#596875;--line:#e4dcd3;--line-2:#788a99;
+  --accent:#002c5f;--accent-ink:#002c5f;--accent-soft:#e9f2f8;--accent-contrast:#fff;--amber:#c77d0a;--amber-ink:#8b5e20;--amber-soft:#f6efdf;
+  --primary-bg:#002c5f;--primary-hover:#001f45;--primary-ink:var(--on-solid);--danger-fill:#b42318;
   --danger:#b42318;--danger-soft:#fde8ea;--mark:#ffe27a;
-  --header-bg:linear-gradient(90deg,#172b3a,#243746 60%,#304b58);--header-blur:none;--header-ink:#fff;--header-muted:#b9cbd3;--header-line:transparent;
+  --header-bg:#002c5f;--header-blur:none;--header-ink:#fff;--header-muted:#aacae6;--header-line:transparent;
   --header-btn-bg:#ffffff10;--header-btn-border:#ffffff2a;--header-btn-hover:#ffffff22;
-  --tab-track:#eaf4f1;--tab-ink:#3b5060;--tab-active-bg:#172b3a;--tab-active-ink:#fff;--tab-active-shadow:0 2px 8px -2px #172b3a66;
+  --tab-track:#e9f2f8;--tab-ink:#3b5060;--tab-active-bg:#002c5f;--tab-active-ink:#fff;--tab-active-shadow:0 2px 8px -2px #002c5f66;
   --shadow:0 1px 2px rgba(21,32,46,.05),0 6px 18px -8px rgba(21,32,46,.18);--shadow-hover:0 2px 4px rgba(21,32,46,.05),0 14px 30px -12px rgba(21,32,46,.25);--shadow-lg:0 20px 60px -20px rgba(21,32,46,.35);
-  --chip-bg:#eef1f3;--chip-ink:#3b5060;--chip-active-bg:#172b3a;--chip-active-ink:#fff;
-  --stat-ink:#172b3a;--c-note:#9254b9;--c-report:#0e9aa0;--c-company:#4f6bed;--c-tag:#c77d0a;--edge:#7a8aa3;--map-line:#b9c3d1;--map-tag-line:#d9c08c;
-  --graph-bg:radial-gradient(ellipse at 50% 40%,#fff 0,#f4f6f7 70%);--node-fill:#fff;--code-bg:#eef1f3;--th-bg:#f4f6f7;--selected-bg:linear-gradient(0deg,#eaf4f1,#fff);
+  --chip-bg:#eef1f3;--chip-ink:#3b5060;--chip-active-bg:#002c5f;--chip-active-ink:#fff;
+  --stat-ink:#002c5f;--c-note:#9254b9;--c-report:#0e9aa0;--c-company:#4f6bed;--c-tag:#c77d0a;--edge:#7a8aa3;--map-line:#b9c3d1;--map-tag-line:#d9c08c;
+  --graph-bg:radial-gradient(ellipse at 50% 40%,#fff 0,#f6f3f2 70%);--node-fill:#fff;--code-bg:#eef1f3;--th-bg:#f6f3f2;--selected-bg:#e9f2f8;
 }
 
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink)}button,input,select{font:inherit}
@@ -98,6 +100,7 @@ header button,header select{background:var(--header-btn-bg);border:1px solid var
 header select{padding-right:10px}
 header button:hover,header select:hover{background:var(--header-btn-hover);border-color:var(--header-btn-border);color:var(--header-ink);box-shadow:none}
 header .quiet{background:transparent;color:var(--header-muted)}
+header :is(button,select,summary):focus-visible{outline-color:var(--header-ink)}
 
 /* Toolbar */
 .toolbar{padding:14px 24px;background:var(--bg);display:flex;gap:16px;align-items:center;position:relative;z-index:2}
@@ -161,7 +164,7 @@ summary{cursor:pointer}
 .source-switch{display:flex;align-items:center;gap:8px;margin:0;padding:7px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:12px;cursor:pointer}
 .source-switch input{appearance:none;display:block!important;width:28px!important;height:16px;min-width:28px;margin:0!important;padding:0!important;border:0;border-radius:999px;background:var(--line-2);position:relative;cursor:pointer}
 .source-switch input:before{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:var(--surface);box-shadow:var(--switch-shadow);transition:transform .18s}
-.source-switch input:checked{background:var(--accent)}.source-switch input:checked:before{transform:translateX(12px);background:var(--on-solid)}
+.source-switch input:checked{background:var(--accent)}.source-switch input:checked:before{transform:translateX(12px);background:var(--accent-contrast)}
 .source-switch:has(input:checked){border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
 .source-controls>p{font-size:11px;line-height:1.6;color:var(--muted);margin:8px 0 0}
 .text-button{border:0;padding:0;background:none;font-size:12px;color:var(--accent-ink);box-shadow:none!important;border-radius:0}
@@ -471,6 +474,7 @@ mark{background:var(--mark);color:inherit;padding:0 2px;border-radius:3px}
 .github-switch input{appearance:none;flex:0 0 42px;width:42px;height:24px;border:0;border-radius:20px;background:var(--ink-2);padding:3px;cursor:pointer;transition:background .15s}
 .github-switch input:before{content:"";display:block;width:18px;height:18px;background:var(--on-solid);border-radius:50%;transition:transform .15s}
 .github-switch input:checked{background:var(--accent)}
+.github-switch input:checked:before{background:var(--accent-contrast)}
 .github-switch input:checked:before{transform:translateX(18px)}
 .github-switch input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .github-state{font-size:13px;line-height:1.6;margin:12px 0 0;color:var(--ink-2)}
