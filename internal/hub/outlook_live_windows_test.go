@@ -36,8 +36,9 @@ func TestLiveEmbeddedDiagnostic(t *testing.T) {
 			report, err := parseReport([]byte(f.Body), f.Name, nil)
 			if err != nil {
 				t.Logf("file=%s error=%v", f.Name, err)
-				if strings.Contains(f.Name,"09-20") || strings.Contains(f.Name,"10-16") || strings.Contains(f.Name,"10-02") {
-					for _, line := range strings.Split(f.Body,"\n") { if strings.HasPrefix(line,"# ") || strings.HasPrefix(line,"## ") || strings.HasPrefix(line,"title:") || strings.HasPrefix(line,"info:") {t.Log(strings.TrimSpace(line))} }
+				if strings.Contains(f.Name,"09-21") || strings.Contains(f.Name,"10-13") || strings.Contains(f.Name,"10-02") {
+					ref := false; n:=0
+					for _, line := range strings.Split(f.Body,"\n") { if strings.Contains(line,"Reference") {ref=true}; if ref && strings.TrimSpace(line)!="" && n<5 {t.Log(strings.TrimSpace(line));n++} }
 				}
 			} else {
 				t.Logf("date=%s imported", report.Date)

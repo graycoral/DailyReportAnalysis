@@ -110,6 +110,10 @@ func parseReport(b []byte, name string, companies []string) (Report, error) {
 		}
 		for i, heading := range required {
 			if name == heading {
+				// A section may span consecutive slides (including Reference).
+				if i == next-1 {
+					continue
+				}
 				if i != next {
 					return r, errors.New("필수 섹션의 순서를 REPORT_FORMAT.md와 맞춰 주세요.")
 				}
