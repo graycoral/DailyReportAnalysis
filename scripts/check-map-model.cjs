@@ -1,7 +1,7 @@
 // Content identity, source switches and saved links must agree in the map.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const elements=new Map(),get=s=>{if(!elements.has(s))elements.set(s,{value:'',checked:true});return elements.get(s)};
-const context=vm.createContext({document:{querySelector:get},URL});
+const context=vm.createContext({document:{querySelector:get},URL,matchMedia:()=>({matches:false,addEventListener(){}})});
 const app=fs.readFileSync(path.join(__dirname,'../internal/hub/web/app.js'),'utf8');
 vm.runInContext(app.slice(0,app.indexOf('// Tab is mirrored')),context);
 const run=s=>vm.runInContext(s,context),plain=x=>JSON.parse(JSON.stringify(x));
@@ -46,4 +46,9 @@ run('const identity=reportIdentity;let identityCalls=0;reportIdentity=r=>{identi
 assert.equal(run('identityCalls'),5);
 run('importedReports=[...importedReports];mapCatalog()');
 assert.equal(run('identityCalls'),10);
+context.noteModel={nodes:[{id:'note:a',kind:'note',label:'Linked note',source:'notes',ref:{id:'a',path:'note.md',body:'',tags:[]}}],links:[{id:'note-report:a:outlook',from:'note:a',to:'r:outlook',label:'직접 연결',evidence:'노트에 저장한 연결',report_id:'outlook'}]};
+run('noteNetworkState=noteModel');
+const withNotes=plain(run('buildDocumentNetwork(filtered())'));
+assert.equal(withNotes.links.find(e=>e.id==='note-report:a:outlook').to,'r:published','note links follow the shared map report while preserving source evidence');
+assert.equal(withNotes.links.find(e=>e.id==='note-report:a:outlook').source_report_id,'outlook');
 console.log('PASS: map content deduplication, original metadata search, source switches, saved links, hidden groups, immutability and identity cache');

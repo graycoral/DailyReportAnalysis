@@ -37,6 +37,7 @@ type LocalFile struct {
 	Size    int      `json:"size"`
 	Added   string   `json:"added"`
 	Reports []string `json:"reports"`
+	SHA256  string   `json:"sha256,omitempty"`
 }
 type MailRef struct {
 	EntryID  string `json:"entry_id"`
@@ -208,7 +209,7 @@ func cleanName(s string) string {
 }
 func (a *App) hasReport(id string) bool {
 	a.mu.RLock()
-	for _, r := range a.snapshot.Catalog.Reports {
+	for _, r := range a.githubSnapshot().Catalog.Reports {
 		if r.ID == id {
 			a.mu.RUnlock()
 			return true
@@ -238,6 +239,7 @@ func (a *App) addPDF(name string, b []byte) (LocalFile, error) {
 		return LocalFile{}, e
 	}
 	f := LocalFile{ID: hex.EncodeToString(k), Name: cleanName(name), Size: len(b), Added: time.Now().In(kst).Format(time.RFC3339), Reports: []string{}}
+	f.SHA256 = digest(string(b))
 	e := a.editLocal(func(x *LocalIndex) error {
 		c, e := protect(b)
 		if e != nil {

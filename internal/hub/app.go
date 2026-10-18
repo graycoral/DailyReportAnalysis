@@ -10,6 +10,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	mrand "math/rand"
@@ -38,6 +39,8 @@ type App struct {
 	mu                   sync.RWMutex
 	syncLock             sync.Mutex
 	localMu              sync.Mutex
+	notesMu              sync.Mutex
+	notesCache           *noteCache
 	pdfCache             pdfCache
 	visibilityMu         sync.Mutex
 	syncing              bool
@@ -85,7 +88,7 @@ func Run(setup bool, payload []byte) {
 		log.SetOutput(lf)
 	}
 	log.Printf("start v%s setup=%v dir=%s", Version, setup, dir)
-	a := &App{dir: dir, setup: setup, payload: payload, config: defaultConfig(), status: "포함된 리포트"}
+	a := &App{dir: dir, setup: setup, payload: payload, config: defaultConfig(), status: "GitHub 연동 후 게시 리포트를 받을 수 있습니다."}
 	defer a.stopRagTask()
 	defer a.pdfCache.clear()
 	if b, e := os.ReadFile(filepath.Join(dir, "config.json")); e == nil {
@@ -94,25 +97,15 @@ func Run(setup bool, payload []byte) {
 			a.config = c
 		}
 	}
-	b, _ := assets.ReadFile("seed/catalog.json")
-	c, e := parseCatalog(b)
-	if e != nil {
-		notifyError("기본 데이터 오류: " + e.Error())
-		return
-	}
-	a.snapshot = Snapshot{Catalog: c, Origin: "bundled"}
-	if e = a.ensureDatabase(context.Background(), a.snapshot, nil); e != nil {
-		log.Printf("bundled database: %v", e)
-		notifyError("기본 DB 준비 실패: " + e.Error())
-		return
-	}
-	if b, e := os.ReadFile(filepath.Join(dir, "snapshot.json")); e == nil {
-		var s Snapshot
-		if json.Unmarshal(b, &s) == nil && s.Catalog.Validate() == nil {
-			a.snapshot = s
-		}
-	}
+	a.loadSnapshot()
 	if *check {
+		b, err := assets.ReadFile("seed/catalog.json")
+		if err != nil {
+			panic(err)
+		}
+		if _, err = parseCatalog(b); err != nil {
+			panic(err)
+		}
 		if e := writeAtomic(filepath.Join(dir, "self-test.txt"), []byte("ok")); e != nil {
 			panic(e)
 		}
@@ -163,7 +156,7 @@ func Run(setup bool, payload []byte) {
 	if !setup {
 		go a.outlookScheduler()
 	}
-	if !setup && a.config.Configured && !a.config.Offline {
+	if !setup && a.config.githubEnabled() {
 		go a.syncData()
 	}
 	fmt.Println(a.address + "/open?key=" + a.secret)
@@ -190,7 +183,7 @@ func (a *App) scheduler() {
 		c := a.config
 		last := a.snapshot.SyncedAt
 		a.mu.RUnlock()
-		if a.setup || !c.Configured || c.Offline {
+		if a.setup || !c.githubEnabled() {
 			continue
 		}
 		local := now.In(kst)
@@ -206,19 +199,30 @@ func (a *App) scheduler() {
 func (a *App) routes() http.Handler {
 	mux := http.NewServeMux()
 	web, _ := fs.Sub(assets, "web")
-	mux.Handle("/", http.FileServer(http.FS(web)))
+	styleNonce := noteRandom()
+	static := http.FileServer(http.FS(web))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
+			b, _ := assets.ReadFile("web/index.html")
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			io.WriteString(w, strings.Replace(string(b), "<head>", "<head><meta name=\"notes-style-nonce\" content=\""+styleNonce+"\">", 1))
+			return
+		}
+		static.ServeHTTP(w, r)
+	})
 	mux.HandleFunc("/api/ping", func(w http.ResponseWriter, r *http.Request) { writeResponse(w, map[string]any{"version": Version}) })
 	// Lightweight poll target; the UI fetches /api/state (full catalog) only when commit changes.
 	mux.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
 		a.mu.RLock()
 		defer a.mu.RUnlock()
-		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "syncing": a.syncing, "status": a.status, "sync_state": a.syncAvailability(), "commit": a.snapshot.Commit, "synced_at": a.snapshot.SyncedAt, "configured": a.config.Configured, "report_visibility": a.reportVisibility(), "local_revision": a.localReportRevision(), "outlook_import": a.outlookImportView()})
+		snap := a.githubSnapshot()
+		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "syncing": a.syncing, "status": a.status, "sync_state": a.syncAvailability(), "github_choice_required": a.githubChoiceRequired(), "commit": snap.Commit, "synced_at": snap.SyncedAt, "configured": a.config.Configured, "offline": a.config.Offline, "offline_reason": a.config.OfflineReason, "report_visibility": a.reportVisibility(), "local_revision": a.localReportRevision(), "outlook_import": a.outlookImportView()})
 	})
 	mux.HandleFunc("/api/state", func(w http.ResponseWriter, r *http.Request) {
 		a.mu.RLock()
 		defer a.mu.RUnlock()
 		_, te := os.Stat(filepath.Join(a.dir, "token.bin"))
-		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "config": a.config, "data_dir": a.dir, "has_token": te == nil, "snapshot": a.snapshot, "syncing": a.syncing, "status": a.status, "sync_state": a.syncAvailability(), "report_visibility": a.reportVisibility(), "outlook_import": a.outlookImportView()})
+		writeResponse(w, map[string]any{"version": Version, "setup": a.setup, "config": a.config, "data_dir": a.dir, "has_token": te == nil, "snapshot": a.githubSnapshot(), "syncing": a.syncing, "status": a.status, "sync_state": a.syncAvailability(), "github_choice_required": a.githubChoiceRequired(), "report_visibility": a.reportVisibility(), "outlook_import": a.outlookImportView()})
 	})
 	mux.HandleFunc("/api/sync", func(w http.ResponseWriter, r *http.Request) {
 		if !post(w, r) {
@@ -228,6 +232,7 @@ func (a *App) routes() http.Handler {
 		writeResponse(w, map[string]any{"ok": true})
 	})
 	mux.HandleFunc("/api/check", a.checkSettings)
+	mux.HandleFunc("/api/github-choice", a.chooseGitHub)
 	mux.HandleFunc("/api/install", a.install)
 	mux.HandleFunc("/api/launch", func(w http.ResponseWriter, r *http.Request) {
 		if !post(w, r) {
@@ -277,6 +282,8 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("/api/report-visibility", a.changeReportVisibility)
 	a.localRoutes(mux)
 	a.reportImportRoutes(mux)
+	a.connectionsRoutes(mux)
+	a.notesRoutes(mux)
 	a.ragRoutes(mux)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		expected := strings.TrimPrefix(a.address, "http://")
@@ -287,7 +294,7 @@ func (a *App) routes() http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Cache-Control", "no-store")
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'nonce-"+styleNonce+"'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
 		if r.URL.Path == "/open" {
 			if subtle.ConstantTimeCompare([]byte(r.URL.Query().Get("key")), []byte(a.secret)) != 1 {
 				http.Error(w, "Invalid session", 403)
@@ -367,9 +374,10 @@ func writeResponse(w http.ResponseWriter, v any) {
 
 type Settings struct {
 	Config
-	Automatic  bool   `json:"automatic"`
-	Token      string `json:"token"`
-	ClearToken bool   `json:"clear_token"`
+	Automatic     bool   `json:"automatic"`
+	Token         string `json:"token"`
+	ClearToken    bool   `json:"clear_token"`
+	preserveToken bool
 }
 
 func (a *App) settings(r *http.Request) (Settings, error) {
@@ -382,12 +390,20 @@ func (a *App) settings(r *http.Request) (Settings, error) {
 		return s, e
 	}
 	s.Token = strings.TrimSpace(s.Token)
+	s.OfflineReason = ""
+	a.mu.RLock()
+	s.GitHubChoiceVersion = a.config.GitHubChoiceVersion
+	a.mu.RUnlock()
 	if s.Token == "" && !s.ClearToken {
 		a.mu.RLock()
 		same := s.Owner == a.config.Owner && s.Repo == a.config.Repo
 		a.mu.RUnlock()
 		if same {
-			s.Token, e = a.readToken()
+			if s.Offline || (a.setup && s.Automatic) {
+				s.preserveToken = true
+			} else {
+				s.Token, e = a.readToken()
+			}
 		}
 	}
 	return s, e
@@ -406,7 +422,7 @@ func (a *App) validateSetup(ctx context.Context, s Settings) (*Snapshot, []strin
 	checks = append(checks, "저장 폴더 생성·쓰기 확인 완료")
 	checks = append(checks, "로컬 웹 서버 및 브라우저 연결 정상")
 	if a.setup && s.Automatic {
-		checks = append(checks, "기본 자료로 자동 설치; GitHub 최신화는 실행 직후 백그라운드 처리")
+		checks = append(checks, "프로그램 자동 설치; GitHub 리포트는 첫 실행에서 연동을 선택한 뒤 받습니다.")
 		return nil, checks, nil
 	}
 	if s.Offline {
@@ -458,6 +474,14 @@ func (a *App) install(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	snap, checks, e := a.validateSetup(r.Context(), s)
+	if isGitHubUnavailable(e) {
+		// Keep the last usable snapshot and credentials; saving settings can still
+		// succeed when GitHub is blocked by the user's network or repository policy.
+		s.Offline = true
+		s.OfflineReason = "connection_failed"
+		checks = append(checks, e.Error(), "GitHub 자료 연동을 자동으로 껐습니다. GitHub 리포트는 표시하지 않으며, Outlook·직접 가져온 자료는 계속 사용할 수 있습니다.")
+		snap, e = nil, nil
+	}
 	if e != nil {
 		log.Printf("install validation failed: %v", e)
 		writeResponse(w, map[string]any{"ok": false, "checks": checks, "error": e.Error()})
@@ -486,7 +510,9 @@ func (a *App) install(w http.ResponseWriter, r *http.Request) {
 		checks = append(checks, "실행 파일 설치 완료")
 	}
 	tokenPath := filepath.Join(a.dir, "token.bin")
-	if len(encrypted) > 0 {
+	if s.preserveToken {
+		// Disabling integration does not require decrypting or deleting credentials.
+	} else if len(encrypted) > 0 {
 		e = writeAtomic(tokenPath, encrypted)
 	} else {
 		e = os.Remove(tokenPath)
@@ -499,6 +525,9 @@ func (a *App) install(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.Configured = true
+	if !s.Automatic {
+		s.GitHubChoiceVersion = Version
+	}
 	if e = writeJSON(filepath.Join(a.dir, "config.json"), s.Config); e != nil {
 		http.Error(w, e.Error(), 500)
 		return
@@ -528,7 +557,7 @@ func (a *App) install(w http.ResponseWriter, r *http.Request) {
 			checks = append(checks, "바탕화면 바로가기 생성 완료")
 		}
 	}
-	writeResponse(w, map[string]any{"ok": true, "checks": checks, "installed_path": filepath.Join(a.dir, "bin", "AVReportHub.exe")})
+	writeResponse(w, map[string]any{"ok": true, "checks": checks, "config": s.Config, "installed_path": filepath.Join(a.dir, "bin", "AVReportHub.exe")})
 }
 
 // Only HTTP(S) source links are rendered by the browser; never run published code.

@@ -11,20 +11,27 @@ import (
 	"time"
 )
 
-const Version = "0.1.7"
+const Version = "0.1.8"
 
 var slug = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]{0,99}$`)
 var datePattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 var kst = time.FixedZone("Asia/Seoul", 9*60*60)
 
 type Config struct {
-	Owner      string `json:"owner"`
-	Repo       string `json:"repo"`
-	Branch     string `json:"branch"`
-	SyncTime   string `json:"sync_time"`
-	Configured bool   `json:"configured"`
-	Offline    bool   `json:"offline"`
+	Owner               string `json:"owner"`
+	Repo                string `json:"repo"`
+	Branch              string `json:"branch"`
+	SyncTime            string `json:"sync_time"`
+	Configured          bool   `json:"configured"`
+	Offline             bool   `json:"offline"`
+	OfflineReason       string `json:"offline_reason,omitempty"`
+	GitHubChoiceVersion string `json:"github_choice_version,omitempty"`
 }
+
+func (c Config) githubEnabled() bool {
+	return c.Configured && !c.Offline && c.GitHubChoiceVersion == Version
+}
+
 type Source struct {
 	Title string `json:"title"`
 	URL   string `json:"url"`

@@ -2,14 +2,14 @@
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../internal/hub/web/app.js'),'utf8');
 const elements=new Map();
-const element=()=>({value:'',checked:true,textContent:'',innerHTML:'',attributes:{},classList:{toggle(){}},setAttribute(k,v){this.attributes[k]=v},querySelectorAll(){return[]},insertAdjacentHTML(){}});
+const element=()=>({value:'',checked:true,textContent:'',innerHTML:'',attributes:{},dataset:{},classList:{toggle(){}},setAttribute(k,v){this.attributes[k]=v},querySelectorAll(){return[]},insertAdjacentHTML(){}});
 const get=selector=>{if(!elements.has(selector))elements.set(selector,element());return elements.get(selector)};
-const context=vm.createContext({document:{querySelector:get,querySelectorAll:()=>[]},URL});
+const context=vm.createContext({window:{},document:{querySelector:get,querySelectorAll:()=>[]},URL,matchMedia:()=>({matches:false,addEventListener(){}})});
 vm.runInContext(source.slice(0,source.indexOf('// Tab is mirrored')),context);
 const evaluate=code=>vm.runInContext(code,context),plain=value=>JSON.parse(JSON.stringify(value));
 for(const state of ['unavailable','offline','unconfigured']){
  evaluate(`showStatus({sync_state:'${state}',status:'GitHub 연결 불가',syncing:false})`);
- assert.match(get('#sync').textContent,/지금 업데이트/);assert.ok(!get('#sync').disabled);
+ assert.match(get('#sync').textContent,/지금 업데이트/);assert.equal(get('#sync').disabled,state==='offline');
  assert.equal(get('#sync-indicator').attributes['data-state'],state==='unavailable'?'error':'idle');
 }
 evaluate('showStatus({sync_state:"checking",syncing:true})');assert.equal(get('#sync').disabled,true);assert.equal(get('#sync-indicator').attributes['data-state'],'checking');
@@ -36,10 +36,44 @@ assert.equal(evaluate('catalog().relations.length'),0,'Outlook must never inheri
 context.duplicate={...context.localReport,body_markdown:'---\r\ntitle: Different mail metadata\r\n---\r\nold  \r\n'};
 evaluate('tab="search";importedReports=[duplicate];mergedSource=null');
 assert.deepEqual(plain(evaluate('catalog().reports.map(r=>r.id)')),[report.id],'same date/body is listed once despite frontmatter and line endings');
+// Deduplication keeps each original's complete search/filter conditions.
+const originalSnapshot=JSON.stringify(context.raw),originalImport=JSON.stringify(context.duplicate);
+for(const strict of [true,false])for(const tab of ['search','timeline']){
+ get('#strict').checked=strict;evaluate('tab='+JSON.stringify(tab));
+ for(const query of ['자율주행','매일 보고','지역 운행 확대']){
+  get('#query').value=query;
+  assert.deepEqual(plain(evaluate('filtered().map(r=>r.id)')),[report.id],`${tab}: duplicate metadata remains searchable (strict=${strict})`);
+ }
+ get('#company').value='Uber';get('#category').value='자율주행';get('#query').value='매일 보고';
+ assert.deepEqual(plain(evaluate('filtered().map(r=>r.id)')),[report.id],'company, category and mail subject match the imported original');
+ get('#from').value='2026-10-16';assert.equal(evaluate('filtered().length'),0,'date filters still apply');get('#from').value='';
+ get('#to').value='2026-10-14';assert.equal(evaluate('filtered().length'),0);get('#to').value='';
+ get('#query').value='게시 리포트';assert.equal(evaluate('filtered().length'),0,'conditions must match one original, not unrelated metadata across copies');
+ get('#query').value='';get('#company').value='';get('#category').value='';
+}
+get('#strict').checked=true;
+for(const tab of ['graph','outlook']){
+ evaluate('tab='+JSON.stringify(tab));get('#query').value='매일 보고';
+ assert.deepEqual(plain(evaluate('filtered().map(r=>r.id)')),[context.duplicate.id],'source views must retain the matching original ID');
+}
+evaluate('tab="map"');
+assert.deepEqual(plain(evaluate('filtered().map(r=>r.id)')),[report.id],'map search resolves matching original metadata to the shared report');
+assert.ok(plain(evaluate('mapReportMembers(filtered()[0]).map(r=>r.id)')).includes(context.duplicate.id),'map keeps the matching source record');
+get('#query').value='';
+assert.equal(JSON.stringify(context.raw),originalSnapshot,'search must not alter published evidence');
+assert.equal(JSON.stringify(context.duplicate),originalImport,'search must not alter imported metadata');
+evaluate('tab="search";importedReports=[{...duplicate,tags:["과거 발송본"]}]');
+get('#query').value='과거 발송본';assert.equal(evaluate('filtered().length'),0,'obsolete tags stay excluded in duplicate groups');
+get('#query').value='';evaluate('importedReports=[duplicate]');
 evaluate('tab="outlook"');
 assert.equal(evaluate('catalog().reports.length'),1,'duplicate mail remains in its source history');
 evaluate('tab="search";applyReportVisibility({hidden_reports:[raw.reports[0].id]})');
 assert.equal(evaluate('catalog().reports.length'),0,'a hidden report must not reappear through a duplicate');
+get('#query').value='매일 보고';assert.equal(evaluate('filtered().length'),0,'matching duplicate metadata cannot reveal a hidden group');
+evaluate('applyReportVisibility({hidden_reports:[]})');
+assert.deepEqual(plain(evaluate('filtered().map(r=>r.id)')),[report.id],'restoring a group also restores its searchable metadata');
+evaluate('importedReports=[]');assert.equal(evaluate('filtered().length'),0,'removed imports must not leave stale search metadata');
+get('#query').value='';
 evaluate('applyReportVisibility({hidden_reports:[]});importedReports=[localReport,{...localReport,id:"manual",origin:"markdown"},{...localReport,id:"next-day",date:"2026-10-16"}];mergedSource=null');
 assert.deepEqual(plain(evaluate('catalog().reports.map(r=>r.id)')),[report.id,'manual','next-day'],'manual/Outlook duplicates merge, but a different date remains');
 

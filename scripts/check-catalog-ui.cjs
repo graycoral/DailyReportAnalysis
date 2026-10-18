@@ -5,16 +5,16 @@ const app=fs.readFileSync(path.join(__dirname,'../internal/hub/web/app.js'),'utf
 const prefix=app.slice(0,app.indexOf('// Tab is mirrored'));
 assert.ok(prefix.length>1000);
 const elements=new Map();
-function element(){return {value:'',checked:false,innerHTML:'',textContent:'',setAttribute(){},classList:{toggle(){}},querySelector(){return element()},querySelectorAll(){return []}}}
+function element(){return {value:'',checked:false,innerHTML:'',textContent:'',dataset:{},setAttribute(){},classList:{toggle(){}},querySelector(){return element()},querySelectorAll(){return []}}}
 function get(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector)}
 function all(selector){
  const pattern=selector==='#results .ml'?/class="ml /g:selector==='#results .mn'?/class="mn /g:null;
  return pattern?[...get('#results').innerHTML.matchAll(pattern)].map(()=>element()):[];
 }
-const context=vm.createContext({
+const context=vm.createContext({window:{},
  document:{querySelector:get,querySelectorAll:all,createTreeWalker:()=>({nextNode:()=>false})},
  NodeFilter:{SHOW_TEXT:4},URL,setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},
- renderReportLocal(){},
+ renderReportLocal(){},matchMedia:()=>({matches:false,addEventListener(){}}),
 });
 vm.runInContext(prefix,context);
 const evaluate=code=>vm.runInContext(code,context);

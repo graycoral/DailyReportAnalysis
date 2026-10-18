@@ -13,7 +13,8 @@ const raw={reports:[published,older,unrelated],entities:[],events:[],relations:[
 let viewer,browser,page;
 (async()=>{
  fs.mkdirSync(out,{recursive:true});
- fs.writeFileSync(path.join(profile,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',configured:true,offline:true,sync_time:'08:00'}));
+ const version=fs.readFileSync(path.join(root,'internal/hub/model.go'),'utf8').match(/\bVersion\s*=\s*"([^"]+)"/)[1];
+ fs.writeFileSync(path.join(profile,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',configured:true,offline:true,github_choice_version:version,sync_time:'08:00'}));
  viewer=spawn(process.env.AV_NAV_VIEWER||path.join(root,'build/map-viewer.exe'),['--no-browser','--data-dir',profile],{windowsHide:true,stdio:'ignore'});
  const instanceFile=path.join(profile,'instance-viewer.json');
  for(let i=0;i<150&&!fs.existsSync(instanceFile);i++)await wait(100);
@@ -21,7 +22,8 @@ let viewer,browser,page;
  browser=await chromium.launch({channel:'msedge',headless:true});
  page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'reduce'});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.route('**/api/state',async route=>{const response=await route.fetch(),state=await response.json();state.snapshot.catalog=raw;await route.fulfill({json:state})});
+ await require('./ui-catalog-fixture.cjs')(page);
+ await page.route('**/api/state',async route=>{const response=await route.fetch(),state=await response.json();state.snapshot.catalog=raw;state.config.offline=false;await route.fulfill({json:state})});
  await page.route('**/api/local',route=>route.fulfill({json:{available:true,files:[pdf],mails:[],sources:[]}}));
  await page.route('**/api/local/reports',route=>route.fulfill({json:{reports:[imported],revision:'map-fixture'}}));
  await page.route('**/api/rag/map',route=>route.fulfill({json:{ok:false,docs:[],links:[]}}));
@@ -68,7 +70,7 @@ let viewer,browser,page;
  }
  await page.locator('.ml.reference').first().press('Enter');
  assert.match(await page.locator('#detail').innerText(),/자료 연결 근거/);
- await page.locator('#network-report').click();
+ await page.locator('[data-network-node="r:published"]').click();
  assert.equal(await open('r:published').count(),1,'evidence links return to the shared report list');
  await page.locator('#source-daily').uncheck();
  assert.equal(await page.locator('.mn.report').count(),1);

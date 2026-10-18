@@ -7,14 +7,14 @@ const fixture=fs.readFileSync(path.join(root,'internal/hub/report_import_test.go
 let viewer,browser;
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function start(){
- viewer=spawn(path.join(root,'build/import-viewer.exe'),['--no-browser','--data-dir',dir],{windowsHide:true,stdio:'ignore'});
+ viewer=spawn(process.env.AV_NAV_VIEWER||path.join(root,'build/import-viewer.exe'),['--no-browser','--data-dir',dir],{windowsHide:true,stdio:'ignore'});
  const file=path.join(dir,'instance-viewer.json');
  for(let i=0;i<150&&!fs.existsSync(file);i++)await wait(100);
  return JSON.parse(fs.readFileSync(file,'utf8'));
 }
 async function stop(){if(!viewer)return;const child=viewer;viewer=null;child.kill();await new Promise(resolve=>child.once('exit',resolve));const file=path.join(dir,'instance-viewer.json');if(fs.existsSync(file))fs.unlinkSync(file)}
 (async()=>{
- fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',sync_time:'08:00',configured:true,offline:true}));
+ fs.writeFileSync(path.join(dir,'config.json'),JSON.stringify({owner:'graycoral',repo:'DailyReportAnalysis',branch:'main',sync_time:'08:00',configured:true,offline:true,github_choice_version:fs.readFileSync(path.join(__dirname,'../internal/hub/model.go'),'utf8').match(/\bVersion\s*=\s*"([^"]+)"/)[1]}));
  let instance=await start();
  browser=await chromium.launch({channel:'msedge',headless:true});
  const page=await browser.newPage({viewport:{width:1560,height:1050}}),errors=[];
@@ -56,7 +56,7 @@ async function stop(){if(!viewer)return;const child=viewer;viewer=null;child.kil
  await page.getByRole('button',{name:'이 폴더 추가',exact:true}).click();
  await page.getByText('자동 가져오기 · 태그: 자율주행',{exact:true}).waitFor();
  assert.equal(selectedSource.folder_id,'00BB');assert.equal(selectedSource.folder_name,'자율주행');
- assert.match(await page.locator('#results').innerText(),/일반 메일은 저장하지 않습니다/);
+ assert.match(await page.locator('#results').innerText(),/일반 메일은 자료 연결 추천을 위해 제목·발신자·날짜·대화 ID와 문서 첨부의 이름·지문만 보관합니다/);
  await page.screenshot({path:path.join(root,'build/outlook-import-ui.png'),fullPage:true});
  // Persisted MD remains available after restarting the server with GitHub offline.
  await page.close();await stop();instance=await start();

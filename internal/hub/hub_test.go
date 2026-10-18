@@ -67,6 +67,7 @@ func TestInvalidSnapshotKeepsLastGoodData(t *testing.T) {
 	defer srv.Close()
 	cfg := defaultConfig()
 	cfg.Configured = true
+	cfg.GitHubChoiceVersion = Version
 	a := &App{dir: dir, config: cfg, snapshot: good}
 	withBase(srv.URL, func() { a.syncData() })
 	after, _ := os.ReadFile(p)
@@ -75,6 +76,9 @@ func TestInvalidSnapshotKeepsLastGoodData(t *testing.T) {
 	}
 	if a.snapshot.Commit != good.Commit || a.status == "최신 자료 확인 완료" {
 		t.Fatalf("bad catalog replaced snapshot: %q", a.status)
+	}
+	if a.config.Offline {
+		t.Fatal("content validation error disabled GitHub integration")
 	}
 }
 func TestConditionalRequestSkipsCatalog(t *testing.T) {
@@ -99,6 +103,7 @@ func TestConditionalRequestSkipsCatalog(t *testing.T) {
 	defer srv.Close()
 	cfg := defaultConfig()
 	cfg.Configured = true
+	cfg.GitHubChoiceVersion = Version
 	a := &App{dir: t.TempDir(), config: cfg, snapshot: Snapshot{Catalog: c, Origin: "bundled"}}
 	withBase(srv.URL, func() { a.syncData(); a.syncData() })
 	if catalogHits != 1 || a.snapshot.ETag != `"etag-1"` || a.snapshot.Commit != strings.Repeat("b", 40) {
@@ -188,7 +193,7 @@ func TestPinnedCatalogAndCredentialScope(t *testing.T) {
 	}
 }
 func TestEmbeddedAttachmentMatchesPublishedHash(t *testing.T) {
-	a := &App{dir: t.TempDir(), config: defaultConfig(), snapshot: Snapshot{Catalog: seedCatalog(t)}}
+	a := githubSettingsApp(t)
 	for _, report := range a.snapshot.Catalog.Reports {
 		for i := range report.Attachments {
 			b, name, e := a.attachment(context.Background(), report.ID, i)

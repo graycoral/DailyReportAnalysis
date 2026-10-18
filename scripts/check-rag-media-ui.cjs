@@ -4,16 +4,16 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const app=fs.readFileSync(path.join(__dirname,'../internal/hub/web/app.js'),'utf8');
 const html=fs.readFileSync(path.join(__dirname,'../internal/hub/web/index.html'),'utf8');
 const elements=new Map(),lists=new Map(),calls=[],messages=[];
-function element(){return {value:'',checked:false,innerHTML:'',textContent:'',setAttribute(){},insertAdjacentHTML(_position,html){this.innerHTML=html+this.innerHTML},classList:{toggle(){}},querySelector(){return element()},querySelectorAll(){return []}}}
+function element(){return {value:'',checked:false,innerHTML:'',textContent:'',dataset:{},setAttribute(){},insertAdjacentHTML(_position,html){this.innerHTML=html+this.innerHTML},classList:{toggle(){}},querySelector(){return element()},querySelectorAll(){return []}}}
 function get(selector){if(!elements.has(selector))elements.set(selector,element());return elements.get(selector)}
 function all(selector){
  const pattern=selector==='#results .ml'?/class="ml /g:selector==='#results .mn'?/class="mn /g:null;
  const result=pattern?[...get('#results').innerHTML.matchAll(pattern)].map(()=>element()):[];
  lists.set(selector,result);return result;
 }
-const context=vm.createContext({document:{querySelector:get,querySelectorAll:all,createTreeWalker:()=>({nextNode:()=>false})},
+const context=vm.createContext({window:{},document:{querySelector:get,querySelectorAll:all,createTreeWalker:()=>({nextNode:()=>false})},
  NodeFilter:{SHOW_TEXT:4},URL,setTimeout:()=>1,clearTimeout(){},requestAnimationFrame:()=>1,cancelAnimationFrame(){},
- addEventListener(){},renderReportLocal(){},fmtSize:n=>`${n} bytes`,
+ addEventListener(){},renderReportLocal(){},fmtSize:n=>`${n} bytes`,matchMedia:()=>({matches:false,addEventListener(){}}),
  fetch:async(url,options)=>{calls.push({url,options});return {ok:true,json:async()=>({created:true,pages:1})}},
 });
 vm.runInContext(app.slice(0,app.indexOf('// Tab is mirrored')),context);

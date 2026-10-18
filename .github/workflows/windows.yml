@@ -17,6 +17,17 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Build offline note editor
+        shell: pwsh
+        run: |
+          npm ci --no-fund --no-audit
+          if ($LASTEXITCODE -ne 0) { throw 'Note editor dependencies failed' }
+          npm run build:notes
+          if ($LASTEXITCODE -ne 0) { throw 'Note editor bundle failed' }
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27.2'
@@ -26,6 +37,14 @@ jobs:
         run: |
           node --check internal/hub/web/app.js
           if ($LASTEXITCODE -ne 0) { throw 'JavaScript syntax check failed' }
+          node --check internal/hub/web/map-view.js
+          if ($LASTEXITCODE -ne 0) { throw 'Map viewport syntax check failed' }
+          node --check internal/hub/web/connections.js
+          if ($LASTEXITCODE -ne 0) { throw 'Offline connections syntax check failed' }
+          node scripts/check-connections-model.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Offline connections UI model tests failed' }
+          node --check internal/hub/web/github-choice.js
+          if ($LASTEXITCODE -ne 0) { throw 'First-run GitHub choice syntax check failed' }
           node scripts/check-catalog-ui.cjs
           if ($LASTEXITCODE -ne 0) { throw 'Catalog visibility UI tests failed' }
           node scripts/check-rag-ui.cjs
@@ -38,6 +57,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Local report import UI tests failed' }
           node scripts/check-source-layers.cjs
           if ($LASTEXITCODE -ne 0) { throw 'Map source visibility tests failed' }
+          node scripts/check-note-network.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Note link extraction tests failed' }
+          node scripts/check-note-listing.cjs
+          if ($LASTEXITCODE -ne 0) { throw 'Incremental note listing tests failed' }
           node scripts/check-map-model.cjs
           if ($LASTEXITCODE -ne 0) { throw 'Map identity and source-link tests failed' }
       - name: Test release retry and verification
@@ -60,15 +83,16 @@ jobs:
       - name: Test and build self-contained executables
         shell: pwsh
         run: ./scripts/build.ps1
-      - name: Test map selection in Edge
+      - name: Test offline workflows in Edge
         shell: pwsh
+        env:
+          AV_NAV_VIEWER: dist/AVReportHub.exe
+          AV_NOTES_VIEWER: dist/AVReportHub.exe
         run: |
-          npm install --prefix build/ui-tools --no-save --no-fund --no-audit playwright@1.55.0
-          if ($LASTEXITCODE -ne 0) { throw 'Browser test dependency installation failed' }
-          $env:NODE_PATH = Join-Path $PWD 'build/ui-tools/node_modules'
-          $env:AV_NAV_VIEWER = Join-Path $PWD 'dist/AVReportHub.exe'
-          node scripts/check-map-ui.cjs
-          if ($LASTEXITCODE -ne 0) { throw 'Map browser tests failed' }
+          foreach ($check in @('connections-ui', 'github-choice-ui', 'github-catalog-ui', 'notes-ui', 'notes-performance-ui', 'note-network-ui', 'report-reading-ui', 'hallmark-ui', 'map-ui')) {
+            node "scripts/check-$check.cjs"
+            if ($LASTEXITCODE -ne 0) { throw "Offline browser test failed: $check" }
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: AVReportHub-Windows-x64

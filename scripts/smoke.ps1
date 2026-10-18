@@ -34,17 +34,24 @@ try {
     $viewer=Start-Process -FilePath $exe -ArgumentList @('--no-browser','--data-dir',"`"$testRoot`"") -WindowStyle Hidden -PassThru
     $v=Connect-App 'viewer'
     $state=Invoke-RestMethod -Uri "$($v.address)/api/state" -WebSession $v.session
-    if(!$state.config.configured -or $state.snapshot.catalog.reports.Count -lt 1){ throw 'Viewer has no configured reports' }
-    if($state.snapshot.catalog.database -and !(Test-Path (Join-Path $testRoot ('databases/' + $state.snapshot.catalog.database.sha256 + '.sqlite')))){throw 'SQLite missing'}
+    if(!$state.config.configured -or $state.snapshot.catalog.reports.Count -ne 0){ throw 'Offline viewer must start without GitHub reports' }
+    if($state.snapshot.catalog.database -or (Test-Path (Join-Path $testRoot 'databases'))){ throw 'Offline installation must not provision a GitHub database' }
+    $choice=@{version=$state.version; enabled=$false} | ConvertTo-Json
+    $null=Invoke-RestMethod -Uri "$($v.address)/api/github-choice" -Method Post -WebSession $v.session -Headers @{Origin=$v.address; 'X-AV-Request'='1'} -ContentType 'application/json' -Body $choice
+    # Local reports remain usable without GitHub. Exercise import and download
+    # through the installed application, using a known REPORT_FORMAT fixture.
+    $fixture=Join-Path $PSScriptRoot 'fixtures/offline-report.md'
+    $source=[IO.File]::ReadAllBytes($fixture)
+    $name='2026-10-15.md'
+    $imported=Invoke-RestMethod -Uri "$($v.address)/api/local/reports/import?name=$name" -Method Post -WebSession $v.session -Headers @{Origin=$v.address; 'X-AV-Request'='1'} -ContentType 'text/markdown; charset=utf-8' -Body $source
+    if(!$imported.id){ throw 'Offline local report import failed' }
     $dest=Join-Path $testRoot 'attachment.md'
-    $report=$state.snapshot.catalog.reports | Where-Object { $_.attachments.Count -gt 0 } | Select-Object -First 1
-    if (!$report) { throw 'Viewer has no report attachment to verify' }
-    $reportID=[Uri]::EscapeDataString($report.id)
-    Invoke-WebRequest -UseBasicParsing -Uri "$($v.address)/api/download?id=$reportID&index=0" -WebSession $v.session -OutFile $dest
+    $reportID=[Uri]::EscapeDataString($imported.id)
+    Invoke-WebRequest -UseBasicParsing -Uri "$($v.address)/api/local/reports/download?id=$reportID" -WebSession $v.session -OutFile $dest
     $hash=(Get-FileHash $dest -Algorithm SHA256).Hash.ToLower()
-    if($hash -ne $report.attachments[0].sha256){ throw 'Attachment mismatch' }
+    if($hash -ne (Get-FileHash $fixture -Algorithm SHA256).Hash.ToLower()){ throw 'Local report download mismatch' }
     $null=Invoke-RestMethod -Uri "$($v.address)/api/exit" -Method Post -WebSession $v.session -Headers @{Origin=$v.address; 'X-AV-Request'='1'} -Body '{}'
-    Write-Host 'Windows setup, install, embedded icon, desktop shortcut, viewer, and attachment smoke test passed.'
+    Write-Host 'Windows setup, install, icon, shortcut, empty GitHub catalog, offline import and download smoke test passed.'
 } finally {
     foreach($p in @($setup,$viewer)){
         if($null -ne $p){

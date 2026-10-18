@@ -110,6 +110,10 @@ func parseReport(b []byte, name string, companies []string) (Report, error) {
 		}
 		for i, heading := range required {
 			if name == heading {
+				// A section may span consecutive slides (including Reference).
+				if i == next-1 {
+					continue
+				}
 				if i != next {
 					return r, errors.New("필수 섹션의 순서를 REPORT_FORMAT.md와 맞춰 주세요.")
 				}
@@ -192,7 +196,7 @@ func (a *App) knownCompanies() []string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	out := []string{}
-	for _, r := range a.snapshot.Catalog.Reports {
+	for _, r := range a.githubSnapshot().Catalog.Reports {
 		out = append(out, r.Companies...)
 	}
 	return out
@@ -206,8 +210,9 @@ type importedReport struct {
 	Mail     *MailRef `json:"mail,omitempty"`
 }
 type outlookCursor struct {
-	Time string   `json:"time"`
-	IDs  []string `json:"ids"`
+	Time          string   `json:"time"`
+	IDs           []string `json:"ids"`
+	ReaderVersion int      `json:"reader_version,omitempty"`
 }
 type reportArchive struct {
 	Reports []importedReport         `json:"reports"`

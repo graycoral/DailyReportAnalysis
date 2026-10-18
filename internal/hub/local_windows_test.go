@@ -91,7 +91,7 @@ func TestLocalPDFPreviewHTTP(t *testing.T) {
 
 func localApp(t *testing.T) *App {
 	t.Helper()
-	return &App{dir: t.TempDir(), secret: strings.Repeat("a", 64), address: "http://127.0.0.1:9000", config: defaultConfig(), snapshot: Snapshot{Catalog: seedCatalog(t)}}
+	return githubSettingsApp(t)
 }
 func call(t *testing.T, h http.Handler, method, path, body string) *httptest.ResponseRecorder {
 	t.Helper()

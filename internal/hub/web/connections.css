@@ -1,0 +1,23 @@
+#connections-dialog{width:min(960px,calc(100vw - 32px));max-height:90vh;padding:24px;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r);overflow:auto}
+#connections-dialog .dialog-title{position:sticky;top:-24px;background:var(--surface);z-index:1;padding:12px 0;gap:16px}
+.connections-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:20px 0 12px}
+.connections-toolbar label{display:grid;gap:6px}.connections-toolbar label:first-child{flex:1;min-width:180px}
+.connections-toolbar input,.connections-toolbar select,.connection-alias-row input,.connection-alias-row select{width:100%;min-height:42px;box-sizing:border-box}
+#connections-status{margin:12px 0;line-height:1.6;color:var(--muted)}
+#connections-feedback{min-height:1.5em;color:var(--accent-ink);line-height:1.6}
+#connections-feedback.error{color:var(--danger)}
+.connections-scope summary{cursor:pointer;min-height:28px;color:var(--muted)}
+.connection-card{border:1px solid var(--line-2);border-radius:var(--r-sm);padding:18px;margin:12px 0;background:var(--surface)}
+.connection-card-head{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.connection-pair{display:grid;grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);gap:10px;align-items:center}
+.connection-pair>span{text-align:center;color:var(--muted)}
+.connection-doc{display:flex;flex-direction:column;gap:8px;text-align:left;white-space:normal;width:100%;min-width:0;padding:14px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface-2);color:var(--ink);overflow-wrap:anywhere}
+.connection-doc small{color:var(--muted);line-height:1.5}.connection-doc b{font-weight:600;line-height:1.5}
+.connection-reasons{padding-left:22px;line-height:1.8;margin:14px 0;color:var(--ink-2)}
+#connection-dictionary{border:1px solid var(--line-2);border-radius:var(--r-sm);padding:16px;margin:18px 0}
+#connection-dictionary summary{cursor:pointer;font-weight:600;min-height:28px}
+.connection-alias-row{display:grid;grid-template-columns:100px minmax(120px,1fr) minmax(160px,2fr) auto;gap:10px;align-items:end;margin:12px 0}
+.connection-alias-row label{display:grid;gap:6px;min-width:0}
+#connections-dialog button{min-height:40px}#connections-dialog button:focus-visible,#connections-dialog input:focus-visible,#connections-dialog select:focus-visible,#connections-status:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#detail .connection-doc{margin:12px 0}
+@media(max-width:650px){#connections-dialog{padding:16px}.connection-pair{grid-template-columns:1fr}.connection-pair>span{display:none}.connection-alias-row{grid-template-columns:1fr 1fr}.connection-alias-row label:nth-child(3){grid-column:1/-1}.connection-alias-row button{justify-self:end;grid-column:2}#connections-dialog .dialog-title{top:-16px}}
