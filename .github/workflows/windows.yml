@@ -92,7 +92,7 @@ jobs:
           AV_NOTES_VIEWER: dist/AVReportHub.exe
           AV_HELP_VIEWER: dist/AVReportHub.exe
         run: |
-          foreach ($check in @('connections-ui', 'github-choice-ui', 'github-catalog-ui', 'notes-ui', 'notes-performance-ui', 'note-network-ui', 'report-reading-ui', 'report-unread-ui', 'guidelines-ui', 'hallmark-ui', 'help-ui', 'rag-layout-ui', 'rag-highlight-ui', 'selection-ui', 'map-ui')) {
+          foreach ($check in @('connections-ui', 'github-choice-ui', 'github-catalog-ui', 'notes-ui', 'notes-performance-ui', 'note-network-ui', 'report-reading-ui', 'report-unread-ui', 'guidelines-ui', 'audit-ui', 'hallmark-ui', 'help-ui', 'rag-layout-ui', 'rag-highlight-ui', 'selection-ui', 'map-ui')) {
             node "scripts/check-$check.cjs"
             if ($LASTEXITCODE -ne 0) { throw "Offline browser test failed: $check" }
           }

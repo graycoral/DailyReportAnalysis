@@ -8,7 +8,7 @@ if(!fs.existsSync(viewer))throw Error('Build the Windows app first or set AV_NAV
 const env={...process.env,AV_NAV_VIEWER:viewer,AV_HELP_VIEWER:viewer,AV_NOTES_VIEWER:viewer,AV_PDF_VIEWER:viewer};
 const checks=[
  'connections-ui','github-choice-ui','github-catalog-ui','notes-ui','note-network-ui',
- 'navigation-ui','settings-ui','report-reading-ui','hallmark-ui','help-ui',
+ 'navigation-ui','settings-ui','audit-ui','report-reading-ui','hallmark-ui','help-ui',
  'outlook-sources-ui','import-ui','pdf-preview-ui','list-actions-ui','selection-ui',
 ];
 for(const check of checks){

@@ -2,7 +2,7 @@
 // A single keyboard/selection policy for every document surface. Selection is
 // distinct from the preview and is limited to the currently visible tab.
 (() => {
- const chosen = new Map(); let scope = tab, busy = false, scheduled = false;
+ const chosen = new Map(); let scope = tab, busy = false, scheduled = false, multiMode = false;
  const key = x => x.kind + ':' + x.id;
  const mailID = m => JSON.stringify([m.store_id || '', m.path || '', m.entry_id]);
  const report = id => { const r = reportOf(id); const ids=tab==='map'&&r?mapReportMembers(r).map(member=>member.id):['search','timeline'].includes(tab)?[...dailyRepresentatives].filter(([,representative])=>representative===id).map(([member])=>member):[id]; return r && {kind:'report',id,ids:ids.length?ids:[id],title:r.title}; };
@@ -34,10 +34,10 @@
  }
  function elements() { return [...document.querySelectorAll(tab === 'notes' ? '#note-list [data-note-id]' : '#results '+selector.split(',').join(',#results '))]; }
  const toolbar = document.createElement('div'); toolbar.id = 'selection-toolbar'; toolbar.className = 'selection-toolbar';
- toolbar.innerHTML = '<span id="selection-count" role="status"></span><span class="selection-hint">Ctrl+클릭 여러 개 선택 · Delete 휴지통 · Shift+Delete 완전 삭제</span><button id="selection-delete" type="button">선택 삭제</button><button id="selection-clear" type="button">선택 해제</button><button id="selection-trash" type="button">휴지통</button>';
+ toolbar.innerHTML = '<span id="selection-count" role="status"></span><span id="selection-hint" class="selection-hint">Ctrl+클릭 여러 개 선택 · Delete 휴지통 · Shift+Delete 완전 삭제</span><button id="selection-mode" type="button" aria-pressed="false" aria-describedby="selection-hint">여러 개 선택</button><button id="selection-delete" type="button">선택 삭제</button><button id="selection-clear" type="button">선택 해제</button><button id="selection-trash" type="button">휴지통</button>';
  document.querySelector('#view-panel').prepend(toolbar);
  function paint(prune = false) {
-  if (scope !== tab) { chosen.clear(); scope = tab; }
+  if (scope !== tab) { chosen.clear(); scope = tab; multiMode = false; }
   toolbar.hidden = tab === 'settings' || !state || state.setup;
   const entries = elements().map(el => [el,item(el)]).filter(([,x]) => x);
   if (prune && !busy) { const visible = new Set(entries.map(([,x]) => key(x))); for (const k of chosen.keys()) if (!visible.has(k)) chosen.delete(k); }
@@ -49,6 +49,9 @@
   }
   const label = `${chosen.size}개 선택`;
   if ($('#selection-count').textContent !== label) $('#selection-count').textContent = label;
+  $('#selection-mode').disabled=busy;$('#selection-mode').setAttribute('aria-pressed',String(multiMode));
+  const hint=multiMode?'자료를 누르거나 Enter·Space로 선택·해제 · 선택을 마치면 여러 개 선택을 끄세요.':'Ctrl+클릭 여러 개 선택 · Delete 휴지통 · Shift+Delete 완전 삭제';
+  if($('#selection-hint').textContent!==hint)$('#selection-hint').textContent=hint;
   $('#selection-delete').disabled = busy || !chosen.size; $('#selection-clear').disabled = busy || !chosen.size;
  }
  function schedule() { if (scheduled) return; scheduled = true; queueMicrotask(() => { scheduled = false; paint(true); }); }
@@ -69,14 +72,19 @@
   const el = e.target.closest(selector) || (!e.target.closest('button') && e.target.closest('.pdf-list-row')?.querySelector('[data-local]'));
   if (!el || !el.closest(tab === 'notes' ? '#note-list' : '#results')) return;
   const x = item(el); if (!x) { chosen.clear(); paint(); return; }
-  pick(x,e.ctrlKey || e.metaKey);
-  if (e.ctrlKey || e.metaKey) { e.preventDefault(); e.stopImmediatePropagation(); el.focus({preventScroll:true}); }
+  const additive=multiMode || e.ctrlKey || e.metaKey;
+  pick(x,additive);
+  if (additive) { e.preventDefault(); e.stopImmediatePropagation(); el.focus({preventScroll:true}); }
   queueMicrotask(() => paint());
  },true);
  const editing = target => !!target?.closest('input:not([type="checkbox"]):not([type="radio"]),textarea,select,[contenteditable]:not([contenteditable="false"]),.cm-editor,[role="textbox"]');
  document.addEventListener('keydown', e => {
-  if (e.defaultPrevented || e.repeat || e.isComposing || e.altKey || editing(e.target) || document.querySelector('dialog[open]')) return;
-  if((e.key==='Enter'||e.key===' ')&&e.target.closest('#results svg')){const el=e.target.closest(selector),x=el&&item(el);if(x){pick(x,e.ctrlKey||e.metaKey);if(e.ctrlKey||e.metaKey){e.preventDefault();e.stopImmediatePropagation()}}else if(el){chosen.clear();paint()}}
+  if (busy || e.defaultPrevented || e.repeat || e.isComposing || e.altKey || editing(e.target) || document.querySelector('dialog[open]')) return;
+  if((e.key==='Enter'||e.key===' ')&&(e.target.closest('#results svg')||e.ctrlKey||e.metaKey)){
+   const el=e.target.closest(selector),x=el&&item(el);
+   if(x){const additive=multiMode||e.ctrlKey||e.metaKey;pick(x,additive);if(additive){e.preventDefault();e.stopImmediatePropagation();return}}
+   else if(el){chosen.clear();paint()}
+  }
   if(e.key==='Delete'&&tab==='settings'&&restoreSelection.size&&!busy){e.preventDefault();remove([...restoreSelection].map(id=>report(id)||{kind:'report',id,title:id}),true);return;}
   if (e.key === 'Delete' && chosen.size && scope === tab && !busy) {
    e.preventDefault(); e.stopPropagation(); remove([...chosen.values()],e.shiftKey);
@@ -110,6 +118,7 @@
   if (busy || !items.length) return;
   items = [...new Map(items.map(x => [key(x),x])).values()];
   if (permanent && !confirm(`${items.length}개 항목을 완전히 삭제할까요?\n${items.slice(0,8).map(x => '• '+x.title).join('\n')}${items.length>8?'\n…':''}\n휴지통과 이전 저장본에서도 복원할 수 없습니다. 이 앱에 보관한 자료만 삭제하며 GitHub·Outlook 원본은 유지됩니다.`)) return;
+  const origin=document.activeElement,originTab=tab,index=elements().indexOf(origin.closest(selector));
   busy = true; paint(); ++refreshRequest; visibilityBusy = true;
   const done = [], errors = [];
   try {
@@ -121,26 +130,35 @@
    visibilityBusy = false;
    try { await refreshItems(done); } catch(e) { errors.push('목록 새로고침: '+e.message); }
    busy = false; paint();
+   if(tab===originTab&&!document.querySelector('dialog[open]')&&(document.activeElement===document.body||document.activeElement===origin&&origin.disabled)){
+    const remaining=elements();(remaining[Math.min(Math.max(index,0),remaining.length-1)]||$('#selection-trash')).focus();
+   }
   }
   toast([done.length ? `${done.length}개를 ${permanent?'완전히 삭제했습니다.':'휴지통으로 이동했습니다.'}` : '',...errors].filter(Boolean).join('\n'));
  }
  $('#selection-delete').onclick = () => remove([...chosen.values()]);
+ $('#selection-mode').onclick = () => {multiMode=!multiMode;paint()};
  $('#selection-clear').onclick = () => { chosen.clear(); paint(); };
  $('#selection-trash').onclick = () => openTrash().catch(e => toast(e.message));
 
  const dialog = document.createElement('dialog'); dialog.id = 'data-trash-dialog'; dialog.setAttribute('aria-labelledby','data-trash-title');
- dialog.innerHTML = '<div class="dialog-title"><h2 id="data-trash-title">휴지통</h2><button id="data-trash-close">닫기</button></div><p class="small-note">Ctrl+클릭으로 여러 개 선택 · Delete 또는 Shift+Delete로 완전 삭제</p><div class="form-actions"><button id="data-trash-all">모두 선택</button><button id="data-trash-restore">선택 복원</button><button id="data-trash-delete" class="danger">완전 삭제</button><span id="data-trash-count" role="status"></span></div><p id="data-trash-error" role="status"></p><div id="data-trash-list"></div>';
- document.body.append(dialog); let trashed = [], trashSelected = new Set(), trashBusy = false;
+ dialog.innerHTML = '<div class="dialog-title"><h2 id="data-trash-title">휴지통</h2><button id="data-trash-close">닫기</button></div><p class="small-note">항목을 누르거나 Enter·Space로 선택·해제 · Delete로 완전 삭제</p><div class="form-actions"><button id="data-trash-all">모두 선택</button><button id="data-trash-restore">선택 복원</button><button id="data-trash-delete" class="danger">완전 삭제</button><span id="data-trash-count" role="status"></span></div><p id="data-trash-error" role="status"></p><div id="data-trash-list"></div>';
+ document.body.append(dialog); let trashed = [], trashSelected = new Set(), trashBusy = false, trashLoading = false, trashRequest = 0;
  function paintTrash() {
   for (const b of dialog.querySelectorAll('[data-trash-key]')) { const yes=trashSelected.has(b.dataset.trashKey); b.classList.toggle('multi-selected',yes);b.setAttribute('aria-pressed',String(yes));b.disabled=trashBusy; }
-  $('#data-trash-count').textContent = `${trashSelected.size}개 선택`;
-  $('#data-trash-restore').disabled = $('#data-trash-delete').disabled = trashBusy || !trashSelected.size;
-  $('#data-trash-close').disabled = $('#data-trash-all').disabled = trashBusy;
+  $('#data-trash-count').textContent = trashLoading?'휴지통을 불러오는 중…':`${trashSelected.size}개 선택`;
+  $('#data-trash-list').setAttribute('aria-busy',String(trashLoading||trashBusy));
+  $('#data-trash-restore').disabled = $('#data-trash-delete').disabled = trashBusy || trashLoading || !trashSelected.size;
+  $('#data-trash-close').disabled = trashBusy;$('#data-trash-all').disabled=trashBusy||trashLoading||!trashed.length;
  }
  async function openTrash() {
+  if(trashBusy)return;
+  const request=++trashRequest;trashLoading=true;
   if (!dialog.open) dialog.showModal();
   $('#data-trash-list').textContent = '휴지통을 불러오는 중…'; trashed=[];trashSelected.clear();paintTrash();
   const results = await Promise.allSettled([api('/api/status'),api('/api/local/trash'),api('/api/notes/trash'),api('/api/rag/status')]);
+  if(request!==trashRequest||!dialog.open)return;
+  trashLoading=false;
   const messages = [], labels=['리포트','내 자료','노트','AI 검색'];
   results.forEach((result,i) => {
    if (result.status !== 'fulfilled') { messages.push(labels[i]+': '+result.reason.message);return; }
@@ -154,7 +172,7 @@
   $('#data-trash-error').textContent=messages.join('\n');
   const names={report:'리포트',pdf:'PDF',mail:'메일 연결',note:'노트',rag:'AI 검색 자료'};
   $('#data-trash-list').innerHTML=trashed.map(x=>`<button class="trash-item" data-trash-key="${esc(key(x))}" aria-pressed="false"><b>${esc(x.title)}</b><small>${names[x.kind]}</small></button>`).join('')||'<p>휴지통이 비어 있습니다.</p>';
-  for (const b of dialog.querySelectorAll('[data-trash-key]')) b.onclick=e=>{const k=b.dataset.trashKey;if(!e.ctrlKey&&!e.metaKey)trashSelected.clear();if(trashSelected.has(k))trashSelected.delete(k);else trashSelected.add(k);paintTrash();};
+  for (const b of dialog.querySelectorAll('[data-trash-key]')) b.onclick=()=>{const k=b.dataset.trashKey;if(trashSelected.has(k))trashSelected.delete(k);else trashSelected.add(k);paintTrash();};
   paintTrash();
  }
  async function trashAction(action) {
@@ -164,10 +182,11 @@
   trashBusy=true;paintTrash();const errors=[],done=[];
   try { for(const x of items) {try {await change(x,action);done.push(x)}catch(e){errors.push(x.title+': '+e.message)}} await refreshItems(done); }
   catch(e){errors.push(e.message)}
-  finally {trashBusy=false;await openTrash();}
+  finally {trashBusy=false;await openTrash();if(dialog.open)(dialog.querySelector('[data-trash-key]')||$('#data-trash-close')).focus();}
   if(errors.length)$('#data-trash-error').textContent=errors.join('\n');
  }
  $('#data-trash-close').onclick=()=>dialog.close();
+ dialog.addEventListener('close',()=>{++trashRequest;trashLoading=false});
  dialog.addEventListener('cancel',e=>{if(trashBusy)e.preventDefault()});
  $('#data-trash-all').onclick=()=>{trashSelected=new Set(trashSelected.size===trashed.length?[]:trashed.map(key));paintTrash()};
  $('#data-trash-restore').onclick=()=>trashAction('restore');$('#data-trash-delete').onclick=()=>trashAction('delete');

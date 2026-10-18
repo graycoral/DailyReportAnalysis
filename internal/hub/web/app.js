@@ -1,7 +1,12 @@
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 let state, tab='search', selected='', selectedRelation='', formBusy=false;
+const settingsBaselines=new WeakMap();
+let toastTimer=0;
 let searchTimer=0,reportListLimit=50,reportListKey='';
+const auxiliaryPages=new Map();
+function pageRows(key,rows,query=''){if(auxiliaryPages.get(key)?.query!==query)auxiliaryPages.set(key,{query,limit:50});return rows.slice(0,auxiliaryPages.get(key).limit)}
+function moreRows(key,total,label){const limit=auxiliaryPages.get(key)?.limit||50;return total>limit?`<button type="button" data-more-rows="${key}">${label} 더 보기 (${limit} / ${total})</button>`:''}
 const narrowReportLayout=matchMedia('(max-width:850px)'),expandedLocalLinks=new Set();
 let reportReaderOpen=false,reportListScroll=0,reportListFocus=null,reportDetailHadFocus=false;
 let importedReports=[],localReportsRevision='',importError='',mergedSource=null,mergedCatalog=null,lastSyncState='',outlookImportState={};
@@ -51,7 +56,7 @@ function renderTagCloud(){let count=(xs)=>{let m=new Map();xs.forEach(x=>m.set(x
  $('#tag-cloud').innerHTML=`<div><div class="cloud-title">분류</div><div class="chips">${tags.map(([t,n])=>chip(t,'','tag',n)).join('')}</div></div><div><div class="cloud-title">기업</div><div class="chips">${cos.map(([t,n])=>chip(t,'teal','company',n)).join('')}</div></div>`;bindChips($('#tag-cloud'))}
 const sources=ss=>(ss||[]).map(s=>{let u=safeURL(s.url);return u?`<a class="source-link" href="${esc(u)}" target="_blank" rel="noopener noreferrer">↗ ${esc(s.title||u)}</a>`:''}).join('');
 async function api(path,body,options={}){let opts=body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-AV-Request':'1'},body:JSON.stringify(body)};let r=await fetch(path,{...opts,signal:options.signal});if(!r.ok)throw Error(await r.text());return r.json()}
-function toast(s){$('#toast').textContent=s;$('#toast').hidden=false;setTimeout(()=>$('#toast').hidden=true,5000)}
+function toast(s){clearTimeout(toastTimer);$('#toast').textContent=s;$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,5000)}
 const reportReading=window.createReportReading({api,identity:reportIdentity,changed:renderReportReading});
 let readingCatalog=null,readingImports=null;
 function refreshReportReading(){
@@ -596,19 +601,35 @@ function renderDetail(){if(tab==='map'&&renderMapExplorer())return;if(tab==='loc
  if(changed)detail.scrollTop=0;
  $$('[data-related]').forEach(b=>b.onclick=()=>selectReport(b.dataset.related,{fromDetail:true}));
 }
+function settingsValues(f){return Object.fromEntries([...f.elements].filter(el=>el.name).map(el=>[el.name,el.type==='checkbox'?el.checked:el.value]))}
+function hasPendingSettings(){return $$('.settings-form').some(f=>settingsBaselines.has(f)&&JSON.stringify(settingsValues(f))!==JSON.stringify(settingsBaselines.get(f)))}
 function syncGitHubSettings(config,force=false){
  if(typeof config?.offline!=='boolean')return;
  if(state)Object.assign(state.config,{offline:config.offline,offline_reason:config.offline_reason||''});
  $$('.settings-form').forEach(f=>{
   const saved=JSON.stringify([config.offline,config.offline_reason||'']);
-  if(force||f.dataset.connection!==saved){f.elements.github_enabled.checked=!config.offline;f.dataset.connection=saved}
+  if(force||f.dataset.connection!==saved){const baseline=settingsBaselines.get(f);if(baseline&&baseline.github_enabled===f.elements.github_enabled.checked)baseline.github_enabled=!config.offline;f.elements.github_enabled.checked=!config.offline;f.dataset.connection=saved}
   f.querySelector('.github-state').textContent=state?.github_choice_required?'이 버전의 GitHub 연동 여부를 선택하고 저장하세요. 선택 전에는 연결을 보류합니다.':f.elements.github_enabled.checked===config.offline?'연동 설정 변경됨 · 아래 저장 버튼을 눌러 적용하세요.':config.offline_reason==='connection_failed'?'연결 실패로 자동 꺼짐 · 다시 켠 뒤 저장하면 연결을 확인합니다.':config.offline?'연동 꺼짐 · GitHub 리포트는 표시하지 않습니다. Outlook·직접 가져온 자료는 계속 사용할 수 있습니다.':'연동 켜짐 · 시작할 때와 설정한 시각에 자료를 확인합니다.';
  });
 }
 function mountForm(target){let host=$(target);host.replaceChildren($('#settings-form').content.cloneNode(true));let f=host.querySelector('form');for(let k of ['owner','repo','branch','sync_time'])f.elements[k].value=state.config[k];syncGitHubSettings(state.config);f.querySelector('#data-location').textContent='자료 저장 위치: '+state.data_dir;f.querySelector('.save-settings').textContent=state.setup?'검사하고 설치':'검사하고 저장';
+ settingsBaselines.set(f,settingsValues(f));
  const input=()=>({owner:f.elements.owner.value.trim(),repo:f.elements.repo.value.trim(),branch:f.elements.branch.value.trim(),sync_time:f.elements.sync_time.value,token:f.elements.token.value,clear_token:f.elements.clear_token.checked,offline:!f.elements.github_enabled.checked});
  f.elements.github_enabled.onchange=()=>syncGitHubSettings(state.config);
- async function run(path){if(formBusy)return;formBusy=true;let box=f.querySelector('.checks');box.classList.remove('error');box.textContent='환경을 확인하고 있습니다…';f.querySelectorAll('button').forEach(b=>b.disabled=true);try{let v=await api(path,input());box.textContent=(v.checks||[]).map(s=>'✓ '+s).join('\n');if(!v.ok){box.classList.add('error');box.textContent+='\n'+(v.error||'설정을 확인하세요.')}else if(path==='/api/install'){syncGitHubSettings(v.config,true);f.elements.token.value='';f.elements.clear_token.checked=false;if(state.setup){f.querySelector('.launch').hidden=false;box.textContent+='\n설치 완료. 리포트 시작 버튼을 누르세요.'}else{toast('설정이 저장되었습니다.');await refresh(true)}}}catch(e){box.classList.add('error');box.textContent=e.message}finally{formBusy=false;f.querySelectorAll('button').forEach(b=>b.disabled=false)}}
+ async function run(path){
+  if(formBusy)return;formBusy=true;const body=input(),box=f.querySelector('.checks'),trigger=document.activeElement,controls=[...f.querySelectorAll('input,select,button')].map(el=>[el,el.disabled]);
+  box.classList.remove('error');box.textContent='환경을 확인하고 있습니다…';box.tabIndex=-1;f.setAttribute('aria-busy','true');controls.forEach(([el])=>el.disabled=true);
+  try{
+   const v=await api(path,body);box.textContent=(v.checks||[]).map(s=>'✓ '+s).join('\n');
+   if(!v.ok){box.classList.add('error');box.textContent+='\n'+(v.error||'설정을 확인하세요.')}
+   else if(path==='/api/install'){
+    syncGitHubSettings(v.config,true);f.elements.token.value='';f.elements.clear_token.checked=false;settingsBaselines.set(f,settingsValues(f));
+    if(state.setup){f.querySelector('.launch').hidden=false;box.textContent+='\n설치 완료. 리포트 시작 버튼을 누르세요.'}
+    else{toast('설정이 저장되었습니다.');await refresh(true)}
+   }
+  }catch(e){box.classList.add('error');box.textContent=e.message}
+  finally{formBusy=false;f.setAttribute('aria-busy','false');controls.forEach(([el,disabled])=>el.disabled=disabled);if(f.checkVisibility()){if(box.classList.contains('error'))box.focus();else if(f.contains(trigger))trigger.focus()}}
+ }
  f.querySelector('.check-env').onclick=()=>{if(f.reportValidity())run('/api/check')};f.onsubmit=e=>{e.preventDefault();run('/api/install')};f.querySelector('.launch').onclick=async()=>{try{await api('/api/launch',{});f.querySelector('.checks').textContent='리포트가 열렸습니다. 이 설정 창은 닫아도 됩니다.'}catch(e){toast(e.message)}};
 }
 function showStatus(s){
@@ -671,6 +692,13 @@ async function refresh(force=false){
  state=next;if(!state.setup)await loadImportedReports();if(request!==refreshRequest)return;applyReportVisibility(state.report_visibility);showStatus({...state,synced_at:state.snapshot.synced_at});updateCatalogView();
 }
 // Tab is mirrored in the URL hash (#timeline, #graph, #map) so a view can be bookmarked or reloaded.
+$('#results').addEventListener('click',e=>{
+ const button=e.target.closest('[data-more-rows]');if(!button)return;
+ const key=button.dataset.moreRows,page=auxiliaryPages.get(key);if(!page)return;
+ const next=page.limit;page.limit+=50;render();
+ const selector={pdf:'[data-local]',mail:'[data-mail-open]',rag:'[data-rag-open]'}[key];
+ if(selector)$$('#results '+selector)[next]?.focus();
+});
 document.addEventListener('focusin',e=>{if(e.target!==document.body)reportDetailHadFocus=$('#detail').contains(e.target)});
 function setTab(t,reportID='',notesReady=false){if(tab==='notes'&&t!=='notes'&&!notesReady&&window.AVNotes?.hasPending()){window.AVNotes.flush().then(ok=>{if(ok)setTab(t,reportID,true)});return}let b=$(`[data-tab="${t}"]`);if(!b)return;if(tab!==t)delete $('#detail').dataset.reportKey;resetMapSelection();tab=t;reportReaderOpen=!!reportID&&narrowReportLayout.matches&&reportListView();reportListScroll=0;reportListFocus=null;networkSelection=null;linkedReport=reportID;$('#visibility-menu').open=false;history.replaceState(null,'',t==='search'?location.pathname:'#'+t);if(t==='map')mapMedia.loaded=false;if(networkView())invalidateNoteNetwork();updateCatalogView();if(reportID)markReportRead(reportID);if(reportReaderOpen){window.scrollTo({top:0,behavior:'instant'});focusReportTitle()}}
 $$('[data-tab]').forEach((b,i)=>{b.onclick=()=>setTab(b.dataset.tab);b.onkeydown=e=>{const tabs=$$('[data-tab]');let next;if(e.key==='ArrowDown')next=(i+1)%tabs.length;else if(e.key==='ArrowUp')next=(i+tabs.length-1)%tabs.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=tabs.length-1;else return;e.preventDefault();setTab(tabs[next].dataset.tab);tabs[next].focus()}});
@@ -683,7 +711,7 @@ $('#sync-indicator').onkeydown=e=>{if(e.key==='Escape'){$('#sync-indicator').ope
 // Theme: applied early by theme.js; settings changes and remembers it (per browser, never synced).
 $('#theme').value=document.documentElement.dataset.theme||'apple';
 $('#theme').onchange=e=>{document.documentElement.dataset.theme=e.target.value;try{localStorage.setItem('av_theme',e.target.value)}catch(x){}if(tab==='graph'||tab==='map')render()};
-{let h=location.hash.slice(1).split('&')[0];if(h&&$(`[data-tab="${h}"]`)){tab=h;$$('[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===tab)))}}
+{const h=location.hash.slice(1).split('&')[0];if($$('[data-tab]').some(b=>b.dataset.tab===h)){tab=h;$$('[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===tab)))}}
 // Keep IME composition intact; coalesce full-list searches only for larger libraries.
 for(const id of ['query','local-query','outlook-query']){
  const input=$('#'+id);let composing=false;
@@ -705,7 +733,8 @@ for(const key of Object.keys(networkSources))$('#source-'+key).onchange=e=>{
  resetMapSelection();networkSelection=null;mapMediaSelected='';mapMediaEdge=null;selected='';selectedRelation='';render();
 };
 $('#sync').onclick=async()=>{if(['offline','auto_disabled','unconfigured'].includes(lastSyncState)){setTab('settings');$('#tab-settings').focus();return}try{await api('/api/sync',{});toast('GitHub 연결과 최신 자료를 다시 확인합니다.');setTimeout(()=>refresh(),400)}catch(e){toast(e.message)}};
-$('#exit').onclick=async()=>{if(window.AVNotes&&!await window.AVNotes.flush())return;if(!confirm('프로그램을 종료할까요? 다음 실행 전까지 자동 갱신이 멈춥니다.'))return;try{await api('/api/exit',{});document.body.innerHTML='<main class="empty"><h1>AV 리포트를 종료했습니다.</h1><p>이 브라우저 창을 닫아도 됩니다.</p></main>'}catch(e){toast(e.message)}};
+window.addEventListener('beforeunload',e=>{if(formBusy||hasPendingSettings()){e.preventDefault();e.returnValue=''}});
+$('#exit').onclick=async()=>{if(formBusy){toast('설정 확인·저장이 완료된 뒤 종료해 주세요.');return}if(window.AVNotes&&!await window.AVNotes.flush())return;if(!confirm((hasPendingSettings()?'저장하지 않은 설정 변경사항이 사라집니다.\n':'')+'프로그램을 종료할까요? 다음 실행 전까지 자동 갱신이 멈춥니다.'))return;try{await api('/api/exit',{});document.body.innerHTML='<main class="empty"><h1>AV 리포트를 종료했습니다.</h1><p>이 브라우저 창을 닫아도 됩니다.</p></main>'}catch(e){toast(e.message)}};
 (async()=>{try{await refresh(true);await loadLocal();if(state.setup){$('#viewer').hidden=true;$('#setup-home').hidden=false;mountForm('#setup-slot');await autoInstall()}else if(!state.config.configured){setTab('settings')}setInterval(()=>{refresh().catch(()=>{});if(networkView()&&!document.hidden)loadNoteNetwork(true)},4000)}catch(e){toast(e.message)}})();
 
 async function autoInstall(){
@@ -730,10 +759,11 @@ const mailRow=(m,act='')=>(mailPool[m.entry_id]=m,`<div class="mail-row"><button
 function renderLocal(){$('#result-count').textContent=`PDF ${local.files.length}개 · 이 PC에만 보관`;
  if(!local.available){$('#results').innerHTML=`<div class="empty">${esc(local.reason||'내 자료를 불러오는 중입니다.')}</div>`;return}
  let q=$('#local-query').value.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean),fs=local.files.filter(f=>q.every(t=>f.name.toLocaleLowerCase().includes(t))).sort((a,b)=>b.added.localeCompare(a.added));
+ const visibleFiles=pageRows('pdf',fs,q.join(' '));
  $('#result-count').textContent=`PDF ${fs.length}${fs.length!==local.files.length?' / '+local.files.length:''}개 · 이 PC에만 보관`;
  $('#results').innerHTML=`<p class="local-note">${uiIcon('lock')} PDF를 이 PC의 현재 Windows 계정으로 암호화해 보관합니다. 리포트에 직접 연결하면 관계 그래프와 전체 지도에도 표시됩니다.</p>
  <div class="dropzone compact-dropzone" id="dropzone" tabindex="0" role="button" aria-label="PDF 추가"><b>＋ PDF 추가</b><span>파일 선택 또는 끌어다 놓기 · 최대 50MB</span></div>
- <div class="pdf-list">${fs.length?`<table class="pdf-table" aria-label="보관한 PDF 파일"><thead><tr><th scope="col">이름</th><th scope="col" class="pdf-date">추가일</th><th scope="col" class="pdf-size">크기</th><th scope="col" class="pdf-links-cell">연결</th><th scope="col" class="pdf-actions-cell"><span class="sr-only">삭제</span></th></tr></thead><tbody>${fs.map(f=>`<tr class="pdf-list-row ${localSel===f.id?'selected':''}"><td><button type="button" class="pdf-file" data-local="${esc(f.id)}" title="${esc(f.name)} · ${esc(f.added.slice(0,10))} 추가 · ${fmtSize(f.size)} · PDF 미리보기" aria-pressed="${localSel===f.id}"><span class="pdf-file-icon" aria-hidden="true">PDF</span><span class="pdf-file-text"><b>${esc(f.name)}</b></span></button></td><td class="pdf-date">${esc(f.added.slice(0,10))}</td><td class="pdf-size">${fmtSize(f.size)}</td><td class="pdf-links-cell"><button type="button" class="pdf-links-button" data-local-links="${esc(f.id)}" aria-label="${esc(f.name)} 연결 리포트" title="연결 리포트 보기"><span>${f.reports.filter(id=>!hiddenReports.has(id)).length}</span></button></td><td class="pdf-actions-cell"><button type="button" class="list-delete" data-delete-pdf="${esc(f.id)}" aria-label="${esc(f.name)} 이 PC에서 삭제" title="휴지통으로 이동 · Shift+Delete 완전 삭제" ${deletingPDFs.has(f.id)?'disabled':''}>${deleteIcon}</button></td></tr>`).join('')}</tbody></table>`:`<p class="small-note">${local.files.length?'파일명과 일치하는 PDF가 없습니다.':'아직 추가한 PDF가 없습니다.'}</p>`}</div>`;
+ <div class="pdf-list">${fs.length?`<table class="pdf-table" aria-label="보관한 PDF 파일"><thead><tr><th scope="col">이름</th><th scope="col" class="pdf-date">추가일</th><th scope="col" class="pdf-size">크기</th><th scope="col" class="pdf-links-cell">연결</th><th scope="col" class="pdf-actions-cell"><span class="sr-only">삭제</span></th></tr></thead><tbody>${visibleFiles.map(f=>`<tr class="pdf-list-row ${localSel===f.id?'selected':''}"><td><button type="button" class="pdf-file" data-local="${esc(f.id)}" title="${esc(f.name)} · ${esc(f.added.slice(0,10))} 추가 · ${fmtSize(f.size)} · PDF 미리보기" aria-pressed="${localSel===f.id}"><span class="pdf-file-icon" aria-hidden="true">PDF</span><span class="pdf-file-text"><b>${esc(f.name)}</b></span></button></td><td class="pdf-date">${esc(f.added.slice(0,10))}</td><td class="pdf-size">${fmtSize(f.size)}</td><td class="pdf-links-cell"><button type="button" class="pdf-links-button" data-local-links="${esc(f.id)}" aria-label="${esc(f.name)} 연결 리포트" title="연결 리포트 보기"><span>${f.reports.filter(id=>!hiddenReports.has(id)).length}</span></button></td><td class="pdf-actions-cell"><button type="button" class="list-delete" data-delete-pdf="${esc(f.id)}" aria-label="${esc(f.name)} 이 PC에서 삭제" title="휴지통으로 이동 · Shift+Delete 완전 삭제" ${deletingPDFs.has(f.id)?'disabled':''}>${deleteIcon}</button></td></tr>`).join('')}</tbody></table>${moreRows('pdf',fs.length,'PDF')}`:`<p class="small-note">${local.files.length?'파일명과 일치하는 PDF가 없습니다.':'아직 추가한 PDF가 없습니다.'}</p>`}</div>`;
  const dz=$('#dropzone');dz.onclick=()=>$('#local-input').click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();dz.click()}};
  $$('[data-local]').forEach(b=>b.onclick=()=>{localSel=b.dataset.local;$$('[data-local]').forEach(x=>{x.setAttribute('aria-pressed',String(x===b));x.closest('.pdf-list-row').classList.toggle('selected',x===b)});renderLocalDetail()});
  $$('.pdf-list-row').forEach(row=>row.onclick=e=>{if(!e.target.closest('button'))row.querySelector('[data-local]').click()});
@@ -776,7 +806,7 @@ function renderOutlook(){
  ${outlookFolders?`<div class="outlook-folders"><h4>가져올 폴더 선택</h4>${outlookFolders.map((s,i)=>`<div class="mail-row"><span class="source-name">${esc(s.name)}</span><button class="text-button" data-folder-add="${i}" ${has(s)?'disabled':''}>${has(s)?'연결됨':'이 폴더 추가'}</button></div>`).join('')||'<p>메일 폴더가 없습니다.</p>'}</div>`:''}
  ${outlookPathHtml()}<button id="outlook-connect-close" class="text-button">연결 설정 접기</button></section></section>
  <h3 class="local-h">Outlook에서 가져온 리포트</h3><p class="small-note">데일리리포트 형식의 자료는 데일리리포트에도 표시합니다. 보고일과 본문이 같은 자료는 한 번만 표시하며, 가져온 내역과 원본 메일은 여기서 확인합니다.</p>${importError?`<p class="small-note error">${esc(importError)}</p>`:''}${reports.slice(0,reportListLimit).map(reportCard).join('')+reportPageMore(reports.length)||'<p class="small-note">표시할 Outlook 리포트가 없습니다. 위의 ‘메일함에서 리포트 가져오기’를 열어 폴더를 설정하거나 검색어를 확인하세요.</p>'}
- <h3 class="local-h">리포트에 연결한 메일</h3>${mails.map(m=>mailRow(m,`<button class="text-button" data-goto-report="${esc(m.report)}">${esc(reportOf(m.report)?.title||m.report)}</button>`)).join('')||'<p class="small-note">표시할 연결 메일이 없습니다. 리포트 본문에서 관련 메일을 찾아 연결할 수 있습니다.</p>'}`;
+ <h3 class="local-h">리포트에 연결한 메일</h3>${pageRows('mail',mails,q.join(' ')).map(m=>mailRow(m,`<button class="text-button" data-goto-report="${esc(m.report)}">${esc(reportOf(m.report)?.title||m.report)}</button>`)).join('')+moreRows('mail',mails.length,'메일')||'<p class="small-note">표시할 연결 메일이 없습니다. 리포트 본문에서 관련 메일을 찾아 연결할 수 있습니다.</p>'}`;
  $$('[data-src-remove]').forEach(b=>b.onclick=()=>localDo('/api/outlook/source',{source:local.sources[+b.dataset.srcRemove],remove:true},'메일함 연결을 해제했습니다. Outlook 원본과 가져온 리포트는 보관됩니다.'));
  $$('[data-store-folders]').forEach(b=>b.onclick=()=>loadOutlookFolders(outlookStores[+b.dataset.storeFolders],b));
  $$('[data-source-folders]').forEach(b=>b.onclick=()=>loadOutlookFolders(local.sources[+b.dataset.sourceFolders],b));
@@ -925,7 +955,7 @@ async function renderRag(){if(!ragEnvironmentState)await pollRagEnvironment();if
  <div class="rag-library-heading"><h2 id="rag-library-title">색인된 자료 <span>${(s.docs||[]).length}</span></h2><button type="button" id="rag-add" aria-describedby="rag-add-help" ${rag.uploading?'disabled':''}><span aria-hidden="true">+</span> PDF·이미지 추가</button></div>
  <form class="link-form" id="rag-query"><input name="q" placeholder="색인된 자료에서 검색" aria-label="AI 검색" maxlength="2000" value="${esc(rag.q)}"><button class="primary">검색</button></form>
  <p id="rag-job-progress" class="small-note" role="status">${rag.uploading?esc(rag.busy):''}</p><div id="rag-out">${rag.busy&&!rag.uploading?`<p class="small-note" role="status">${esc(rag.busy)}</p>`:''}${ragHitsHtml()}</div>
- <div class="rag-document-list">${(s.docs||[]).map(d=>`<div class="rag-document"><button class="rag-document-open" data-rag-open="${esc(d.id)}">${uiIcon(d.kind==='image'?'image':'file')}<span><b>${ragMarkedText(d.name)}</b><small>${d.kind==='image'&&d.pages===1?'이미지':`${d.pages}페이지`} · ${fmtSize(d.size)}</small></span></button><button class="text-button" data-rag-del="${esc(d.id)}" aria-label="${esc(d.name)} 삭제" ${rag.uploading||deletingRagDocs.has(d.id)?'disabled':''}>삭제</button></div>`).join('')||'<div class="rag-library-empty"><b>아직 색인된 자료가 없습니다.</b><p>PDF·이미지를 추가하거나 여기에 놓으세요.</p></div>'}</div>
+ <div class="rag-document-list">${pageRows('rag',s.docs||[]).map(d=>`<div class="rag-document"><button class="rag-document-open" data-rag-open="${esc(d.id)}">${uiIcon(d.kind==='image'?'image':'file')}<span><b>${ragMarkedText(d.name)}</b><small>${d.kind==='image'&&d.pages===1?'이미지':`${d.pages}페이지`} · ${fmtSize(d.size)}</small></span></button><button class="text-button" data-rag-del="${esc(d.id)}" aria-label="${esc(d.name)} 삭제" ${rag.uploading||deletingRagDocs.has(d.id)?'disabled':''}>삭제</button></div>`).join('')+moreRows('rag',(s.docs||[]).length,'자료')||'<div class="rag-library-empty"><b>아직 색인된 자료가 없습니다.</b><p>PDF·이미지를 추가하거나 여기에 놓으세요.</p></div>'}</div>
  <div class="rag-library-footer"><p class="small-note" id="rag-add-help">목록에 파일 끌어놓기 · 파일당 50MB<br>이 PC에 암호화 없이 저장</p><button class="text-button" id="rag-show-map">전체 지도에서 보기</button></div>
  </section>
  <details class="rag-tools" id="rag-tools" ${rag.toolsOpen?'open':''}><summary>색인·모델 정보</summary>
