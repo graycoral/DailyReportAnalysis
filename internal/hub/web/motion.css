@@ -42,9 +42,8 @@ dialog:not([open]),dialog:not([open])::backdrop{pointer-events:none}
   }
  }
 }
-/* Cancel in-flight motion, including pseudo-elements, as soon as input or the
-   preference changes. No close timer: native dialogs restore focus immediately. */
-html:not([data-ui-input=pointer]) *,html:not([data-ui-input=pointer]) *::before,html:not([data-ui-input=pointer]) *::after,html:not([data-ui-input=pointer]) dialog::backdrop{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+/* Pointer-only rules disappear on keyboard input and cancel their transitions.
+   Leave editor caret blinking intact. Native close restores focus immediately. */
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after,dialog::backdrop{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }

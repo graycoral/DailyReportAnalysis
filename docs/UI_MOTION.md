@@ -25,6 +25,6 @@
 | 키보드·보조기술 활성화 | 도움말 외 일부 전환 유지 | 모두 0ms | 빈번한 키 입력에 지연을 만들지 않음 |
 | 동작 줄이기 | 요소의 animation/transition 제거, 일부 가상 요소 미포함 | 요소·가상 요소·모달 배경 모두 0ms, 누름 scale 없음 | 설정 변경 시 진행 중 움직임도 즉시 중단 |
 
-공통 값은 `internal/hub/web/motion.css`, 입력 방식 감지는 `motion.js`에서 관리한다. 모달은 CSS `@starting-style`과 `allow-discrete`를 사용하며, 지원하지 않는 브라우저에서는 기본 즉시 전환으로 동작한다. 닫기 타이머를 추가하지 않고 네이티브 `dialog.close()`의 포커스 복귀를 유지한다.
+공통 값은 `internal/hub/web/motion.css`, 입력 방식 감지는 `motion.js`에서 관리한다. 키보드 정책은 앱 전환에만 적용하고 노트 편집기의 커서 깜빡임은 유지한다. 모달은 CSS `@starting-style`과 `allow-discrete`를 사용하며, 지원하지 않는 브라우저에서는 기본 즉시 전환으로 동작한다. 닫기 타이머를 추가하지 않고 네이티브 `dialog.close()`의 포커스 복귀를 유지한다.
 
 검증은 `scripts/check-help-ui.cjs`에서 도움말·앱 전환 검사를 함께 수행한다. 실제 전환을 중간 프레임에서 멈춰 확인하고 빠른 닫기/재열기, Escape, 키보드·동작 줄이기, 가상 요소 스위치, 즉시 표시되는 타임라인을 확인한다.

@@ -11,6 +11,12 @@ module.exports=async function checkAppMotion(page){
  assert.equal(await filter.locator('span').evaluate(e=>getComputedStyle(e).transitionDuration),'0.16s');
  await page.keyboard.press('Enter');
  assert.equal(await filter.locator('span').evaluate(e=>getComputedStyle(e).transitionDuration),'0s','keyboard cancels arrow motion');
+ // An app interaction policy must not disable functional editor caret blinking.
+ await page.locator('#tab-notes').click();
+ await page.locator('#note-new').click();
+ await page.locator('.cm-content').click();await page.keyboard.press('ArrowLeft');
+ assert.notEqual(await page.locator('.cm-cursorLayer').evaluate(e=>getComputedStyle(e).animationName),'none','keyboard input preserves the editor caret');
+ await page.locator('#tab-timeline').click();
 
  for(const id of ['connections-dialog','pdf-links-dialog','github-choice-dialog','rag-warning','data-trash-dialog']){
   await page.mouse.move(0,0);
