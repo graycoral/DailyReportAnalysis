@@ -1,7 +1,7 @@
 {
-  "count": 20,
+  "count": 21,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-19",
+  "through_date": "2026-10-20",
   "records": [
     {
       "date": "2026-09-20",
@@ -340,6 +340,23 @@
           "name": "autonomous_driving_daily_2026-10-19.pptx",
           "path": "data/reports/2026-10-19/autonomous_driving_daily_2026-10-19.pptx",
           "sha256": "10035daf03924b69b8c0fc62c0ef0054c200fc47c16ee6c3b8538f451f23d992"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-20",
+      "title": "Zoox 산타모니카 주차 협상 승인·Tesla Austin 자정 운행 확대",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-20.md",
+          "path": "data/reports/2026-10-20/autonomous_driving_daily_2026-10-20.md",
+          "sha256": "eaf8232d14b6277883d607fbfa59b45217a88fc6b9650c195bd14e5a41bada05"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-20.pptx",
+          "path": "data/reports/2026-10-20/autonomous_driving_daily_2026-10-20.pptx",
+          "sha256": "2b5771796adb8d81a3be74183e272e664e0e1fe869e8c84c1998b65465043fe2"
         }
       ]
     }
