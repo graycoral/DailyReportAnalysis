@@ -2218,6 +2218,52 @@
           "url": "https://www.theverge.com/transportation/997091/waymo-singapore-robotaxi-launch-2027"
         }
       ]
+    },
+    {
+      "id": "zoox-santa-monica-parking-20261013",
+      "date": "2026-10-13",
+      "title": "Zoox 산타모니카 주차 라이선스 추진 승인",
+      "status": "승인(협상)",
+      "report_id": "2026-10-20",
+      "detail": "시의회 Completed Agenda 11.A에서 주차 파일럿 및 제안된 Zoox 라이선스 추진 승인을 확인했다. 10월 19일 지역 보도는 최대 150대 대기·보관 협상안을 설명한다. 계약 체결·실제 배치·승객 서비스 개시는 미확인.",
+      "companies": [
+        "Zoox"
+      ],
+      "sources": [
+        {
+          "title": "Santa Monica 시의회: Completed Agenda, 11.A",
+          "url": "https://www.smgov.net/uploadedFiles/Departments/Clerk/a20261013_Completed.pdf"
+        },
+        {
+          "title": "Santa Monica Daily Press: Zoox robotaxi parking agreement (축약 제목)",
+          "url": "https://www.smdp.com/santa-monica-moves-toward-deal-to-park-zoox-robotaxis-at-main-library/"
+        }
+      ]
+    },
+    {
+      "id": "tesla-austin-midnight-report-20261017",
+      "date": "2026-10-17",
+      "title": "Tesla Austin 자정 운행 확대 보도",
+      "status": "보도",
+      "report_id": "2026-10-20",
+      "detail": "두 전문 매체가 Tesla 앱 알림을 근거로 Austin 자정까지 이용시간 확대를 보도했다. 날짜는 보도일이며 정확한 첫 시행일은 미확인. 공식 지원 페이지는 지역별 시간이 다를 수 있다고 안내한다. 안전요원·무인 수준 변화로 추정하지 않는다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "Not a Tesla App: Robotaxi hours until midnight (축약 제목)",
+          "url": "https://www.notateslaapp.com/news/4844/tesla-extends-robotaxi-hours-again-now-until-midnight"
+        },
+        {
+          "title": "Drive Tesla: Cybercab midnight hours in Austin (축약 제목)",
+          "url": "https://driveteslacanada.ca/news/tesla-cybercab-midnight-operating-hours-austin/"
+        },
+        {
+          "title": "Tesla: Robotaxi Support",
+          "url": "https://www.tesla.com/support/robotaxi"
+        }
+      ]
     }
   ],
   "entities": [
