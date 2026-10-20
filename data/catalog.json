@@ -2362,6 +2362,70 @@
           "url": "https://www.theverge.com/transportation/997091/waymo-singapore-robotaxi-launch-2027"
         }
       ]
+    },
+    {
+      "id": "waymo-madrid-plan-20261020",
+      "date": "2026-10-20",
+      "title": "Waymo 마드리드 2027 승객 서비스 계획",
+      "status": "계획",
+      "report_id": "2026-10-21",
+      "detail": "Waymo는 마드리드 광역권에서 수동 주행과 훈련된 자율주행 전문가가 운전석에 앉는 기술 검증을 거쳐 2027년 첫 승객을 맞는다는 목표를 발표했다. 무인 상용 개시일·차량 수·최종 허가는 미확인.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "Waymo: ¡Llegamos a Madrid! Waymo is coming to Spain",
+          "url": "https://waymo.com/blog/2026/10/waymo-in-madrid-region/"
+        },
+        {
+          "title": "Reuters: Waymo to launch autonomous ride-hailing in Madrid next year",
+          "url": "https://www.reuters.com/business/waymo-launch-autonomous-ride-hailing-madrid-next-year-2026-10-20/"
+        }
+      ]
+    },
+    {
+      "id": "waymo-fleet-20000-report-20261019",
+      "date": "2026-10-19",
+      "title": "Waymo 2027년 말 2만대 확대 목표 보도",
+      "status": "보도",
+      "report_id": "2026-10-21",
+      "detail": "Semafor는 익명 소식통을 인용해 Waymo가 약 4,000대에서 2026년 말 8,000대, 2027년 말 20,000대로 확대할 계획이라고 보도했다. Waymo는 논평을 거부했으므로 공식 목표로 확정하지 않는다.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "Semafor: Waymo plans to quintuple its fleet",
+          "url": "https://www.semafor.com/article/10/19/2026/waymo-plans-to-quintuple-its-fleet"
+        },
+        {
+          "title": "Waymo: Waymo Closes $5 Billion Debt Financing to Accelerate Business Expansion",
+          "url": "https://waymo.com/blog/2026/10/waymo-closes-5-billion-debt-financing/"
+        }
+      ]
+    },
+    {
+      "id": "oro-80m-investment-20261020",
+      "date": "2026-10-20",
+      "title": "Oro Mobility 전략적 지분 투자 8천만달러 확보",
+      "status": "투자 확보",
+      "report_id": "2026-10-21",
+      "detail": "Hertz는 Oro Mobility가 전략적 지분 투자 8,000만 달러를 확보했다고 발표했다. 자금은 일반 라이드셰어와 자율주행 차량 관리에 걸친 차량·운영 인프라·기술 역량 확장에 쓰일 예정이다.",
+      "companies": [
+        "Hertz",
+        "Oro Mobility"
+      ],
+      "sources": [
+        {
+          "title": "Hertz·SEC: Hertz-Backed Oro Mobility Secures $80 Million Strategic Equity Investment",
+          "url": "https://www.sec.gov/Archives/edgar/data/1657853/000095010326015848/dp255212_ex9901.htm"
+        },
+        {
+          "title": "Axios: Steve Cohen backs Hertz robotaxi ambitions with $80 million investment",
+          "url": "https://www.axios.com/2026/10/20/steve-cohen-hertz-robotaxi-80-million"
+        }
+      ]
     }
   ],
   "entities": [
@@ -2428,6 +2492,16 @@
     {
       "id": "element-fleet-management",
       "label": "Element Fleet Management",
+      "kind": "기업"
+    },
+    {
+      "id": "hertz",
+      "label": "Hertz",
+      "kind": "기업"
+    },
+    {
+      "id": "oro-mobility",
+      "label": "Oro Mobility",
       "kind": "기업"
     }
   ],
@@ -2580,6 +2654,21 @@
         {
           "title": "Element Fleet Management: Element expands strategic partnership with Waymo as autonomous mobility arrives in Canada",
           "url": "https://www.elementfleet.com/about/news/element-expands-strategic-partnership-with-waymo-as-autonomous-mobility-arrives-in-canada"
+        }
+      ]
+    },
+    {
+      "id": "hertz-oro-majority-20261020",
+      "from": "hertz",
+      "to": "oro-mobility",
+      "label": "과반 경제적 지분 보유·운영 지원",
+      "status": "현행",
+      "report_id": "2026-10-21",
+      "evidence": "Hertz의 2026-10-20 SEC 첨부 보도자료는 Hertz가 Oro의 과반 경제적 지분을 유지하고 차량·기업 서비스를 지원한다고 명시한다.",
+      "sources": [
+        {
+          "title": "Hertz·SEC: Hertz-Backed Oro Mobility Secures $80 Million Strategic Equity Investment",
+          "url": "https://www.sec.gov/Archives/edgar/data/1657853/000095010326015848/dp255212_ex9901.htm"
         }
       ]
     }
