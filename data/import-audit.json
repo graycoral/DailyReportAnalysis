@@ -1,7 +1,7 @@
 {
-  "count": 21,
+  "count": 22,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-20",
+  "through_date": "2026-10-21",
   "records": [
     {
       "date": "2026-09-20",
@@ -357,6 +357,23 @@
           "name": "autonomous_driving_daily_2026-10-20.pptx",
           "path": "data/reports/2026-10-20/autonomous_driving_daily_2026-10-20.pptx",
           "sha256": "2b5771796adb8d81a3be74183e272e664e0e1fe869e8c84c1998b65465043fe2"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-21",
+      "title": "Waymo 마드리드 2027 계획·Oro 8천만달러 투자",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-21.md",
+          "path": "data/reports/2026-10-21/autonomous_driving_daily_2026-10-21.md",
+          "sha256": "aa419742a25f0014cd4e637d377c6f7daca7cff0fe0f196ba57dbc4701492881"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-21.pptx",
+          "path": "data/reports/2026-10-21/autonomous_driving_daily_2026-10-21.pptx",
+          "sha256": "00c5f722178a984e965a5583be90a740f168b26826d7b30a3c65850d30cfdaf0"
         }
       ]
     }
