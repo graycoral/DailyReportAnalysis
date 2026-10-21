@@ -1,7 +1,7 @@
 {
-  "count": 22,
+  "count": 23,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-21",
+  "through_date": "2026-10-22",
   "records": [
     {
       "date": "2026-09-20",
@@ -374,6 +374,23 @@
           "name": "autonomous_driving_daily_2026-10-21.pptx",
           "path": "data/reports/2026-10-21/autonomous_driving_daily_2026-10-21.pptx",
           "sha256": "00c5f722178a984e965a5583be90a740f168b26826d7b30a3c65850d30cfdaf0"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-22",
+      "title": "Bolt·NVIDIA 마드리드 L4 검증·Tesla 안전보고",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-22.md",
+          "path": "data/reports/2026-10-22/autonomous_driving_daily_2026-10-22.md",
+          "sha256": "45b7b7fb2c612fc0c867fe86ee326b7ed16f5350218a1e0b8e5d339df7f269cf"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-22.pptx",
+          "path": "data/reports/2026-10-22/autonomous_driving_daily_2026-10-22.pptx",
+          "sha256": "cb42b88c9086bcbfaef4ab486a78a1d19b9b74f126117c56d972fea15d0cd9e3"
         }
       ]
     }
