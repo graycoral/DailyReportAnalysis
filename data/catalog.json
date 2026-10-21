@@ -2531,6 +2531,93 @@
           "url": "https://www.theverge.com/transportation/997091/waymo-singapore-robotaxi-launch-2027"
         }
       ]
+    },
+    {
+      "id": "bolt-nvidia-alpamayo-madrid-20261021",
+      "date": "2026-10-21",
+      "title": "Bolt, NVIDIA Alpamayo 선정·Madrid 2027 검증 계획",
+      "status": "계획",
+      "report_id": "2026-10-22",
+      "detail": "Bolt는 유럽 로보택시 프로그램에 NVIDIA Alpamayo Stack을 선정했다. Lucid 차량부터 적용하고 규제 승인을 전제로 2027년 Madrid에서 실도로 데이터를 수집할 계획이다. 상용 또는 무인 운행 개시가 아니다.",
+      "companies": [
+        "Bolt",
+        "NVIDIA",
+        "Lucid"
+      ],
+      "sources": [
+        {
+          "title": "NVIDIA: European Mobility Leaders Build Safe Vehicles and Robotaxi Fleets on NVIDIA Hyperion",
+          "url": "https://nvidianews.nvidia.com/news/european-mobility-leaders-build-safe-vehicles-and-robotaxi-fleets-on-nvidia-hyperion"
+        },
+        {
+          "title": "Bolt: Press Releases: Bolt picks NVIDIA Alpamayo Stack to drive its autonomous vehicles across Europe",
+          "url": "https://bolt.eu/en/blog/category/press-releases/"
+        }
+      ]
+    },
+    {
+      "id": "tesla-robotaxi-safety-report-20261021",
+      "date": "2026-10-21",
+      "title": "Tesla 첫 Robotaxi Safety Report 공개",
+      "status": "공식 공개",
+      "report_id": "2026-10-22",
+      "detail": "Tesla는 안전요원 없는 자율주행을 대상으로 2026-01-22~10-18의 안전 결과와 집계 방법을 공개했다. 고정 집계는 3,112,541마일이며 회사 자체 정의와 비교 한계를 함께 봐야 한다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "Tesla: Robotaxi Safety Report",
+          "url": "https://www.tesla.com/robotaxi/safety"
+        },
+        {
+          "title": "Drive Tesla: Tesla Launches Robotaxi Safety Report, Claims Zero Injuries Over 3.1 Million Autonomous Miles",
+          "url": "https://driveteslacanada.ca/robotaxi/tesla-robotaxi-safety-report-zero-injuries/"
+        }
+      ]
+    },
+    {
+      "id": "tesla-cybercab-dallas-plan-20261021",
+      "date": "2026-10-21",
+      "title": "Tesla Dallas Cybercab 11월 투입 계획",
+      "status": "계획",
+      "report_id": "2026-10-22",
+      "detail": "Tesla는 Q3 2026 실적 설명회에서 2026년 11월 Dallas에 안전요원 없는 Cybercab을 투입할 계획이라고 밝혔다. 기존 Dallas Model Y 무인 서비스와 구분되는 차량 플랫폼 확대 계획이다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "Tesla IR: Tesla Releases Third Quarter 2026 Financial Results",
+          "url": "https://ir.tesla.com/press-release/tesla-releases-third-quarter-2026-financial-results"
+        },
+        {
+          "title": "Not a Tesla App: Tesla Names Next Robotaxi Cities, Shares Miles Driven & Safety Data",
+          "url": "https://www.notateslaapp.com/news/4860/tesla-names-next-robotaxi-cities-shares-miles-driven-safety-data"
+        }
+      ]
+    },
+    {
+      "id": "uber-nvidia-av-data-factory-20261021",
+      "date": "2026-10-21",
+      "title": "Uber·NVIDIA AV 데이터 팩토리 개발",
+      "status": "개발",
+      "report_id": "2026-10-22",
+      "detail": "Uber와 NVIDIA는 Cosmos 기반 데이터 팩토리로 자율주행 개발 데이터를 선별·처리하고 있다. 신규 승객 서비스 또는 무인 운행 상태 변화는 확인되지 않았다.",
+      "companies": [
+        "Uber",
+        "NVIDIA"
+      ],
+      "sources": [
+        {
+          "title": "NVIDIA: European Mobility Leaders Build Safe Vehicles and Robotaxi Fleets on NVIDIA Hyperion",
+          "url": "https://nvidianews.nvidia.com/news/european-mobility-leaders-build-safe-vehicles-and-robotaxi-fleets-on-nvidia-hyperion"
+        },
+        {
+          "title": "Uber: Autonomous Articles",
+          "url": "https://www.uber.com/us/en/newsroom/autonomous/"
+        }
+      ]
     }
   ],
   "entities": [
@@ -2607,6 +2694,26 @@
     {
       "id": "oro-mobility",
       "label": "Oro Mobility",
+      "kind": "기업"
+    },
+    {
+      "id": "bolt",
+      "label": "Bolt",
+      "kind": "기업"
+    },
+    {
+      "id": "nvidia",
+      "label": "NVIDIA",
+      "kind": "기업"
+    },
+    {
+      "id": "lucid",
+      "label": "Lucid",
+      "kind": "기업"
+    },
+    {
+      "id": "tesla",
+      "label": "Tesla",
       "kind": "기업"
     }
   ],
@@ -2774,6 +2881,44 @@
         {
           "title": "Hertz·SEC: Hertz-Backed Oro Mobility Secures $80 Million Strategic Equity Investment",
           "url": "https://www.sec.gov/Archives/edgar/data/1657853/000095010326015848/dp255212_ex9901.htm"
+        }
+      ]
+    },
+    {
+      "id": "bolt-nvidia-alpamayo-20261021",
+      "from": "bolt",
+      "to": "nvidia",
+      "label": "Alpamayo Stack 선정·유럽 L4 공동 적용",
+      "status": "계획",
+      "report_id": "2026-10-22",
+      "evidence": "NVIDIA와 Bolt의 2026-10-21 발표는 Bolt가 Alpamayo Stack을 선정하고 양사가 유럽 도로용 소프트웨어를 조정한다고 명시한다.",
+      "sources": [
+        {
+          "title": "NVIDIA: European Mobility Leaders Build Safe Vehicles and Robotaxi Fleets on NVIDIA Hyperion",
+          "url": "https://nvidianews.nvidia.com/news/european-mobility-leaders-build-safe-vehicles-and-robotaxi-fleets-on-nvidia-hyperion"
+        },
+        {
+          "title": "Bolt: Press Releases: Bolt picks NVIDIA Alpamayo Stack to drive its autonomous vehicles across Europe",
+          "url": "https://bolt.eu/en/blog/category/press-releases/"
+        }
+      ]
+    },
+    {
+      "id": "uber-nvidia-data-factory-20261021",
+      "from": "uber",
+      "to": "nvidia",
+      "label": "Cosmos 기반 AV 데이터 팩토리 개발",
+      "status": "개발",
+      "report_id": "2026-10-22",
+      "evidence": "NVIDIA의 2026-10-21 발표는 Uber와 NVIDIA가 Cosmos 기반 AV 데이터 팩토리를 개발하고 있다고 명시한다.",
+      "sources": [
+        {
+          "title": "NVIDIA: European Mobility Leaders Build Safe Vehicles and Robotaxi Fleets on NVIDIA Hyperion",
+          "url": "https://nvidianews.nvidia.com/news/european-mobility-leaders-build-safe-vehicles-and-robotaxi-fleets-on-nvidia-hyperion"
+        },
+        {
+          "title": "Uber: Autonomous Articles",
+          "url": "https://www.uber.com/us/en/newsroom/autonomous/"
         }
       ]
     }
