@@ -1,7 +1,7 @@
 {
-  "count": 23,
+  "count": 24,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-22",
+  "through_date": "2026-10-23",
   "records": [
     {
       "date": "2026-09-20",
@@ -391,6 +391,23 @@
           "name": "autonomous_driving_daily_2026-10-22.pptx",
           "path": "data/reports/2026-10-22/autonomous_driving_daily_2026-10-22.pptx",
           "sha256": "cb42b88c9086bcbfaef4ab486a78a1d19b9b74f126117c56d972fea15d0cd9e3"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-23",
+      "title": "Tesla Cybercab 고객 인도·소유차량 로보택시 편입 계획",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-23.md",
+          "path": "data/reports/2026-10-23/autonomous_driving_daily_2026-10-23.md",
+          "sha256": "f30cd9df2b4eeb43c95630160156740aaeab6e015de2b872903a0d4ba87ace77"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-23.pptx",
+          "path": "data/reports/2026-10-23/autonomous_driving_daily_2026-10-23.pptx",
+          "sha256": "00e325d20a1be6c62354dcf60c533d3e6eb0eded74a5ca05524804296d26e43c"
         }
       ]
     }
