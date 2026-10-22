@@ -1904,6 +1904,70 @@
   ],
   "events": [
     {
+      "id": "tesla-cybercab-customer-delivery-plan-20261021",
+      "date": "2026-10-21",
+      "title": "Tesla Cybercab 고객 인도 계획",
+      "status": "계획",
+      "report_id": "2026-10-23",
+      "detail": "Tesla는 2026년 말까지 소규모 Cybercab을 외부 고객에게 인도하기 시작한다는 목표를 설명회에서 제시했다. 판매 가격·인도 대수·대상 지역·허가 완료는 공개되지 않았으며 실제 인도 달성이 아니다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "Reuters: Tesla aims to sell Cybercab robotaxis by end of year despite federal probe",
+          "url": "https://www.reuters.com/business/autos-transportation/tesla-aims-sell-cybercab-robotaxis-by-end-year-despite-federal-probe-2026-10-22/"
+        },
+        {
+          "title": "EarningsCalls.dev: Tesla Q3 2026 Earnings Call Transcript",
+          "url": "https://earningscalls.dev/transcripts/tesla-inc_tsla_earnings_call_transcript_2026-10-21"
+        }
+      ]
+    },
+    {
+      "id": "tesla-customer-vehicle-robotaxi-plan-20261021",
+      "date": "2026-10-21",
+      "title": "Tesla 고객 소유 차량 로보택시 편입 계획",
+      "status": "계획",
+      "report_id": "2026-10-23",
+      "detail": "Tesla는 2027년 2분기 일부 고객 소유 차량을 로보택시 차량군에 편입할 수 있다는 목표를 밝혔다. 지오펜스·차량군 관리·지역별 규제·보험 조건이 남아 있으며 실제 무인 유상 운행 개시는 확인되지 않았다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "EarningsCalls.dev: Tesla Q3 2026 Earnings Call Transcript",
+          "url": "https://earningscalls.dev/transcripts/tesla-inc_tsla_earnings_call_transcript_2026-10-21"
+        },
+        {
+          "title": "The Verge: Tesla says customers can add their own vehicles to the robotaxi fleet next year",
+          "url": "https://www.theverge.com/transportation/1016118/tesla-robotaxi-customer-owned-vehicle-fleet-network-q3-2026-earnings"
+        }
+      ]
+    },
+    {
+      "id": "einride-alpamayo-evaluation-plan-20261021",
+      "date": "2026-10-21",
+      "title": "Einride NVIDIA Alpamayo 평가 계획",
+      "status": "계획",
+      "report_id": "2026-10-23",
+      "detail": "Einride는 자율 화물 시스템에서 NVIDIA Alpamayo를 shadow mode로 평가하고 2027년 하반기 실도로 평가를 목표로 한다. 평가 중 Alpamayo는 차량을 제어하지 않고 기존 안전 아키텍처가 권한을 유지한다.",
+      "companies": [
+        "Einride",
+        "NVIDIA"
+      ],
+      "sources": [
+        {
+          "title": "Einride: Einride Deepens Collaboration with NVIDIA: Adopts NVIDIA Alpamayo for Autonomous Trucks",
+          "url": "https://www.einride.tech/press/3385407"
+        },
+        {
+          "title": "Reuters: Einride expands Nvidia partnership to deploy AI reasoning model for self-driving trucks",
+          "url": "https://www.reuters.com/business/autos-transportation/einride-expands-nvidia-partnership-deploy-ai-reasoning-model-self-driving-trucks-2026-10-21/"
+        }
+      ]
+    },
+    {
       "id": "minneapolis-av-veto-override-failed-20261015",
       "date": "2026-10-15",
       "title": "미니애폴리스 로보택시 안전요원 의무 조례 재의결 실패",
@@ -2819,6 +2883,11 @@
       "id": "tesla",
       "label": "Tesla",
       "kind": "기업"
+    },
+    {
+      "id": "einride",
+      "label": "Einride",
+      "kind": "기업"
     }
   ],
   "relations": [
@@ -3023,6 +3092,25 @@
         {
           "title": "Uber: Autonomous Articles",
           "url": "https://www.uber.com/us/en/newsroom/autonomous/"
+        }
+      ]
+    },
+    {
+      "id": "einride-nvidia-alpamayo-20261021",
+      "from": "einride",
+      "to": "nvidia",
+      "label": "Alpamayo 평가·후학습 협력",
+      "status": "계획",
+      "report_id": "2026-10-23",
+      "evidence": "Einride의 2026-10-21 공식 발표는 NVIDIA Alpamayo를 Einride Driver 안에서 평가하고 화물 운행 데이터로 후학습·증류하며 2027년 하반기 실도로 평가를 목표로 한다고 명시한다.",
+      "sources": [
+        {
+          "title": "Einride: Einride Deepens Collaboration with NVIDIA: Adopts NVIDIA Alpamayo for Autonomous Trucks",
+          "url": "https://www.einride.tech/press/3385407"
+        },
+        {
+          "title": "Reuters: Einride expands Nvidia partnership to deploy AI reasoning model for self-driving trucks",
+          "url": "https://www.reuters.com/business/autos-transportation/einride-expands-nvidia-partnership-deploy-ai-reasoning-model-self-driving-trucks-2026-10-21/"
         }
       ]
     }
