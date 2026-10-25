@@ -1,7 +1,7 @@
 {
-  "count": 24,
+  "count": 25,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-23",
+  "through_date": "2026-10-26",
   "records": [
     {
       "date": "2026-09-20",
@@ -408,6 +408,23 @@
           "name": "autonomous_driving_daily_2026-10-23.pptx",
           "path": "data/reports/2026-10-23/autonomous_driving_daily_2026-10-23.pptx",
           "sha256": "00e325d20a1be6c62354dcf60c533d3e6eb0eded74a5ca05524804296d26e43c"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-26",
+      "title": "Baidu 런던 유인 시험·유럽 L4 계획·NHTSA 조명 제안",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-26.md",
+          "path": "data/reports/2026-10-26/autonomous_driving_daily_2026-10-26.md",
+          "sha256": "1dcdf0cc29345fd336161ec0c1819cd94432a3e8055f7c1e6bbcfa1b8ab62bf3"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-26.pptx",
+          "path": "data/reports/2026-10-26/autonomous_driving_daily_2026-10-26.pptx",
+          "sha256": "7ec6ec32cb3bd9353538fd8c2e9031f8f11a36a0f4ab71e72592729e99bf7170"
         }
       ]
     }
