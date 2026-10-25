@@ -2020,6 +2020,95 @@
   ],
   "events": [
     {
+      "id": "baidu-freenow-london-safety-driver-test-20261023",
+      "date": "2026-10-23",
+      "title": "Baidu Apollo Go·Freenow 런던 안전운전자 동승 시험",
+      "status": "시험 진행",
+      "report_id": "2026-10-26",
+      "detail": "Baidu Apollo Go와 Freenow는 2026년 여름부터 London에서 RT6의 안전운전자 동승 시험을 진행했다. 2027년 완전 무인·상용 출시는 목표이며 현재 달성 사실이 아니다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "Reuters: China’s Baidu tests robotaxi on London streets",
+          "url": "https://www.reuters.com/business/finance/chinas-baidu-tests-robotaxi-london-streets-2026-10-23/"
+        }
+      ]
+    },
+    {
+      "id": "nhtsa-fmvss108-ads-lighting-proposal-20261023",
+      "date": "2026-10-23",
+      "title": "NHTSA FMVSS 108 ADS 차량 조명 규칙 제안",
+      "status": "규칙 제안",
+      "report_id": "2026-10-26",
+      "detail": "NHTSA는 ADS 전용차의 수동 조명 조작장치 요건을 조정하고 선택형 청록색 ADS 표시등 기준을 추가하는 FMVSS 108 개정안을 제안했다. 최종 규칙이나 시행 확정이 아니다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "NHTSA: Vehicle Lighting Updates for Automated Vehicles",
+          "url": "https://www.nhtsa.gov/press-releases/vehicle-lighting-updates-automated-vehicles"
+        },
+        {
+          "title": "NHTSA: FMVSS No. 108 NPRM",
+          "url": "https://www.nhtsa.gov/node/144326"
+        }
+      ]
+    },
+    {
+      "id": "bolt-stellantis-greater-paris-adacities-plan-20261023",
+      "date": "2026-10-23",
+      "title": "Bolt·Stellantis 대파리 ADACities 실증 계획",
+      "status": "계획",
+      "report_id": "2026-10-26",
+      "detail": "Bolt·Stellantis·Métropole du Grand Paris는 2028년 최대 5개 지자체에서 실증을 시작해 2030년 약 30개 지자체 확대와 상용 운영 가능성을 검토하는 계획을 발표했다. 필요한 승인, 노선, 차량 규모와 안전요원은 미확정이다.",
+      "companies": [
+        "Bolt",
+        "Pony.ai",
+        "NVIDIA"
+      ],
+      "sources": [
+        {
+          "title": "Stellantis·Bolt: Greater Paris autonomous mobility experimentation from 2028",
+          "url": "https://www.media.stellantis.com/uk-en/corporate/press/metropole-du-grand-paris-bolt-and-stellantis-together-aim-to-bring-autonomous-vehicles-by-experimentation-to-greater-paris-from-2028"
+        }
+      ]
+    },
+    {
+      "id": "wayve-stellantis-nvidia-france-collaboration-20261023",
+      "date": "2026-10-23",
+      "title": "Wayve·Stellantis·NVIDIA 프랑스 AV 생태계 협력 발표",
+      "status": "계획",
+      "report_id": "2026-10-26",
+      "detail": "Wayve·Stellantis·NVIDIA는 프랑스 정부와 L4-Ready 플랫폼, Wayve AI Driver, NVIDIA Hyperion·Halos를 결합하는 협력 구상을 발표했다. 실제 시험 노선·차량 수·서비스 개시일은 공개되지 않았다.",
+      "companies": [
+        "Wayve",
+        "NVIDIA"
+      ],
+      "sources": [
+        {
+          "title": "Wayve: Safe and Responsible AV Deployment Across France",
+          "url": "https://wayve.ai/press/wayve-stellantis-nvidia-collaborate-on-deployment-across-france/"
+        }
+      ]
+    },
+    {
+      "id": "pony-indrive-kazakhstan-mou-20261023",
+      "date": "2026-10-23",
+      "title": "Pony.ai·inDrive Kazakhstan L4 타당성 검토 MOU",
+      "status": "계획",
+      "report_id": "2026-10-26",
+      "detail": "Pony.ai와 inDrive는 NVIDIA 인프라를 활용해 Kazakhstan을 첫 시장으로 L4 서비스의 기술·운영·규제·상업 타당성을 검토하는 MOU를 발표했다. Astana 도입은 정부 합의가 전제이며 운행 개시는 확인되지 않았다.",
+      "companies": [
+        "Pony.ai",
+        "NVIDIA"
+      ],
+      "sources": [
+        {
+          "title": "Pony.ai: inDrive and Pony.ai Explore Autonomous Mobility in Kazakhstan",
+          "url": "https://blog.pony.ai/indrive-and-pony-ai-announce-collaboration-to-explore-autonomous-mobility-in-kazakhstan-built-on-nvidia-hyperion/"
+        }
+      ]
+    },
+    {
       "id": "tesla-cybercab-customer-delivery-plan-20261021",
       "date": "2026-10-21",
       "title": "Tesla Cybercab 고객 인도 계획",
@@ -3004,6 +3093,51 @@
       "id": "einride",
       "label": "Einride",
       "kind": "기업"
+    },
+    {
+      "id": "baidu-apollo-go",
+      "label": "Baidu Apollo Go",
+      "kind": "기업"
+    },
+    {
+      "id": "freenow",
+      "label": "Freenow",
+      "kind": "기업"
+    },
+    {
+      "id": "london",
+      "label": "London",
+      "kind": "지역"
+    },
+    {
+      "id": "stellantis",
+      "label": "Stellantis",
+      "kind": "기업"
+    },
+    {
+      "id": "greater-paris",
+      "label": "Métropole du Grand Paris",
+      "kind": "지역"
+    },
+    {
+      "id": "wayve",
+      "label": "Wayve",
+      "kind": "기업"
+    },
+    {
+      "id": "france",
+      "label": "France",
+      "kind": "지역"
+    },
+    {
+      "id": "indrive",
+      "label": "inDrive",
+      "kind": "기업"
+    },
+    {
+      "id": "kazakhstan",
+      "label": "Kazakhstan",
+      "kind": "지역"
     }
   ],
   "relations": [
@@ -3227,6 +3361,66 @@
         {
           "title": "Reuters: Einride expands Nvidia partnership to deploy AI reasoning model for self-driving trucks",
           "url": "https://www.reuters.com/business/autos-transportation/einride-expands-nvidia-partnership-deploy-ai-reasoning-model-self-driving-trucks-2026-10-21/"
+        }
+      ]
+    },
+    {
+      "id": "baidu-freenow-london-testing-20261023",
+      "from": "baidu-apollo-go",
+      "to": "freenow",
+      "label": "런던 RT6 유인 시험 협력",
+      "status": "시험 진행",
+      "report_id": "2026-10-26",
+      "evidence": "Reuters는 Baidu Apollo Go와 Freenow가 London에서 RT6 안전운전자 동승 시험을 진행 중이라고 보도했다. 2027년 무인·상용 전환은 목표다.",
+      "sources": [
+        {
+          "title": "Reuters: China’s Baidu tests robotaxi on London streets",
+          "url": "https://www.reuters.com/business/finance/chinas-baidu-tests-robotaxi-london-streets-2026-10-23/"
+        }
+      ]
+    },
+    {
+      "id": "bolt-stellantis-greater-paris-plan-20261023",
+      "from": "bolt",
+      "to": "stellantis",
+      "label": "대파리 ADACities 실증 계획",
+      "status": "계획",
+      "report_id": "2026-10-26",
+      "evidence": "2026-10-23 공식 발표는 Bolt가 서비스 통합·배치 계획을, Stellantis가 L4-Ready 차량을 맡는 대파리 실증 후보 사업을 명시한다.",
+      "sources": [
+        {
+          "title": "Stellantis·Bolt: Greater Paris autonomous mobility experimentation from 2028",
+          "url": "https://www.media.stellantis.com/uk-en/corporate/press/metropole-du-grand-paris-bolt-and-stellantis-together-aim-to-bring-autonomous-vehicles-by-experimentation-to-greater-paris-from-2028"
+        }
+      ]
+    },
+    {
+      "id": "wayve-stellantis-france-collaboration-20261023",
+      "from": "wayve",
+      "to": "stellantis",
+      "label": "프랑스 L4 기술 생태계 협력",
+      "status": "계획",
+      "report_id": "2026-10-26",
+      "evidence": "Wayve 공식 2026-10-23 발표는 Stellantis L4-Ready Platforms와 Wayve AI Driver를 NVIDIA Hyperion·Halos 기반으로 결합하는 프랑스 협력을 명시한다.",
+      "sources": [
+        {
+          "title": "Wayve: Safe and Responsible AV Deployment Across France",
+          "url": "https://wayve.ai/press/wayve-stellantis-nvidia-collaborate-on-deployment-across-france/"
+        }
+      ]
+    },
+    {
+      "id": "pony-ai-indrive-kazakhstan-mou-20261023",
+      "from": "pony-ai",
+      "to": "indrive",
+      "label": "Kazakhstan L4 타당성 검토 MOU",
+      "status": "계획",
+      "report_id": "2026-10-26",
+      "evidence": "Pony.ai 공식 2026-10-23 발표는 양사가 Kazakhstan에서 L4 서비스의 기술·운영·규제·상업 타당성을 평가하기 위한 MOU를 체결했다고 명시한다.",
+      "sources": [
+        {
+          "title": "Pony.ai: inDrive and Pony.ai Explore Autonomous Mobility in Kazakhstan",
+          "url": "https://blog.pony.ai/indrive-and-pony-ai-announce-collaboration-to-explore-autonomous-mobility-in-kazakhstan-built-on-nvidia-hyperion/"
         }
       ]
     }
