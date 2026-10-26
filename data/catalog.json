@@ -3102,6 +3102,27 @@
           "url": "https://www.theverge.com/transportation/997091/waymo-singapore-robotaxi-launch-2027"
         }
       ]
+    },
+    {
+      "id": "tesla-houston-service-area-expansion-20261026",
+      "date": "2026-10-26",
+      "title": "Tesla Houston 무인 로보택시 운행구역 확대",
+      "status": "운영 확대 확인",
+      "report_id": "2026-10-27",
+      "detail": "2026년 10월 26일 Tesla Robotaxi가 Houston 서비스 구역을 Jersey Village에서 Bellaire·The Heights·Montrose·Midtown·Downtown·East Downtown 일부로 확대했다. 현지 보도는 Model Y가 인간 운전자와 전좌석 안전요원 없이 운행한다고 확인했다. 차량 수·총면적·신규 허가 여부는 공개되지 않았다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "Tesla Robotaxi: Houston bigger service area now live [원문 미확인]",
+          "url": "https://x.com/robotaxi/status/2114713219411660978"
+        },
+        {
+          "title": "Houston Chronicle: Tesla's robotaxi service expands across parts of Houston",
+          "url": "https://www.houstonchronicle.com/news/houston-texas/transportation/article/houston-tesla-robotaxi-expansion-22494979.php"
+        }
+      ]
     }
   ],
   "entities": [
@@ -3248,6 +3269,11 @@
     {
       "id": "kazakhstan",
       "label": "Kazakhstan",
+      "kind": "지역"
+    },
+    {
+      "id": "houston",
+      "label": "Houston",
       "kind": "지역"
     }
   ],
@@ -3532,6 +3558,25 @@
         {
           "title": "Pony.ai: inDrive and Pony.ai Explore Autonomous Mobility in Kazakhstan",
           "url": "https://blog.pony.ai/indrive-and-pony-ai-announce-collaboration-to-explore-autonomous-mobility-in-kazakhstan-built-on-nvidia-hyperion/"
+        }
+      ]
+    },
+    {
+      "id": "tesla-houston-driverless-expansion-20261026",
+      "from": "tesla",
+      "to": "houston",
+      "label": "무인 로보택시 운행구역 확대",
+      "status": "운영 확대 확인",
+      "report_id": "2026-10-27",
+      "evidence": "2026년 10월 26일 공개 지도와 Houston Chronicle 보도는 Tesla가 Houston Robotaxi 운행구역을 도심·Montrose·Midtown 등으로 확대했고 차량에 인간 운전자와 전좌석 안전요원이 없다고 명시한다.",
+      "sources": [
+        {
+          "title": "Tesla Robotaxi: Houston bigger service area now live [원문 미확인]",
+          "url": "https://x.com/robotaxi/status/2114713219411660978"
+        },
+        {
+          "title": "Houston Chronicle: Tesla's robotaxi service expands across parts of Houston",
+          "url": "https://www.houstonchronicle.com/news/houston-texas/transportation/article/houston-tesla-robotaxi-expansion-22494979.php"
         }
       ]
     }
