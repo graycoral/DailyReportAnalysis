@@ -1,7 +1,7 @@
 {
-  "count": 25,
+  "count": 26,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-26",
+  "through_date": "2026-10-27",
   "records": [
     {
       "date": "2026-09-20",
@@ -425,6 +425,23 @@
           "name": "autonomous_driving_daily_2026-10-26.pptx",
           "path": "data/reports/2026-10-26/autonomous_driving_daily_2026-10-26.pptx",
           "sha256": "7ec6ec32cb3bd9353538fd8c2e9031f8f11a36a0f4ab71e72592729e99bf7170"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-27",
+      "title": "Tesla 휴스턴 무인 로보택시 운행구역 확대",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-27.md",
+          "path": "data/reports/2026-10-27/autonomous_driving_daily_2026-10-27.md",
+          "sha256": "56d65cde86d4f4c1faf34bb193d122d02144ac5531c3351239c15487f1f37636"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-27.pptx",
+          "path": "data/reports/2026-10-27/autonomous_driving_daily_2026-10-27.pptx",
+          "sha256": "b0f5a858b3ce7ca60aa43e3276446f8aadb19ce21195c3afded11518ba1a2e0e"
         }
       ]
     }
