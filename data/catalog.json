@@ -3231,6 +3231,27 @@
           "url": "https://www.theverge.com/transportation/997091/waymo-singapore-robotaxi-launch-2027"
         }
       ]
+    },
+    {
+      "id": "waymo-five-city-service-area-expansion-20261027",
+      "date": "2026-10-27",
+      "title": "Waymo 5개 도시 서비스 영역 약 250제곱마일 확대",
+      "status": "운영 확대",
+      "report_id": "2026-10-29",
+      "detail": "Waymo는 Los Angeles, Nashville, Orlando, San Diego, San Francisco Bay Area의 기존 무인 호출 서비스 영역에 합계 약 250제곱마일을 발표일부터 다음 1주 동안 순차 추가한다고 밝혔다. 도시별 추가 면적·투입 차량 수와 확대 완료 여부는 공개되지 않았다.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "Waymo: From the road — October 27, 2026",
+          "url": "https://waymo.com/blog/shorts/more-places/"
+        },
+        {
+          "title": "Waymo: From the road — October 28, 2026",
+          "url": "https://waymo.com/blog/shorts/waymo-and-ramp/"
+        }
+      ]
     }
   ],
   "entities": [
