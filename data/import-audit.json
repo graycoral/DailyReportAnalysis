@@ -1,7 +1,7 @@
 {
-  "count": 26,
+  "count": 27,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-27",
+  "through_date": "2026-10-29",
   "records": [
     {
       "date": "2026-09-20",
@@ -442,6 +442,23 @@
           "name": "autonomous_driving_daily_2026-10-27.pptx",
           "path": "data/reports/2026-10-27/autonomous_driving_daily_2026-10-27.pptx",
           "sha256": "b0f5a858b3ce7ca60aa43e3276446f8aadb19ce21195c3afded11518ba1a2e0e"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-29",
+      "title": "Waymo 5개 도시 무인 서비스 영역 250제곱마일 확대",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-29.md",
+          "path": "data/reports/2026-10-29/autonomous_driving_daily_2026-10-29.md",
+          "sha256": "1abac5f70c1b9b6aebe5fff20c4e29d0f498c8afabf4dadf6f3f096499ea2bcd"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-29.pptx",
+          "path": "data/reports/2026-10-29/autonomous_driving_daily_2026-10-29.pptx",
+          "sha256": "767eac7905d322000f94975af1a5ee452fc140deda022bb9c8fe5e10a4c6795f"
         }
       ]
     }
