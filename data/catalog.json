@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "published_at": "2026-10-29T07:34:01+09:00",
+  "published_at": "2026-10-30T07:30:00+09:00",
   "reports": [
     {
       "id": "2026-10-29",
@@ -2343,6 +2343,27 @@
   ],
   "events": [
     {
+      "id": "mobileye-holo-norway-permit-disclosure-20261029",
+      "date": "2026-10-29",
+      "title": "Mobileye Drive 기반 Holo 노르웨이 공공 배치 허가 공개",
+      "status": "허가 공개",
+      "report_id": "2026-10-30",
+      "detail": "Mobileye의 2026-10-29 공식 발표는 Mobileye Drive 기반 플랫폼이 노르웨이 자율주행 허가를 받아 Holo가 공공 배치할 수 있게 됐다고 명시한다. 허가 발급일·차량 수·ODD는 공개되지 않았고 Ruter는 현재 안전요원 동승을 명시한다.",
+      "companies": [
+        "Mobileye"
+      ],
+      "sources": [
+        {
+          "title": "Mobileye: Q3 2026 Results and Business Overview",
+          "url": "https://ir.mobileye.com/news-releases/news-release-details/mobileye-releases-third-quarter-2026-results-updates-guidance"
+        },
+        {
+          "title": "Ruter: Autonomous transport on-demand",
+          "url": "https://ruter.no/en/projects-and-new-development/autonomous-transport-on-demand"
+        }
+      ]
+    },
+    {
       "id": "baidu-freenow-london-safety-driver-test-20261023",
       "date": "2026-10-23",
       "title": "Baidu Apollo Go·Freenow 런던 안전운전자 동승 시험",
@@ -3508,6 +3529,26 @@
       "id": "houston",
       "label": "Houston",
       "kind": "지역"
+    },
+    {
+      "id": "mobileye",
+      "label": "Mobileye",
+      "kind": "기업"
+    },
+    {
+      "id": "holo",
+      "label": "Holo",
+      "kind": "기업"
+    },
+    {
+      "id": "ruter",
+      "label": "Ruter",
+      "kind": "기관"
+    },
+    {
+      "id": "norway",
+      "label": "Norway",
+      "kind": "지역"
     }
   ],
   "relations": [
@@ -3810,6 +3851,25 @@
         {
           "title": "Houston Chronicle: Tesla's robotaxi service expands across parts of Houston",
           "url": "https://www.houstonchronicle.com/news/houston-texas/transportation/article/houston-tesla-robotaxi-expansion-22494979.php"
+        }
+      ]
+    },
+    {
+      "id": "mobileye-holo-norway-permit-20261029",
+      "from": "mobileye",
+      "to": "holo",
+      "label": "노르웨이 공공 배치 허가 기반 운영",
+      "status": "허가 확인",
+      "report_id": "2026-10-30",
+      "evidence": "Mobileye 공식 2026-10-29 발표는 자사 플랫폼의 노르웨이 자율주행 허가로 Holo의 공공 배치가 가능해졌다고 명시하며, Ruter는 Holo가 운영하고 Mobileye 기술을 사용하는 서비스 구조와 현재 안전요원 동승을 설명한다.",
+      "sources": [
+        {
+          "title": "Mobileye: Q3 2026 Results and Business Overview",
+          "url": "https://ir.mobileye.com/news-releases/news-release-details/mobileye-releases-third-quarter-2026-results-updates-guidance"
+        },
+        {
+          "title": "Ruter: Autonomous transport on-demand",
+          "url": "https://ruter.no/en/projects-and-new-development/autonomous-transport-on-demand"
         }
       ]
     }
