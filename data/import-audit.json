@@ -1,7 +1,7 @@
 {
-  "count": 27,
+  "count": 28,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-29",
+  "through_date": "2026-10-30",
   "records": [
     {
       "date": "2026-09-20",
@@ -459,6 +459,23 @@
           "name": "autonomous_driving_daily_2026-10-29.pptx",
           "path": "data/reports/2026-10-29/autonomous_driving_daily_2026-10-29.pptx",
           "sha256": "767eac7905d322000f94975af1a5ee452fc140deda022bb9c8fe5e10a4c6795f"
+        }
+      ]
+    },
+    {
+      "date": "2026-10-30",
+      "title": "Mobileye 노르웨이 공공 배치 허가 공개",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-10-30.md",
+          "path": "data/reports/2026-10-30/autonomous_driving_daily_2026-10-30.md",
+          "sha256": "575e1f1141af313af08d433e7130f563235fe1fbdd8a16afbaad80520815a2df"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-10-30.pptx",
+          "path": "data/reports/2026-10-30/autonomous_driving_daily_2026-10-30.pptx",
+          "sha256": "0ca889d61d68307b525514f8997d45643a92702c62067ca4678c683c69c0c5fe"
         }
       ]
     }
