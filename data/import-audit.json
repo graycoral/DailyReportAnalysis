@@ -1,7 +1,7 @@
 {
-  "count": 28,
+  "count": 29,
   "from_date": "2026-09-20",
-  "through_date": "2026-10-30",
+  "through_date": "2026-11-02",
   "records": [
     {
       "date": "2026-09-20",
@@ -476,6 +476,23 @@
           "name": "autonomous_driving_daily_2026-10-30.pptx",
           "path": "data/reports/2026-10-30/autonomous_driving_daily_2026-10-30.pptx",
           "sha256": "0ca889d61d68307b525514f8997d45643a92702c62067ca4678c683c69c0c5fe"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-02",
+      "title": "Waymo·Toyota 일본 bZ4X L4 시험 계획",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-02.md",
+          "path": "data/reports/2026-11-02/autonomous_driving_daily_2026-11-02.md",
+          "sha256": "905e7252dc89a898074e76215c9a2eae9afe99f2cd80bad27971d8c7a25b3e8f"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-02.pptx",
+          "path": "data/reports/2026-11-02/autonomous_driving_daily_2026-11-02.pptx",
+          "sha256": "5c5bf61a7cfa8db729c570fd73b0e664fdd8939156a13fc65a870e7882c83b80"
         }
       ]
     }
