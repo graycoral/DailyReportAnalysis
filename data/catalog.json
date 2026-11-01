@@ -2447,6 +2447,61 @@
   ],
   "events": [
     {
+      "id": "may-edge-case-safety-framework-assessment-phase1-20261028",
+      "date": "2026-10-28",
+      "title": "May Mobility 독립 안전사례 평가 1단계 완료",
+      "status": "평가 1단계 완료",
+      "report_id": "2026-11-02",
+      "detail": "Edge Case는 May Mobility의 driverless safety case framework 구조·완전성·명확성 및 UL 4600·OASC 정렬을 독립적으로 평가한 1단계를 완료했다. 규제기관 허가, 개별 안전 주장 전체 검증 또는 무인 상용화 달성을 뜻하지 않는다.",
+      "companies": [
+        "May Mobility"
+      ],
+      "sources": [
+        {
+          "title": "May Mobility: Edge Case Completes Independent Safety Assessment",
+          "url": "https://maymobility.com/posts/edge-case-completes-independent-safety-assessment-of-may-mobilitys-safety-case-framework"
+        }
+      ]
+    },
+    {
+      "id": "kodiak-long-haul-arm-99-20261030",
+      "date": "2026-10-30",
+      "title": "Kodiak 장거리 무인 안전사례 ARM 99% 공개",
+      "status": "출시 준비",
+      "report_id": "2026-11-02",
+      "detail": "Kodiak의 2026-10-30 공식 발표는 장거리 무인 운행 안전사례의 자체 준비도 지표 ARM이 99%라고 명시한다. 안전사례 완결 뒤 Dallas–Houston I-45 운행과 IKEA 219마일 노선 개시는 계획이며 실제 개시 사실은 아니다.",
+      "companies": [
+        "Kodiak"
+      ],
+      "sources": [
+        {
+          "title": "Kodiak: Autonomy Readiness Measure Reaches 99%",
+          "url": "https://kodiak.ai/news/mountain-view-calif.-kodiak-ai-inc.-kodiak-nasdaq-"
+        }
+      ]
+    },
+    {
+      "id": "waymo-toyota-bz4x-japan-test-plan-20261030",
+      "date": "2026-10-30",
+      "title": "Waymo·Toyota 일본 bZ4X L4 시험 계획",
+      "status": "계획",
+      "report_id": "2026-11-02",
+      "detail": "Waymo와 Toyota의 2026-10-30 공식 발표는 일본에서 자율주행 Toyota bZ4X 차량군의 초기 시험·검증 운행을 2027년에 시작하고, Toyota 다카오카 공장에서 기본 차량 조립부터 Waymo AV 하드웨어 통합까지 수행할 계획이라고 명시한다. 현재 일본 무인 상용 서비스 개시 사실은 아니다.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "Waymo: Toyota and Waymo Advance Autonomous Driving Collaboration",
+          "url": "https://waymo.com/blog/2026/10/toyota-bz4x-partnership/"
+        },
+        {
+          "title": "Toyota: Toyota and Waymo Advance Autonomous Driving Collaboration",
+          "url": "https://global.toyota/en/newsroom/corporate/44960881.html"
+        }
+      ]
+    },
+    {
       "id": "mobileye-holo-norway-permit-disclosure-20261029",
       "date": "2026-10-29",
       "title": "Mobileye Drive 기반 Holo 노르웨이 공공 배치 허가 공개",
@@ -3653,6 +3708,16 @@
       "id": "norway",
       "label": "Norway",
       "kind": "지역"
+    },
+    {
+      "id": "toyota",
+      "label": "Toyota",
+      "kind": "기업"
+    },
+    {
+      "id": "edge-case",
+      "label": "Edge Case",
+      "kind": "기업"
     }
   ],
   "relations": [
@@ -3974,6 +4039,40 @@
         {
           "title": "Ruter: Autonomous transport on-demand",
           "url": "https://ruter.no/en/projects-and-new-development/autonomous-transport-on-demand"
+        }
+      ]
+    },
+    {
+      "id": "waymo-toyota-bz4x-collaboration-20261030",
+      "from": "waymo",
+      "to": "toyota",
+      "label": "bZ4X 자율주행 시험·차량 생산 협력",
+      "status": "계획",
+      "report_id": "2026-11-02",
+      "evidence": "Waymo와 Toyota의 2026-10-30 공식 발표는 2027년 일본 bZ4X 초기 시험·검증 운행과 Toyota 다카오카 공장의 차량 생산·Waymo AV 하드웨어 통합을 명시한다.",
+      "sources": [
+        {
+          "title": "Waymo: Toyota and Waymo Advance Autonomous Driving Collaboration",
+          "url": "https://waymo.com/blog/2026/10/toyota-bz4x-partnership/"
+        },
+        {
+          "title": "Toyota: Toyota and Waymo Advance Autonomous Driving Collaboration",
+          "url": "https://global.toyota/en/newsroom/corporate/44960881.html"
+        }
+      ]
+    },
+    {
+      "id": "may-edge-case-safety-assessment-20261028",
+      "from": "may",
+      "to": "edge-case",
+      "label": "driverless safety case framework 독립 평가",
+      "status": "평가 1단계 완료",
+      "report_id": "2026-11-02",
+      "evidence": "May Mobility가 게시한 Edge Case 발표는 2022년 시작된 협력의 일환으로 driverless safety case framework 독립 평가 1단계 완료와 후속 개별 주장·근거 평가 계획을 명시한다.",
+      "sources": [
+        {
+          "title": "May Mobility: Edge Case Completes Independent Safety Assessment",
+          "url": "https://maymobility.com/posts/edge-case-completes-independent-safety-assessment-of-may-mobilitys-safety-case-framework"
         }
       ]
     }
