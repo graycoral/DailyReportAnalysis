@@ -1,7 +1,7 @@
 {
-  "count": 29,
+  "count": 30,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-02",
+  "through_date": "2026-11-03",
   "records": [
     {
       "date": "2026-09-20",
@@ -493,6 +493,23 @@
           "name": "autonomous_driving_daily_2026-11-02.pptx",
           "path": "data/reports/2026-11-02/autonomous_driving_daily_2026-11-02.pptx",
           "sha256": "5c5bf61a7cfa8db729c570fd73b0e664fdd8939156a13fc65a870e7882c83b80"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-03",
+      "title": "Tesla Fort Worth 로보택시 서비스 개시 발표",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-03.md",
+          "path": "data/reports/2026-11-03/autonomous_driving_daily_2026-11-03.md",
+          "sha256": "6c05e4b3354c0460b2eaf3226d8386820c52bf78b1f601f60479de21b3bdace7"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-03.pptx",
+          "path": "data/reports/2026-11-03/autonomous_driving_daily_2026-11-03.pptx",
+          "sha256": "8570826e5d1c10bee0facaa1b5163b057cfd2657400902bb8460efc6fd42811d"
         }
       ]
     }
