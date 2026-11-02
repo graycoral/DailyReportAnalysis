@@ -2556,6 +2556,31 @@
   ],
   "events": [
     {
+      "id": "tesla-fort-worth-robotaxi-launch-20261102",
+      "date": "2026-11-02",
+      "title": "Tesla Fort Worth 로보택시 서비스 개시 발표",
+      "status": "상용·지역 확대",
+      "report_id": "2026-11-03",
+      "detail": "Tesla 공식 Robotaxi X 계정은 2026년 11월 2일 Fort Worth에서 오전 6시부터 서비스를 이용할 수 있다고 발표했고 후속 보도는 현지 이용자의 첫 탑승 게시물을 인용했다. 공식 발표는 차량 모델·차량 수·정확한 ODD·안전요원 유무를 공개하지 않았다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "Tesla Robotaxi: Fort Worth service availability announcement [원문 미확인]",
+          "url": "https://x.com/robotaxi/status/2117128711761985656"
+        },
+        {
+          "title": "Not a Tesla App: Tesla Expands Robotaxi Service in Fort Worth",
+          "url": "https://www.notateslaapp.com/news/4932/tesla-expands-robotaxi-service-launches-unsupervised-rides-in-fort-worth"
+        },
+        {
+          "title": "Tesla: Robotaxi",
+          "url": "https://www.tesla.com/robotaxi"
+        }
+      ]
+    },
+    {
       "id": "may-edge-case-safety-framework-assessment-phase1-20261028",
       "date": "2026-10-28",
       "title": "May Mobility 독립 안전사례 평가 1단계 완료",
@@ -3827,6 +3852,11 @@
       "id": "edge-case",
       "label": "Edge Case",
       "kind": "기업"
+    },
+    {
+      "id": "fort-worth",
+      "label": "Fort Worth",
+      "kind": "지역"
     }
   ],
   "relations": [
@@ -4182,6 +4212,29 @@
         {
           "title": "May Mobility: Edge Case Completes Independent Safety Assessment",
           "url": "https://maymobility.com/posts/edge-case-completes-independent-safety-assessment-of-may-mobilitys-safety-case-framework"
+        }
+      ]
+    },
+    {
+      "id": "tesla-fort-worth-robotaxi-service-20261102",
+      "from": "tesla",
+      "to": "fort-worth",
+      "label": "로보택시 서비스 개시",
+      "status": "상용·지역 확대",
+      "report_id": "2026-11-03",
+      "evidence": "Tesla 공식 Robotaxi X 계정은 2026년 11월 2일 Fort Worth 서비스 이용 가능 시각을 공지했고 후속 보도는 초기 탑승 정황을 확인했다. 차량 구성·차량 수·안전요원 유무는 공식 발표에서 확인되지 않았다.",
+      "sources": [
+        {
+          "title": "Tesla Robotaxi: Fort Worth service availability announcement [원문 미확인]",
+          "url": "https://x.com/robotaxi/status/2117128711761985656"
+        },
+        {
+          "title": "Not a Tesla App: Tesla Expands Robotaxi Service in Fort Worth",
+          "url": "https://www.notateslaapp.com/news/4932/tesla-expands-robotaxi-service-launches-unsupervised-rides-in-fort-worth"
+        },
+        {
+          "title": "Tesla: Robotaxi",
+          "url": "https://www.tesla.com/robotaxi"
         }
       ]
     }
