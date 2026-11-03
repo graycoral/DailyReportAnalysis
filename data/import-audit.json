@@ -1,7 +1,7 @@
 {
-  "count": 30,
+  "count": 31,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-03",
+  "through_date": "2026-11-04",
   "records": [
     {
       "date": "2026-09-20",
@@ -510,6 +510,23 @@
           "name": "autonomous_driving_daily_2026-11-03.pptx",
           "path": "data/reports/2026-11-03/autonomous_driving_daily_2026-11-03.pptx",
           "sha256": "8570826e5d1c10bee0facaa1b5163b057cfd2657400902bb8460efc6fd42811d"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-04",
+      "title": "Baidu Apollo World 로보택시 훈련 모델 공개",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-04.md",
+          "path": "data/reports/2026-11-04/autonomous_driving_daily_2026-11-04.md",
+          "sha256": "2a52188b859e419756840dbbd9d76b33839973ba8c91df13df1de2dcfd3687d8"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-04.pptx",
+          "path": "data/reports/2026-11-04/autonomous_driving_daily_2026-11-04.pptx",
+          "sha256": "a6f932fbe7c317cf88424bb6d189eb243de238de7d87920f0d762b09759d760a"
         }
       ]
     }
