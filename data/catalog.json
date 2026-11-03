@@ -2664,6 +2664,25 @@
   ],
   "events": [
     {
+      "id": "baidu-apollo-world-robotaxi-training-20261103",
+      "date": "2026-11-03",
+      "title": "Baidu Apollo World 로보택시 훈련 모델 공개",
+      "status": "기술 공개·훈련 적용",
+      "report_id": "2026-11-04",
+      "detail": "Baidu Apollo는 2026년 11월 3일 Apollo World를 공개하고 하루 최대 10만 km의 가상주행 생성과 Apollo Go 글로벌 시험·검증 적용을 밝혔다. 신규 도시 상용화·운행 허가·차량 투입·안전요원 철수 또는 무인 전환 발표는 아니다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "Reuters: China’s Baidu launches AI model simulating road environment for robotaxis",
+          "url": "https://www.reuters.com/technology/chinas-baidu-launches-ai-model-simulating-road-environment-robotaxis-2026-11-03/"
+        },
+        {
+          "title": "凤凰网汽车/易车: 百度Apollo World世界模型亮相",
+          "url": "https://auto.ifeng.com/c/8xlKNWYFZGH"
+        }
+      ]
+    },
+    {
       "id": "tesla-fort-worth-robotaxi-launch-20261102",
       "date": "2026-11-02",
       "title": "Tesla Fort Worth 로보택시 서비스 개시 발표",
