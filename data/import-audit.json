@@ -1,7 +1,7 @@
 {
-  "count": 31,
+  "count": 32,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-04",
+  "through_date": "2026-11-05",
   "records": [
     {
       "date": "2026-09-20",
@@ -527,6 +527,23 @@
           "name": "autonomous_driving_daily_2026-11-04.pptx",
           "path": "data/reports/2026-11-04/autonomous_driving_daily_2026-11-04.pptx",
           "sha256": "a6f932fbe7c317cf88424bb6d189eb243de238de7d87920f0d762b09759d760a"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-05",
+      "title": "Uber 무인차 플랫폼 2027년 2천대 초과 목표",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-05.md",
+          "path": "data/reports/2026-11-05/autonomous_driving_daily_2026-11-05.md",
+          "sha256": "b8520c20b27858103c073bed4172dcf635e8378947d8175ce8811c97f6f2f226"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-05.pptx",
+          "path": "data/reports/2026-11-05/autonomous_driving_daily_2026-11-05.pptx",
+          "sha256": "2544192d105e1c16964a01c2d4b4121dfbd671580acd076b37cb6841c0533b4a"
         }
       ]
     }
