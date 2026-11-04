@@ -3900,6 +3900,27 @@
           "url": "https://www.theverge.com/transportation/997091/waymo-singapore-robotaxi-launch-2027"
         }
       ]
+    },
+    {
+      "id": "uber-driverless-platform-scale-targets-20261104",
+      "date": "2026-11-04",
+      "title": "Uber 플랫폼 완전무인 차량 규모 목표 제시",
+      "status": "계획",
+      "report_id": "2026-11-05",
+      "detail": "Uber는 2026년 11월 4일 실적 발표에서 자사 플랫폼의 완전무인 차량을 2026년 말 약 700대, 2027년 말 2,000대 초과로 확대하는 목표와 자율주행 투자 자본을 더 적은 수의 파트너에 집중할 계획을 밝혔다. 현재 실제 대수·파트너별 배분·도시별 실행은 공개되지 않았다.",
+      "companies": [
+        "Uber"
+      ],
+      "sources": [
+        {
+          "title": "Reuters: Uber's profit forecast disappoints as driver shortages, Middle East conflict hurt",
+          "url": "https://www.reuters.com/business/ubers-profit-forecast-disappoints-driver-shortages-middle-east-conflict-hurt-2026-11-04/"
+        },
+        {
+          "title": "Uber Investor Relations: Uber Q3 2026 Earnings Conference Call",
+          "url": "https://investor.uber.com/home/"
+        }
+      ]
     }
   ],
   "entities": [
