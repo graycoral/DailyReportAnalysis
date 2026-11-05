@@ -3581,6 +3581,48 @@
       ]
     },
     {
+      "id": "may-forterra-diu-roads-phase3-20261105",
+      "date": "2026-11-05",
+      "title": "May Mobility·Forterra 미 육군 ROADS 3단계 선정",
+      "status": "선정·시험 준비",
+      "report_id": "2026-11-06",
+      "detail": "May Mobility와 Forterra는 DIU ROADS 챌린지 3단계 대상에 선정됐다고 발표했다. 11월 현장 매핑과 2026년 말까지의 단계별 시연·개발, 육군 기지 한 곳의 1개월 파일럿을 계획한다. 차내 안전요원과 원격 지원을 포함하며 무인 운행 개시나 본사업 조달 확정은 아니다.",
+      "companies": [
+        "May Mobility"
+      ],
+      "sources": [
+        {
+          "title": "May Mobility: Forterra and May Mobility Advance to Phase III of DIU’s ROADS Challenge",
+          "url": "https://maymobility.com/posts/forterra-and-may-mobility-advance-to-phase-iii-of-dius-roads-challenge-bringing-autonomous-rides-to-soldiers-on-military-bases/"
+        },
+        {
+          "title": "Defense Innovation Unit: Active Projects — ROADS",
+          "url": "https://www.diu.mil/active-projects"
+        }
+      ]
+    },
+    {
+      "id": "lyft-waymo-nashville-fleet-expansion-plan-20261105",
+      "date": "2026-11-05",
+      "title": "Lyft Nashville Waymo 무인차 확대 계획",
+      "status": "상용 확대 계획",
+      "report_id": "2026-11-06",
+      "detail": "Lyft는 Nashville의 기존 Waymo 완전무인 상용 차량을 2026년 말까지 대폭 늘리고 공항 승차를 곧 시작할 계획이라고 밝혔다. 현재 차량 수·증차 목표·이용률과 공항 개시일은 공개하지 않았다.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "Reuters: Lyft to expand Waymo robotaxi fleet in Nashville by year-end",
+          "url": "https://www.reuters.com/business/autos-transportation/lyft-expand-waymo-robotaxi-fleet-nashville-by-year-end-2026-11-05/"
+        },
+        {
+          "title": "Lyft: Waymo rides now available on the Lyft App in Nashville",
+          "url": "https://www.lyft.com/blog/posts/waymo-rides-now-available-on-the-lyft-app-in-nashville"
+        }
+      ]
+    },
+    {
       "id": "archive-2026-10-13",
       "date": "2026-10-13",
       "title": "Tesla 로보택시 학교구역 속도 검토",
@@ -4213,6 +4255,26 @@
       "id": "fort-worth",
       "label": "Fort Worth",
       "kind": "지역"
+    },
+    {
+      "id": "forterra",
+      "label": "Forterra",
+      "kind": "기업"
+    },
+    {
+      "id": "lyft",
+      "label": "Lyft",
+      "kind": "기업"
+    },
+    {
+      "id": "nashville",
+      "label": "Nashville",
+      "kind": "지역"
+    },
+    {
+      "id": "diu",
+      "label": "Defense Innovation Unit",
+      "kind": "기관"
     }
   ],
   "relations": [
@@ -4591,6 +4653,40 @@
         {
           "title": "Tesla: Robotaxi",
           "url": "https://www.tesla.com/robotaxi"
+        }
+      ]
+    },
+    {
+      "id": "may-forterra-roads-phase3-20261105",
+      "from": "may",
+      "to": "forterra",
+      "label": "ROADS 3단계 시제품 운행 협력",
+      "status": "시험 준비",
+      "report_id": "2026-11-06",
+      "evidence": "May Mobility의 2026-11-05 발표는 May Mobility가 ADS 탑재 승용차를 제공하고 Forterra가 OneLink로 차량 운영·검증을 맡는 ROADS 3단계 시제품 계획을 명시한다.",
+      "sources": [
+        {
+          "title": "May Mobility: Forterra and May Mobility Advance to Phase III of DIU’s ROADS Challenge",
+          "url": "https://maymobility.com/posts/forterra-and-may-mobility-advance-to-phase-iii-of-dius-roads-challenge-bringing-autonomous-rides-to-soldiers-on-military-bases/"
+        }
+      ]
+    },
+    {
+      "id": "lyft-waymo-nashville-expansion-20261105",
+      "from": "lyft",
+      "to": "waymo",
+      "label": "Nashville 무인차 확대·운영 협력",
+      "status": "상용 확대 계획",
+      "report_id": "2026-11-06",
+      "evidence": "Reuters와 Lyft 공식 발표는 Nashville에서 Waymo 완전무인 차량을 Lyft 앱과 Waymo 앱의 단일 차량 풀로 운영하고 Lyft의 Flexdrive가 차량 관리를 맡으며, Lyft가 2026년 말까지 차량 확대를 계획한다고 명시한다.",
+      "sources": [
+        {
+          "title": "Reuters: Lyft to expand Waymo robotaxi fleet in Nashville by year-end",
+          "url": "https://www.reuters.com/business/autos-transportation/lyft-expand-waymo-robotaxi-fleet-nashville-by-year-end-2026-11-05/"
+        },
+        {
+          "title": "Lyft: Waymo rides now available on the Lyft App in Nashville",
+          "url": "https://www.lyft.com/blog/posts/waymo-rides-now-available-on-the-lyft-app-in-nashville"
         }
       ]
     }
