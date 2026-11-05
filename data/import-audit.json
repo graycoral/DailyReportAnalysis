@@ -1,7 +1,7 @@
 {
-  "count": 32,
+  "count": 33,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-05",
+  "through_date": "2026-11-06",
   "records": [
     {
       "date": "2026-09-20",
@@ -544,6 +544,23 @@
           "name": "autonomous_driving_daily_2026-11-05.pptx",
           "path": "data/reports/2026-11-05/autonomous_driving_daily_2026-11-05.pptx",
           "sha256": "2544192d105e1c16964a01c2d4b4121dfbd671580acd076b37cb6841c0533b4a"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-06",
+      "title": "May Mobility 미 육군 ROADS 3단계 진입",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-06.md",
+          "path": "data/reports/2026-11-06/autonomous_driving_daily_2026-11-06.md",
+          "sha256": "1deeb24f14bd129f3b09138c81cc3ddc050280883d17a7867876750a02f4307f"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-06.pptx",
+          "path": "data/reports/2026-11-06/autonomous_driving_daily_2026-11-06.pptx",
+          "sha256": "07872ed149c16e06b0b318147e9017a5864741ac31e1546ccd0966890d71be06"
         }
       ]
     }
