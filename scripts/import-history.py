@@ -179,7 +179,8 @@ def build(records, audit, catalog, if_changed=False):
     db.commit()
     assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
     assert not db.execute('PRAGMA foreign_key_check').fetchall()
-    probe = next((c for r in catalog['reports'] for c in r['companies']), None)
+    # FTS5 trigram does not index search terms shorter than three characters.
+    probe = next((c for r in catalog['reports'] for c in r['companies'] if len(c) >= 3), None)
     if probe: assert db.execute('SELECT count(*) FROM report_search WHERE report_search MATCH ?', ('"%s"' % probe,)).fetchone()[0] > 0
     # Viewer projection is exported from DB, so it is the same tested archive.
     catalog['reports'] = [json.loads(row[0]) for row in db.execute('SELECT payload FROM reports ORDER BY date DESC')]

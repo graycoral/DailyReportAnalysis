@@ -1,7 +1,7 @@
 {
-  "count": 33,
+  "count": 34,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-06",
+  "through_date": "2026-11-09",
   "records": [
     {
       "date": "2026-09-20",
@@ -561,6 +561,23 @@
           "name": "autonomous_driving_daily_2026-11-06.pptx",
           "path": "data/reports/2026-11-06/autonomous_driving_daily_2026-11-06.pptx",
           "sha256": "07872ed149c16e06b0b318147e9017a5864741ac31e1546ccd0966890d71be06"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-09",
+      "title": "사우디 자율주행 여객운송 시행규칙 확정",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-09.md",
+          "path": "data/reports/2026-11-09/autonomous_driving_daily_2026-11-09.md",
+          "sha256": "028356c047a82291ebc259e9388bb71f09b93de26157b1fd4ceb338a915f9655"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-09.pptx",
+          "path": "data/reports/2026-11-09/autonomous_driving_daily_2026-11-09.pptx",
+          "sha256": "5bdbe896373e24f38bf242fb587adab1c630f99e14434c3314ccac5c4aa565b3"
         }
       ]
     }
