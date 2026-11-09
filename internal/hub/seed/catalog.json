@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "published_at": "2026-11-10T07:45:47+09:00",
+  "published_at": "2026-11-10T07:50:37+09:00",
   "reports": [
     {
       "id": "2026-11-10",
@@ -5224,6 +5224,6 @@
   "database": {
     "name": "reports.sqlite",
     "path": "data/reports.sqlite",
-    "sha256": "f0f30d4c2a747327deab1f2fcfbb09a167e65ef7cacfdfcee1b338aa63cea2d9"
+    "sha256": "ef8d422605628aec023ba43737a1b5adb9fe0ca708ebc784990c2a09c98ed739"
   }
 }
