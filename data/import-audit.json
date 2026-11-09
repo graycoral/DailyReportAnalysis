@@ -1,7 +1,7 @@
 {
-  "count": 34,
+  "count": 35,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-09",
+  "through_date": "2026-11-10",
   "records": [
     {
       "date": "2026-09-20",
@@ -578,6 +578,23 @@
           "name": "autonomous_driving_daily_2026-11-09.pptx",
           "path": "data/reports/2026-11-09/autonomous_driving_daily_2026-11-09.pptx",
           "sha256": "5bdbe896373e24f38bf242fb587adab1c630f99e14434c3314ccac5c4aa565b3"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-10",
+      "title": "카카오모빌리티·NVIDIA L4 MOU와 Tesla 지역 확대",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-10.md",
+          "path": "data/reports/2026-11-10/autonomous_driving_daily_2026-11-10.md",
+          "sha256": "1ca95ed99696d8f21d5a78ab269e7df1021490ff1554d1cdeb57b071decea70a"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-10.pptx",
+          "path": "data/reports/2026-11-10/autonomous_driving_daily_2026-11-10.pptx",
+          "sha256": "c19df54aaf83e917a7ebe79a92fda38ecd2f1f11d51144593701eb6893d7adf9"
         }
       ]
     }
