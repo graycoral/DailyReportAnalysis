@@ -3206,6 +3206,78 @@
   ],
   "events": [
     {
+      "id": "toyooka-roii-collision-suspension-20261109",
+      "date": "2026-11-09",
+      "title": "도요오카 ROii 접촉사고·실증 운행 중단",
+      "status": "사고·운행 중단",
+      "report_id": "2026-11-11",
+      "detail": "도요오카시의 운전자 동승 레벨 2 ROii가 기노사키온천에서 돌담과 접촉했고 부상자는 없었다. 시는 원인 조사와 안전 확인이 끝날 때까지 실증 운행을 중단했다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "도요오카시: 기노사키온천 지역 자율주행버스 실증 운행",
+          "url": "https://www.city.toyooka.lg.jp/kurashi/dorokotsu/1039195/1039198.html"
+        },
+        {
+          "title": "도요오카시: 자율주행버스 접촉사고에 따른 운행 중단",
+          "url": "https://www.city.toyooka.lg.jp/_res/projects/default_project/_page_/001/039/464/20261109-2.pdf"
+        }
+      ]
+    },
+    {
+      "id": "daegu-roii-public-pilot-start-20261107",
+      "date": "2026-11-07",
+      "title": "대구 ROii 시민 무료 실증 운행 개시",
+      "status": "안전요원 동승 시험",
+      "report_id": "2026-11-11",
+      "detail": "대구 엑스코 일대 2.7km 순환 구간에서 ROii 시민 무료 실증이 시작됐다. 안전요원이 동승하고 일부 혼잡·스쿨존 구간은 수동 운전하므로 무인 상용 운행이 아니다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "뉴스1: 대구 엑스코 일대 레벨4 자율주행버스 시민 운행",
+          "url": "https://www.news1.kr/local/daegu-gyeongbuk/6341860"
+        },
+        {
+          "title": "대구신문: 대구 자율주행 셔틀버스 ROii 시민 탑승 개시",
+          "url": "https://www.idaegu.co.kr/news/articleView.html?idxno=564735"
+        }
+      ]
+    },
+    {
+      "id": "wayve-coreweave-cloud-agreement-20261109",
+      "date": "2026-11-09",
+      "title": "Wayve·CoreWeave 자율주행 AI 학습 인프라 계약",
+      "status": "계약",
+      "report_id": "2026-11-11",
+      "detail": "Wayve는 CoreWeave와 다년 계약을 맺고 NVIDIA Blackwell GPU 기반 클라우드에서 종단간 자율주행 기반모델의 학습·평가·시뮬레이션을 수행하기로 했다. 신규 운행 지역이나 무인 운행 개시는 발표되지 않았다.",
+      "companies": [
+        "Wayve"
+      ],
+      "sources": [
+        {
+          "title": "CoreWeave: Wayve AI Driver Training Multi-Year Agreement",
+          "url": "https://coreweave.com/news/coreweave-to-power-wayves-ai-driver-training-in-multi-year-agreement"
+        }
+      ]
+    },
+    {
+      "id": "waymo-uk-accessibility-network-20261110",
+      "date": "2026-11-10",
+      "title": "Waymo 영국 접근성 네트워크 출범",
+      "status": "런던 서비스 준비",
+      "report_id": "2026-11-11",
+      "detail": "Waymo는 10개 기관과 영국 접근성 네트워크를 출범시켜 런던 서비스 전 이용자 연구와 제품 시험을 진행한다. 런던 상용 호출 서비스 개시가 아니다.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "Waymo: UK Accessibility Network",
+          "url": "https://waymo.com/blog/2026/11/uk-accessibility-network/"
+        }
+      ]
+    },
+    {
       "id": "may-investor-day-plan-20261112",
       "date": "2026-11-12",
       "title": "May Mobility Investor Day 개최 예정",
@@ -4735,9 +4807,97 @@
       "id": "nhtsa",
       "label": "NHTSA",
       "kind": "규제기관"
+    },
+    {
+      "id": "autonomous-a2z",
+      "label": "Autonomous A2Z",
+      "kind": "기업"
+    },
+    {
+      "id": "toyooka",
+      "label": "도요오카",
+      "kind": "지역"
+    },
+    {
+      "id": "daegu",
+      "label": "대구",
+      "kind": "지역"
+    },
+    {
+      "id": "coreweave",
+      "label": "CoreWeave",
+      "kind": "기업"
     }
   ],
   "relations": [
+    {
+      "id": "autonomous-a2z-toyooka-roii-pilot-20261109",
+      "from": "autonomous-a2z",
+      "to": "toyooka",
+      "label": "ROii L2 실증 운행",
+      "status": "사고 후 중단",
+      "report_id": "2026-11-11",
+      "evidence": "도요오카시 공식 자료는 Autonomous A2Z ROii를 운전자 동승 레벨 2로 운행했고, 11월 9일 접촉사고 뒤 안전 확인 시까지 운행을 중단했다고 명시한다.",
+      "sources": [
+        {
+          "title": "도요오카시: 기노사키온천 지역 자율주행버스 실증 운행",
+          "url": "https://www.city.toyooka.lg.jp/kurashi/dorokotsu/1039195/1039198.html"
+        },
+        {
+          "title": "도요오카시: 자율주행버스 접촉사고에 따른 운행 중단",
+          "url": "https://www.city.toyooka.lg.jp/_res/projects/default_project/_page_/001/039/464/20261109-2.pdf"
+        }
+      ]
+    },
+    {
+      "id": "autonomous-a2z-daegu-roii-pilot-20261107",
+      "from": "autonomous-a2z",
+      "to": "daegu",
+      "label": "ROii 시민 실증 운행",
+      "status": "안전요원 동승 시험",
+      "report_id": "2026-11-11",
+      "evidence": "대구 시민 실증은 ROii를 사용하며 안전요원이 동승하고 일부 구간을 수동 운전한다.",
+      "sources": [
+        {
+          "title": "뉴스1: 대구 엑스코 일대 레벨4 자율주행버스 시민 운행",
+          "url": "https://www.news1.kr/local/daegu-gyeongbuk/6341860"
+        },
+        {
+          "title": "대구신문: 대구 자율주행 셔틀버스 ROii 시민 탑승 개시",
+          "url": "https://www.idaegu.co.kr/news/articleView.html?idxno=564735"
+        }
+      ]
+    },
+    {
+      "id": "wayve-coreweave-ai-training-20261109",
+      "from": "wayve",
+      "to": "coreweave",
+      "label": "AI Driver 학습 인프라 계약",
+      "status": "다년 계약",
+      "report_id": "2026-11-11",
+      "evidence": "CoreWeave 공식 발표는 Wayve가 종단간 자율주행 기반모델 학습·평가·시뮬레이션에 CoreWeave Cloud와 NVIDIA Blackwell GPU를 사용하는 다년 계약을 명시한다.",
+      "sources": [
+        {
+          "title": "CoreWeave: Wayve AI Driver Training Multi-Year Agreement",
+          "url": "https://coreweave.com/news/coreweave-to-power-wayves-ai-driver-training-in-multi-year-agreement"
+        }
+      ]
+    },
+    {
+      "id": "waymo-london-accessibility-network-20261110",
+      "from": "waymo",
+      "to": "london",
+      "label": "접근성 공동설계 네트워크",
+      "status": "서비스 준비",
+      "report_id": "2026-11-11",
+      "evidence": "Waymo 공식 발표는 런던 서비스 준비를 위해 10개 기관과 이용자 연구·제품 시험을 진행하는 영국 접근성 네트워크를 출범했다고 명시한다.",
+      "sources": [
+        {
+          "title": "Waymo: UK Accessibility Network",
+          "url": "https://waymo.com/blog/2026/11/uk-accessibility-network/"
+        }
+      ]
+    },
     {
       "id": "kakao-nvidia-l4-mou-20261109",
       "from": "kakao-mobility",
