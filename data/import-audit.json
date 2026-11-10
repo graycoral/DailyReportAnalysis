@@ -1,7 +1,7 @@
 {
-  "count": 35,
+  "count": 36,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-10",
+  "through_date": "2026-11-11",
   "records": [
     {
       "date": "2026-09-20",
@@ -595,6 +595,23 @@
           "name": "autonomous_driving_daily_2026-11-10.pptx",
           "path": "data/reports/2026-11-10/autonomous_driving_daily_2026-11-10.pptx",
           "sha256": "c19df54aaf83e917a7ebe79a92fda38ecd2f1f11d51144593701eb6893d7adf9"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-11",
+      "title": "도요오카 자율주행 버스 접촉사고와 실증 운행 중단",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-11.md",
+          "path": "data/reports/2026-11-11/autonomous_driving_daily_2026-11-11.md",
+          "sha256": "85070a51a96f52876cc1bbe3d730c558d0bec2e7a421afcffc2b42a3bdb66b10"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-11.pptx",
+          "path": "data/reports/2026-11-11/autonomous_driving_daily_2026-11-11.pptx",
+          "sha256": "5a75fac959660047ffac5d262eaddb26c9fedcba8f8794f0000d0fd05a6e4962"
         }
       ]
     }
