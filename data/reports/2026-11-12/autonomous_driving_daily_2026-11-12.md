@@ -95,7 +95,7 @@ fonts:
 
 - AutoE2E 소스와 v1.0 체크포인트는 Apache 2.0으로 공개돼 연구·상업 이용과 자체 데이터 재학습·미세조정이 가능하다. [R1][R3][R4]
 - 카메라 우선 Reactive Model은 7,990만 파라미터로, 자동차 SoC에서의 계산량·전력·비용 최적화를 전제로 설계됐다. 실제 플랫폼별 성능과 자원 요구량은 아직 평가 대상이다. [R1][R2]
-- TIER IV는 Autoware 2.0에서 AutoE2E 외에도 NVIDIA Alpamayo 2 Edge의 Autoware 통합을 완료했다고 밝혔다. AutoE2E는 NVIDIA 외 컴퓨팅 플랫폼에서도 실행 가능하도록 개발됐다. [R2]
+- TIER IV는 Autoware 2.0에서 AutoE2E 외에도 20억 파라미터 NVIDIA Alpamayo 2 Edge의 Autoware 통합을 완료했다고 밝혔다. AutoE2E는 NVIDIA 외 컴퓨팅 플랫폼에서도 실행 가능하도록 개발됐다. [R2]
 - 이번 공개는 소프트웨어·모델 공급망의 실행된 변화이지만, L4 상용화·무인 서비스 개시·차량 양산은 아직 확인되지 않았다. [R1][R2]
 
 ---
