@@ -1,7 +1,7 @@
 {
-  "count": 36,
+  "count": 37,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-11",
+  "through_date": "2026-11-12",
   "records": [
     {
       "date": "2026-09-20",
@@ -612,6 +612,23 @@
           "name": "autonomous_driving_daily_2026-11-11.pptx",
           "path": "data/reports/2026-11-11/autonomous_driving_daily_2026-11-11.pptx",
           "sha256": "5a75fac959660047ffac5d262eaddb26c9fedcba8f8794f0000d0fd05a6e4962"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-12",
+      "title": "Autoware AutoE2E 공개와 L4 검증 단계",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-12.md",
+          "path": "data/reports/2026-11-12/autonomous_driving_daily_2026-11-12.md",
+          "sha256": "ab51d63f5b4c4e1c4566e988ee4020fc94d52240a5a28b1c1ac5782cd24fa0a3"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-12.pptx",
+          "path": "data/reports/2026-11-12/autonomous_driving_daily_2026-11-12.pptx",
+          "sha256": "34efa0d9f8043c67fc11ef4b750aed0f5f93161be8405c48b9f102fb560dd3ab"
         }
       ]
     }
