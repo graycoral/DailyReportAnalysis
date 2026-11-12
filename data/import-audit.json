@@ -1,7 +1,7 @@
 {
-  "count": 37,
+  "count": 38,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-12",
+  "through_date": "2026-11-13",
   "records": [
     {
       "date": "2026-09-20",
@@ -629,6 +629,23 @@
           "name": "autonomous_driving_daily_2026-11-12.pptx",
           "path": "data/reports/2026-11-12/autonomous_driving_daily_2026-11-12.pptx",
           "sha256": "34efa0d9f8043c67fc11ef4b750aed0f5f93161be8405c48b9f102fb560dd3ab"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-13",
+      "title": "Avride Dallas 운영 확대와 쏘카·현대차 협력",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-13.md",
+          "path": "data/reports/2026-11-13/autonomous_driving_daily_2026-11-13.md",
+          "sha256": "b5284105d2a785b7c98e13de49089f428107c39b9aae7122928960cbbca303e4"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-13.pptx",
+          "path": "data/reports/2026-11-13/autonomous_driving_daily_2026-11-13.pptx",
+          "sha256": "814ff9d2fbed77fbfae1292a5435ee6cb4cf70ef921d003a60ffa6498c4d0d80"
         }
       ]
     }
