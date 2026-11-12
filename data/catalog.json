@@ -3416,6 +3416,78 @@
   ],
   "events": [
     {
+      "id": "tier-iv-shunan-dump-truck-20261112",
+      "date": "2026-11-12",
+      "title": "TIER IV·Shunan Bulk Terminal 항만 덤프트럭 자동화 개발",
+      "status": "개발 계획",
+      "report_id": "2026-11-13",
+      "detail": "일본 도쿠야마·구다마쓰항에서 현재 유인 덤프트럭이 운행하는 노선을 자동화하고 2028년 말 무인 운행을 달성한다는 목표다. 차량 수·실증 개시일·안전요원·원격감시·허가 세부사항은 공개되지 않았다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "TIER IV: Shunan Bulk Terminal autonomous dump truck development",
+          "url": "https://tier4.co.jp/en/updates/press-release/20261112-tieriv-and-shunanbulkterminal-develop-autonomous-dump-truck"
+        }
+      ]
+    },
+    {
+      "id": "may-id-buzz-plan-20261112",
+      "date": "2026-11-12",
+      "title": "May Mobility ID. Buzz 1만 대 초과 배치 계획",
+      "status": "차량 개발·배치 계획",
+      "report_id": "2026-11-13",
+      "detail": "May Mobility가 ID. Buzz 기반 자율주행차를 2031년까지 1만 대 초과 배치하고 2027년 초 미국 도로시험, 2028년 첫 양산차 인도를 목표로 제시했다. 차량 인도·규제 승인·상용 또는 무인 배치 완료가 아니다.",
+      "companies": [
+        "May Mobility"
+      ],
+      "sources": [
+        {
+          "title": "May Mobility: Autonomous Volkswagen ID. Buzz robotaxi platform plan",
+          "url": "https://maymobility.com/en/news/may-mobility-plans-to-bring-autonomous-volkswagen-id-buzz-vehicles-to-global-robotaxi-platforms"
+        }
+      ]
+    },
+    {
+      "id": "socar-hyundai-apex-mou-20261111",
+      "date": "2026-11-11",
+      "title": "쏘카·현대자동차·에이펙스모빌리티 자율주행 MOU",
+      "status": "비구속 MOU·PoC 계획",
+      "report_id": "2026-11-13",
+      "detail": "세 회사가 AV Foundry 기술·서비스 검증, 국내 도로 데이터 수집, 전용 차량 플랫폼과 자율주행 소프트웨어 PoC를 위한 3년 MOU를 체결했다. 일부 조항을 제외하고 비구속적이며 실제 L4 운행·허가·차량 공급 완료는 확인되지 않았다.",
+      "companies": [
+        "쏘카",
+        "현대자동차"
+      ],
+      "sources": [
+        {
+          "title": "AWAKEPLUS: 쏘카 자율주행 사업 협력 MOU 공시 미러",
+          "url": "https://www.awakeplus.co.kr/data/view/20261112800227"
+        }
+      ]
+    },
+    {
+      "id": "avride-dallas-scale-20261112",
+      "date": "2026-11-12",
+      "title": "Avride Dallas 로보택시 운영 규모 확대",
+      "status": "상용 확대·안전요원 동승",
+      "report_id": "2026-11-13",
+      "detail": "Avride가 자율주행차 250대, 누적 자율주행 200만 마일 초과, 승객 승차 10만 회 초과를 공개했고 Dallas 운행구역을 31제곱마일로 확대했다. Uber는 운전석 onboard specialist가 모니터링하고 필요시 개입한다고 안내하며 완전무인은 2027년 상반기 계획이다.",
+      "companies": [
+        "Uber",
+        "Avride"
+      ],
+      "sources": [
+        {
+          "title": "Nebius: Letter to shareholders Q3 2026",
+          "url": "https://assets.nebius.com/assets/65994da2-e220-40cd-bb5d-72e9654a237d/SHL.pdf"
+        },
+        {
+          "title": "Uber: Self-driving Avride robotaxis on Uber in Dallas",
+          "url": "https://www.uber.com/us/en/r/autonomous/dallas-tx-us/"
+        }
+      ]
+    },
+    {
       "id": "autoe2e-open-source-release-20261111",
       "date": "2026-11-11",
       "title": "Autoware AutoE2E v1.0 공개",
@@ -5066,9 +5138,138 @@
       "id": "tier-iv",
       "label": "TIER IV",
       "kind": "기업"
+    },
+    {
+      "id": "avride",
+      "label": "Avride",
+      "kind": "기업"
+    },
+    {
+      "id": "socar",
+      "label": "쏘카",
+      "kind": "기업"
+    },
+    {
+      "id": "hyundai-motor",
+      "label": "현대자동차",
+      "kind": "기업"
+    },
+    {
+      "id": "apex-mobility",
+      "label": "에이펙스모빌리티",
+      "kind": "기업"
+    },
+    {
+      "id": "ecarx",
+      "label": "ECARX",
+      "kind": "기업"
+    },
+    {
+      "id": "charlton-intelligence",
+      "label": "Charlton Intelligence.ai",
+      "kind": "기업"
+    },
+    {
+      "id": "shunan-bulk-terminal",
+      "label": "Shunan Bulk Terminal",
+      "kind": "기업"
     }
   ],
   "relations": [
+    {
+      "id": "tier-iv-shunan-dump-truck-development-20261112",
+      "from": "tier-iv",
+      "to": "shunan-bulk-terminal",
+      "label": "항만 덤프트럭 자동화 개발",
+      "status": "개발 계획",
+      "report_id": "2026-11-13",
+      "evidence": "TIER IV 공식 발표는 양사가 도쿠야마·구다마쓰항의 덤프트럭 운송 자동화 기술과 운영 체계를 공동 개발한다고 명시한다.",
+      "sources": [
+        {
+          "title": "TIER IV: Shunan Bulk Terminal autonomous dump truck development",
+          "url": "https://tier4.co.jp/en/updates/press-release/20261112-tieriv-and-shunanbulkterminal-develop-autonomous-dump-truck"
+        }
+      ]
+    },
+    {
+      "id": "may-charlton-id-buzz-deployment-20261112",
+      "from": "may",
+      "to": "charlton-intelligence",
+      "label": "ID. Buzz 차량 배치 지원",
+      "status": "계획",
+      "report_id": "2026-11-13",
+      "evidence": "May Mobility 공식 발표는 Charlton Intelligence.ai가 ID. Buzz 기반 자율주행차의 배치를 지원한다고 명시한다.",
+      "sources": [
+        {
+          "title": "May Mobility: Autonomous Volkswagen ID. Buzz robotaxi platform plan",
+          "url": "https://maymobility.com/en/news/may-mobility-plans-to-bring-autonomous-volkswagen-id-buzz-vehicles-to-global-robotaxi-platforms"
+        }
+      ]
+    },
+    {
+      "id": "may-ecarx-id-buzz-integration-20261112",
+      "from": "may",
+      "to": "ecarx",
+      "label": "ID. Buzz ADK·ADS 통합",
+      "status": "개발 중",
+      "report_id": "2026-11-13",
+      "evidence": "May Mobility 공식 발표는 ECARX가 ID. Buzz 기반 차량의 ADK와 May Mobility ADS 통합을 지원한다고 명시한다.",
+      "sources": [
+        {
+          "title": "May Mobility: Autonomous Volkswagen ID. Buzz robotaxi platform plan",
+          "url": "https://maymobility.com/en/news/may-mobility-plans-to-bring-autonomous-volkswagen-id-buzz-vehicles-to-global-robotaxi-platforms"
+        }
+      ]
+    },
+    {
+      "id": "socar-apex-autonomous-mou-20261111",
+      "from": "socar",
+      "to": "apex-mobility",
+      "label": "자율주행 서비스 검증 MOU",
+      "status": "비구속 MOU·계획",
+      "report_id": "2026-11-13",
+      "evidence": "공시 미러는 쏘카와 에이펙스모빌리티가 현대자동차와 3년 MOU를 체결해 자율주행 기술·서비스 검증과 PoC를 추진한다고 명시한다.",
+      "sources": [
+        {
+          "title": "AWAKEPLUS: 쏘카 자율주행 사업 협력 MOU 공시 미러",
+          "url": "https://www.awakeplus.co.kr/data/view/20261112800227"
+        }
+      ]
+    },
+    {
+      "id": "socar-hyundai-av-foundry-mou-20261111",
+      "from": "socar",
+      "to": "hyundai-motor",
+      "label": "AV Foundry·자율주행 PoC MOU",
+      "status": "비구속 MOU·계획",
+      "report_id": "2026-11-13",
+      "evidence": "공시 미러는 쏘카와 현대자동차가 에이펙스모빌리티와 3년 MOU를 체결해 기술·서비스 검증, 데이터 수집, 전용 플랫폼·소프트웨어 PoC를 추진한다고 명시한다.",
+      "sources": [
+        {
+          "title": "AWAKEPLUS: 쏘카 자율주행 사업 협력 MOU 공시 미러",
+          "url": "https://www.awakeplus.co.kr/data/view/20261112800227"
+        }
+      ]
+    },
+    {
+      "id": "avride-uber-dallas-robotaxi-20261112",
+      "from": "avride",
+      "to": "uber",
+      "label": "Dallas 로보택시 운영",
+      "status": "상용·안전요원 동승",
+      "report_id": "2026-11-13",
+      "evidence": "Nebius 주주서한과 Uber 안내는 Avride 차량이 Uber 앱을 통해 Dallas에서 승객을 운송하고 onboard specialist가 운전석에 탑승한다고 명시한다.",
+      "sources": [
+        {
+          "title": "Nebius: Letter to shareholders Q3 2026",
+          "url": "https://assets.nebius.com/assets/65994da2-e220-40cd-bb5d-72e9654a237d/SHL.pdf"
+        },
+        {
+          "title": "Uber: Self-driving Avride robotaxis on Uber in Dallas",
+          "url": "https://www.uber.com/us/en/r/autonomous/dallas-tx-us/"
+        }
+      ]
+    },
     {
       "id": "autoware-foundation-tier-iv-autoe2e-20261111",
       "from": "autoware-foundation",
