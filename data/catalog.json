@@ -3523,6 +3523,91 @@
   ],
   "events": [
     {
+      "id": "tesla-cybercab-invitation-orders-20261113",
+      "date": "2026-11-13",
+      "title": "Tesla Cybercab 초청 고객 주문 개시",
+      "status": "초청 주문 개시·인도 미확인",
+      "report_id": "2026-11-16",
+      "detail": "Tesla가 초기 Cybercab 판매용 구속력 있는 주문약관을 공개했고 주문은 초청 고객당 1대로 제한된다. 활성 구독과 Tesla 지원 지오펜스가 필요하며 실제 고객 인도와 전국 운행 허가는 확인되지 않았다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "Tesla: Motor Vehicle Binding Order Agreement (Cybercab)",
+          "url": "https://www.tesla.com/configurator/api/v4/terms?locale=en_US&model=cc&saleType=Sale"
+        },
+        {
+          "title": "Tesla: Cybercab Autonomy Subscription Agreement",
+          "url": "https://www.tesla.com/configurator/api/v4/terms?category=autonomy_subs&locale=en_US&model=cc&saleType=Sale"
+        }
+      ]
+    },
+    {
+      "id": "zoox-atlanta-restricted-driverless-rides-20261113",
+      "date": "2026-11-13",
+      "title": "Zoox Atlanta 완전무인 제한 승차 개시",
+      "status": "완전무인 제한 운행·대중 미개방",
+      "report_id": "2026-11-16",
+      "detail": "Zoox가 Atlanta 북서부 공공도로에서 운전석과 조향장치가 없는 전용 로보택시 승차를 직원·가족·친구에게 제공하기 시작했다. 일반 대중 서비스와 유료 상용 운행은 아직 개시하지 않았다.",
+      "companies": [
+        "Zoox"
+      ],
+      "sources": [
+        {
+          "title": "Zoox: Zoox Robotaxi Arriving in Atlanta",
+          "url": "https://zoox.com/journal/atlanta-expansion-robotaxi"
+        }
+      ]
+    },
+    {
+      "id": "korea-av-performance-certification-rule-20261113",
+      "date": "2026-11-13",
+      "title": "한국 자율주행차 성능인증·적합성 승인 규정 시행",
+      "status": "규정 시행",
+      "report_id": "2026-11-16",
+      "detail": "국토교통부고시 제2026-627호가 시행돼 안전기준이 아직 마련되지 않은 자율주행차 등의 성능인증, 운행구역 적합성 승인과 정기검사 절차를 규정했다. 특정 기업의 무인 상용운행 승인이 아니다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "국가법령정보센터: 자율주행자동차 성능인증 및 적합성 승인 등에 관한 규정",
+          "url": "https://www.law.go.kr/admRulLsInfoP.do?admRulSeq=2100000287878"
+        }
+      ]
+    },
+    {
+      "id": "gwangju-av-permit-application-20261115",
+      "date": "2026-11-15",
+      "title": "광주 자율주행 실증도시 첫 차량 허가 절차 착수",
+      "status": "허가 신청·시험 준비",
+      "report_id": "2026-11-16",
+      "detail": "RideFlux 첫 차량이 임시운행허가 신청과 안전평가 단계에 들어갔으며 11월 30일 첫 운행과 연말 약 120대 투입을 목표로 한다. 허가 승인, 실제 운행과 무인 서비스 개시는 확인되지 않았다.",
+      "companies": [
+        "현대자동차"
+      ],
+      "sources": [
+        {
+          "title": "국토교통부: 광주 자율주행 실증도시 본궤도 진입",
+          "url": "https://www.molit.go.kr/USR/NEWS/dtl.jsp?id=95092599&lcmspage=1"
+        }
+      ]
+    },
+    {
+      "id": "tier-iv-komatsu-dump-truck-development-20261113",
+      "date": "2026-11-13",
+      "title": "TIER IV·Komatsu 덤프트럭 3종 자율주행 공동개발",
+      "status": "공동개발·검증 착수",
+      "report_id": "2026-11-16",
+      "detail": "양사가 덤프트럭 3종의 적재·운반·하역 자율화와 현장 차량관리를 공동개발하며 일본·북미 2027년 배치를 목표로 한다. 실제 현장 무인 상용 배치는 확인되지 않았다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "TIER IV: TIER IV and Komatsu begin joint development of autonomous driving systems",
+          "url": "https://tier4.co.jp/en/updates/press-release/20261113-tieriv-and-komatsu-begin-joint-development-of-autonomous-driving-systems"
+        }
+      ]
+    },
+    {
       "id": "tier-iv-shunan-dump-truck-20261112",
       "date": "2026-11-12",
       "title": "TIER IV·Shunan Bulk Terminal 항만 덤프트럭 자동화 개발",
@@ -3560,15 +3645,15 @@
       "title": "쏘카·현대자동차·에이펙스모빌리티 자율주행 MOU",
       "status": "비구속 MOU·PoC 계획",
       "report_id": "2026-11-13",
-      "detail": "세 회사가 AV Foundry 기술·서비스 검증, 국내 도로 데이터 수집, 전용 차량 플랫폼과 자율주행 소프트웨어 PoC를 위한 3년 MOU를 체결했다. 일부 조항을 제외하고 비구속적이며 실제 L4 운행·허가·차량 공급 완료는 확인되지 않았다.",
+      "detail": "세 회사가 AV Foundry 기술·서비스 검증, 국내 도로 데이터 수집, 전용 차량 플랫폼과 자율주행 소프트웨어 PoC를 위한 3년 MOU를 체결했다. 쏘카 공식 발표는 2027년 초 센서킷 차량 운행과 실도로 데이터 수집 계획을 명시하며, 실제 L4 운행·허가·차량 공급 완료는 확인되지 않았다.",
       "companies": [
         "쏘카",
         "현대자동차"
       ],
       "sources": [
         {
-          "title": "AWAKEPLUS: 쏘카 자율주행 사업 협력 MOU 공시 미러",
-          "url": "https://www.awakeplus.co.kr/data/view/20261112800227"
+          "title": "쏘카: 쏘카·에이펙스, 현대자동차와 자율주행 사업 MOU 체결",
+          "url": "https://frontend.socarcorp.kr/blog/783"
         }
       ]
     },
@@ -5280,9 +5365,74 @@
       "id": "shunan-bulk-terminal",
       "label": "Shunan Bulk Terminal",
       "kind": "기업"
+    },
+    {
+      "id": "zoox",
+      "label": "Zoox",
+      "kind": "기업"
+    },
+    {
+      "id": "cybercab",
+      "label": "Cybercab",
+      "kind": "차량"
+    },
+    {
+      "id": "gwangju",
+      "label": "광주",
+      "kind": "지역"
+    },
+    {
+      "id": "komatsu",
+      "label": "Komatsu",
+      "kind": "기업"
     }
   ],
   "relations": [
+    {
+      "id": "tesla-cybercab-invitation-orders-20261113",
+      "from": "tesla",
+      "to": "cybercab",
+      "label": "초청 고객 개인판매 주문",
+      "status": "주문 개시·인도 미확인",
+      "report_id": "2026-11-16",
+      "evidence": "Tesla의 Cybercab 초기 판매용 구속력 있는 주문약관은 초청 전용, 고객당 1대 원칙과 차량 인도 전 절차를 명시한다.",
+      "sources": [
+        {
+          "title": "Tesla: Motor Vehicle Binding Order Agreement (Cybercab)",
+          "url": "https://www.tesla.com/configurator/api/v4/terms?locale=en_US&model=cc&saleType=Sale"
+        }
+      ]
+    },
+    {
+      "id": "zoox-atlanta-restricted-driverless-rides-20261113",
+      "from": "zoox",
+      "to": "atlanta",
+      "label": "완전무인 전용 로보택시 제한 승차",
+      "status": "직원·가족·친구 제한",
+      "report_id": "2026-11-16",
+      "evidence": "Zoox 공식 발표는 Atlanta 북서부 공공도로에서 운전석과 조향장치가 없는 전용 로보택시 승차를 직원·가족·친구에게 제공한다고 명시한다.",
+      "sources": [
+        {
+          "title": "Zoox: Zoox Robotaxi Arriving in Atlanta",
+          "url": "https://zoox.com/journal/atlanta-expansion-robotaxi"
+        }
+      ]
+    },
+    {
+      "id": "tier-iv-komatsu-dump-truck-development-20261113",
+      "from": "tier-iv",
+      "to": "komatsu",
+      "label": "덤프트럭 자율주행 공동개발",
+      "status": "개발·검증 착수",
+      "report_id": "2026-11-16",
+      "evidence": "TIER IV 공식 발표는 양사가 덤프트럭 3종의 적재·운반·하역 자율화와 현장 차량관리를 공동개발하고 2027년 일본·북미 배치를 목표로 한다고 명시한다.",
+      "sources": [
+        {
+          "title": "TIER IV: TIER IV and Komatsu begin joint development of autonomous driving systems",
+          "url": "https://tier4.co.jp/en/updates/press-release/20261113-tieriv-and-komatsu-begin-joint-development-of-autonomous-driving-systems"
+        }
+      ]
+    },
     {
       "id": "tier-iv-shunan-dump-truck-development-20261112",
       "from": "tier-iv",
@@ -5335,11 +5485,11 @@
       "label": "자율주행 서비스 검증 MOU",
       "status": "비구속 MOU·계획",
       "report_id": "2026-11-13",
-      "evidence": "공시 미러는 쏘카와 에이펙스모빌리티가 현대자동차와 3년 MOU를 체결해 자율주행 기술·서비스 검증과 PoC를 추진한다고 명시한다.",
+      "evidence": "쏘카 공식 발표는 쏘카와 에이펙스모빌리티가 현대자동차와 자율주행 기술·서비스 검증, 2027년 초 센서킷 차량 데이터 수집과 PoC를 추진한다고 명시한다.",
       "sources": [
         {
-          "title": "AWAKEPLUS: 쏘카 자율주행 사업 협력 MOU 공시 미러",
-          "url": "https://www.awakeplus.co.kr/data/view/20261112800227"
+          "title": "쏘카: 쏘카·에이펙스, 현대자동차와 자율주행 사업 MOU 체결",
+          "url": "https://frontend.socarcorp.kr/blog/783"
         }
       ]
     },
@@ -5350,11 +5500,11 @@
       "label": "AV Foundry·자율주행 PoC MOU",
       "status": "비구속 MOU·계획",
       "report_id": "2026-11-13",
-      "evidence": "공시 미러는 쏘카와 현대자동차가 에이펙스모빌리티와 3년 MOU를 체결해 기술·서비스 검증, 데이터 수집, 전용 플랫폼·소프트웨어 PoC를 추진한다고 명시한다.",
+      "evidence": "쏘카 공식 발표는 쏘카와 현대자동차가 에이펙스모빌리티와 기술·서비스 검증, 2027년 초 센서킷 차량 데이터 수집, 전용 플랫폼·소프트웨어 PoC를 추진한다고 명시한다.",
       "sources": [
         {
-          "title": "AWAKEPLUS: 쏘카 자율주행 사업 협력 MOU 공시 미러",
-          "url": "https://www.awakeplus.co.kr/data/view/20261112800227"
+          "title": "쏘카: 쏘카·에이펙스, 현대자동차와 자율주행 사업 MOU 체결",
+          "url": "https://frontend.socarcorp.kr/blog/783"
         }
       ]
     },
