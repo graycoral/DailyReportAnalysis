@@ -1,7 +1,7 @@
 {
-  "count": 38,
+  "count": 39,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-13",
+  "through_date": "2026-11-16",
   "records": [
     {
       "date": "2026-09-20",
@@ -646,6 +646,23 @@
           "name": "autonomous_driving_daily_2026-11-13.pptx",
           "path": "data/reports/2026-11-13/autonomous_driving_daily_2026-11-13.pptx",
           "sha256": "814ff9d2fbed77fbfae1292a5435ee6cb4cf70ef921d003a60ffa6498c4d0d80"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-16",
+      "title": "Tesla Cybercab 초청 주문·Zoox Atlanta 무인 운행",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-16.md",
+          "path": "data/reports/2026-11-16/autonomous_driving_daily_2026-11-16.md",
+          "sha256": "ad1cffd7a65836f5e741b31544e5e63af10c4fb78aa53b4236e413b5d1d6e84a"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-16.pptx",
+          "path": "data/reports/2026-11-16/autonomous_driving_daily_2026-11-16.pptx",
+          "sha256": "f9fc6fc15e66667d148050eaf1ae328b21312f4c3c1af454d5f6f61752ebf522"
         }
       ]
     }
