@@ -1,7 +1,7 @@
 {
-  "count": 39,
+  "count": 40,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-16",
+  "through_date": "2026-11-17",
   "records": [
     {
       "date": "2026-09-20",
@@ -663,6 +663,23 @@
           "name": "autonomous_driving_daily_2026-11-16.pptx",
           "path": "data/reports/2026-11-16/autonomous_driving_daily_2026-11-16.pptx",
           "sha256": "f9fc6fc15e66667d148050eaf1ae328b21312f4c3c1af454d5f6f61752ebf522"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-17",
+      "title": "Pony.ai bZ4X 무인 상용·Zoox Uber 통합",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-17.md",
+          "path": "data/reports/2026-11-17/autonomous_driving_daily_2026-11-17.md",
+          "sha256": "07737cd687046dd92ec49f10336bfa1d58cb70fdbf45a55b402a1e60ca0c3f05"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-17.pptx",
+          "path": "data/reports/2026-11-17/autonomous_driving_daily_2026-11-17.pptx",
+          "sha256": "c04e96f772f59aa5e26fb7f709284ed53b7adf663bb9dc8aaccbb7595ce106db"
         }
       ]
     }

@@ -1,7 +1,120 @@
 {
   "schema_version": 1,
-  "published_at": "2026-11-16T07:54:52+09:00",
+  "published_at": "2026-11-17T07:49:59+09:00",
   "reports": [
+    {
+      "id": "2026-11-17",
+      "date": "2026-11-17",
+      "title": "Pony.ai bZ4X 무인 상용·Zoox Uber 통합",
+      "summary": "[신규·완전무인 상용] Pony.ai·Toyota: Gen-7 bZ4X Robotaxi가 광저우 완전무인 상용 차량군에 합류해 24시간 호출을 시작했다. 현 투입 대수·정확한 ODD는 공개되지 않았다. [R1][R2] [신규·플랫폼 실행] Uber·Zoox: Las Vegas의 완전무인 Zoox 차량이 Uber 앱에서 실제 매칭되기 시작했다. 기존 도시 서비스의 호출 채널 확대이며 차량 수는 미공개다. [R3][R4]",
+      "companies": [
+        "Uber",
+        "May Mobility",
+        "Waymo",
+        "Tesla",
+        "Zoox",
+        "Kodiak",
+        "Pony.ai"
+      ],
+      "tags": [
+        "동향"
+      ],
+      "sources": [
+        {
+          "title": "ir.pony.ai",
+          "url": "https://ir.pony.ai/news-releases/news-release-details/pony-ai-inc-and-toyota-launch-fully-driverless-commercial"
+        },
+        {
+          "title": "pony.ai",
+          "url": "https://pony.ai/news/V501qW0v?lang=zh"
+        },
+        {
+          "title": "investor.uber.com",
+          "url": "https://investor.uber.com/news-events/news/press-release-details/2026/Zoox-Is-Now-Available-on-Uber-in-Las-Vegas/default.aspx"
+        },
+        {
+          "title": "zoox.com",
+          "url": "https://zoox.com/journal/las-vegas"
+        },
+        {
+          "title": "ir.baidu.com",
+          "url": "https://ir.baidu.com/news-releases/news-release-details/baidu-announces-third-quarter-2026-results/"
+        },
+        {
+          "title": "www.reuters.com",
+          "url": "https://www.reuters.com/business/tesla-announces-33-billion-expansion-germany-plant-2026-11-16/"
+        },
+        {
+          "title": "www.tagesschau.de",
+          "url": "https://www.tagesschau.de/inland/regional/brandenburg/tesla-investitionen-brandenburg-100.html"
+        },
+        {
+          "title": "investors.kodiak.ai",
+          "url": "https://investors.kodiak.ai/news-releases/news-release-details/microvision-lidar-powers-commercial-driverless-trucking-scale"
+        },
+        {
+          "title": "www.abc15.com",
+          "url": "https://www.abc15.com/news/local-news/region-phoenix-metro/three-hospitalized-following-crash-involving-waymo"
+        },
+        {
+          "title": "www.azfamily.com",
+          "url": "https://www.azfamily.com/video/2026/11/16/3-hurt-after-waymo-involved-crash-central-phoenix/"
+        },
+        {
+          "title": "www.uber.com",
+          "url": "https://www.uber.com/us/en/r/autonomous/dallas-tx-us/"
+        },
+        {
+          "title": "bolt.eu",
+          "url": "https://bolt.eu/en/company/newsroom/"
+        },
+        {
+          "title": "ir.mobileye.com",
+          "url": "https://ir.mobileye.com/news-events/news-releases"
+        },
+        {
+          "title": "www.kakaomobility.com",
+          "url": "https://www.kakaomobility.com/newsroom/news"
+        },
+        {
+          "title": "www.socarcorp.kr",
+          "url": "https://www.socarcorp.kr/blog"
+        },
+        {
+          "title": "www.sec.gov",
+          "url": "https://www.sec.gov/Archives/edgar/data/2111542/000121390026120242/ea0312314-425_acpholdings.htm"
+        },
+        {
+          "title": "www.uber.com",
+          "url": "https://www.uber.com/us/en/r/autonomous/arlington-tx-us/"
+        },
+        {
+          "title": "www.dps.texas.gov",
+          "url": "https://www.dps.texas.gov/sites/default/files/documents/highwaypatrol/cav/plans/may_mobility.pdf"
+        },
+        {
+          "title": "maymobility.com",
+          "url": "https://maymobility.com/en/news/may-mobility-plans-to-bring-autonomous-volkswagen-id-buzz-vehicles-to-global-robotaxi-platforms"
+        },
+        {
+          "title": "maymobility.com",
+          "url": "https://maymobility.com/en/get-a-may/atlanta"
+        }
+      ],
+      "body_markdown": "---\ntheme: default\ntitle: \"자율주행 데일리 리포트 2026-11-17\"\ninfo: \"Pony.ai bZ4X 무인 상용·Zoox Uber 통합\"\nfonts:\n  sans: Noto Sans CJK KR\n---\n\n# Executive Summary\n## 2026-11-17 · Pony.ai bZ4X 무인 상용·Zoox Uber 통합\n\n- **[신규·완전무인 상용] Pony.ai·Toyota**: Gen-7 bZ4X Robotaxi가 광저우 완전무인 상용 차량군에 합류해 24시간 호출을 시작했다. 현 투입 대수·정확한 ODD는 공개되지 않았다. [R1][R2]\n- **[신규·플랫폼 실행] Uber·Zoox**: Las Vegas의 완전무인 Zoox 차량이 Uber 앱에서 실제 매칭되기 시작했다. 기존 도시 서비스의 호출 채널 확대이며 차량 수는 미공개다. [R3][R4]\n- **[신규·운영·계획·공급망]**: Baidu는 Q3 선전 무인 운행 170% 증가와 두바이 차량군 2배를 공개했고, Tesla는 독일 €30억 Cybercab 시설을 계획했으며, MicroVision IRIS LiDAR는 Kodiak 6세대 플랫폼에 통합됐다. [R5][R6][R7][R8]\n- **지정 6개사**: Uber에서 신규 L4 플랫폼 실행이 확인됐고 Avride·Bolt·Mobileye·카카오모빌리티·쏘카에서는 이전 보고 이후 신규 L4 상태 변화가 확인되지 않았다. [R3][R11][R12][R13][R14][R15]\n- **May Mobility**: [신규] Arlington 무인(Driver-Out) 시험 9월 개시·SPAC 종결 목표 2027년 1분기 제시 · [중복·추가 확인] 이전 보고 2026-11-16 · 미국 상용 3곳·ID. Buzz 계획 재확인. [R16][R17][R18][R19][R20]\n- **[신규·사고 조사] Waymo**: Phoenix에서 Waymo 차량 2대가 포함된 4중 충돌로 3명이 병원에 이송됐다. 원인·과실과 ADS 작동 여부는 확인되지 않았다. [R9][R10]\n\n확인 기준: 2026-11-17 07:36 한국시간. 이전 발송본 및 공개 저장소 보고서와 비교해 May Mobility를 제외한 동일 사건·수치의 재보도를 제외했다.\n\n---\n\n# 주요 신규 업데이트\n## [신규] Pony.ai bZ4X 완전무인 상용 · Zoox Uber 앱 통합\n\n- **Pony.ai·Toyota·발표 및 시행일 2026-11-16**: Gen-7 bZ4X가 광저우 완전무인 상용 차량군에 합류했고 PonyPilot·WeChat·Alipay에서 24시간 호출할 수 있다. [R1][R2]\n- Pony.ai 영문 IR은 완전무인 상용서비스라고 설명하고 중국어 공식 페이지는 일반 대상 L4 시범운영이라고 표현한다. 현재 차량 수·운행경계·원격지원 방식은 공개되지 않았다. [R1][R2]\n- 중국 주요 도시 약 1,000대 배치는 향후 목표이며 현재 달성 수치가 아니다. [R1]\n- **Uber·Zoox·발표 및 시행일 2026-11-16**: Las Vegas에서 UberX·Comfort·Electric 계열·Wait & Save 이용자가 추가요금 없이 Zoox 완전무인 차량과 매칭될 수 있다. [R3]\n- 이번 변화는 Zoox의 첫 제3자 플랫폼 통합이다. Los Angeles의 Zoox 자체 서비스는 2026년 말, Uber 통합은 2027년 계획으로 아직 달성되지 않았다. [R3][R4]\n\n출처: [Pony.ai IR, 2026-11-16][R1] · [Pony.ai 중국어 공식, 2026-11-16][R2] · [Uber IR, 2026-11-16][R3]\n\n---\n\n# 기업/지역별 상세 내용\n## Baidu 운영 확대 · Tesla 독일 생산 계획\n\n- **Baidu·발표일 2026-11-16, 기준기간 2026년 3분기**: 선전의 완전무인 운행 건수는 전분기 대비 약 170% 증가했고 두바이는 완전무인 상용 구역을 넓히며 차량군을 2배로 확대했다. [R5]\n- Apollo Go는 2026년 10월 30개 도시, Q3 약 3,400만 자율주행 km, 10월 31일 누적 3.9억 km 초과를 공개했다. 두바이 절대 차량 수와 신규 도시 명칭은 공개하지 않았다. [R5]\n- **Tesla·발표일 2026-11-16 [원문 미확인]**: 독일 Grünheide에 €30억 규모의 Cybercab 생산시설을 추가하고 연간 최대 100만 대 생산능력을 목표로 한다. Reuters 원문은 실행환경에서 열리지 않아 공개 Tagesschau 보도로 보완했다. [R6][R7]\n- 건축허가 신청은 2026년 말, 착공은 2027년 상반기, 생산은 2029년 계획이며 허가·착공·양산·EU 무인운행 승인은 아직 확인되지 않았다. [R6][R7]\n- **Pony.ai·Toyota**: bZ4X에는 L4용 이중화·fail-operational 설계가 적용됐고 정비·충전 인프라를 함께 구축 중이지만 타 도시 배치는 준비 단계다. [R1]\n\n---\n\n# 지정 6개사 L4 점검\n\n| 기업 | 이전 보고 이후 확인 결과 | 확인 출처 |\n|---|---|---|\n| Uber | **[신규·상용·무인]** Las Vegas에서 Zoox 완전무인 차량이 Uber 앱에 실제 연동됐다. 차량 수는 미공개이며 Los Angeles 연동은 2027년 계획이다. [R3][R4] | Uber·Zoox 공식 |\n| Avride | 신규 확인 사항 없음. Dallas 서비스는 차내 전문요원이 계속 감시·개입하며 신규 무인 전환·허가·차량 규모 변화가 확인되지 않았다. [R11] | Uber Dallas 안내 |\n| Bolt | 신규 확인 사항 없음. 신규 L4 운행·허가·무인 전환·차량 배치 실행이 확인되지 않았다. [R12] | Bolt 공식 뉴스룸 |\n| Mobileye | 신규 확인 사항 없음. 신규 L4 운행·허가·driver-out·계약 실행 변화가 확인되지 않았다. [R13] | Mobileye 공식 IR |\n| 카카오모빌리티 | 신규 확인 사항 없음. 2026-11-09 NVIDIA MOU 이후 실제 무인 전환·허가·차량 공급 실행 변화가 확인되지 않았다. [R14] | 카카오모빌리티 뉴스룸 |\n| 쏘카 | 신규 확인 사항 없음. 2026-11-13 현대자동차·에이펙스모빌리티 MOU 이후 실제 L4 서비스·허가·PoC 개시 변화가 확인되지 않았다. [R15] | 쏘카 공식 블로그 |\n\n---\n\n# May Mobility 심층 점검\n## [신규] Arlington 무인(Driver-Out) 시험 9월 개시·SPAC 종결 목표 2027년 1분기 제시 · [중복·추가 확인] 이전 보고 2026-11-16 · 미국 상용 3곳·ID. Buzz 계획 재확인\n\n- **실제 서비스 지역 [중복·추가 확인]**: SEC Investor Day 자료는 미국 상업 운영지를 Atlanta·Eden Prairie·Grand Rapids로 재확인하고 Arlington은 upcoming으로 구분했다. [R16]\n- **Arlington [신규·시험]**: 회사 자료는 무인시험이 2026년 9월 시작됐다고 처음 공개했다. Uber 승객 서비스는 아직 열리지 않았으며 공도 여부·승객 탑승·차량 수·ODD는 공개되지 않았다. [R16][R17]\n- **Atlanta [중복]**: Midtown 서비스는 Lyft로 이용 가능하지만 standby operator가 모든 승차를 감시하고 필요시 개입한다. [R20]\n- **현대자동차 연관성**: 2026-11-17 확인 범위에서 May Mobility와 현대자동차 간 신규 직접 계약·투자·차량 공급·기술 통합은 확인되지 않았다. [R16][R19]\n\n---\n\n# May Mobility 심층 점검\n## 안전요원·무인 수준과 기술·ODD\n\n- **[신규·실제] Arlington**: driverless testing은 9월 시작됐지만 시험의 도로·승객·시간대·속도·기상 조건은 공개되지 않았다. [R16]\n- **[중복·추가 확인] 공개 대응계획**: Texas DPS 문서는 Arlington 차량마다 운전석 AVO 탑승을 명시한다. 무인시험과의 관계가 설명되지 않아 상용 무인 전환으로 분류하지 않는다. [R18]\n- **[신규·회사 제시 ODD]**: Campus·Downtown·Suburban ODD, 700 lane-miles 초과, 승하차 지점 1만 곳 초과를 제시했지만 현장별 배분과 독립 검증은 공개되지 않았다. [R16]\n- **[신규·계획]**: 4번째 driver-out 배치는 2026년 말 또는 2027년 초 목표다. MOTER 초기 벤치마크의 위험 이벤트 97% 감소 수치는 표본 기간·차량 수·주행거리가 공개되지 않은 회사 제시 결과다. [R16]\n\n---\n\n# May Mobility 심층 점검\n## 차량·운영 실적과 투자·SPAC 일정\n\n- **차량·운영 실적 [중복]**: 최신 공개치는 상업 자율주행 승차 60만 회 초과, 110만 마일, 과거 driver-out 배치 3건이다. Investor Day의 50만 회 초과 표기는 더 오래된 반올림 수치로 본다. [R16][R19]\n- **차량 규모 [신규·계획]**: 2026년 말 300~400대, 2027년 말 수천 대, 2028년 말 수만 대 목표를 제시했으며 실제 보유·운행 차량 수가 아니다. [R16]\n- **ID. Buzz [중복·추가 확인·계획]**: 2028년 양산과 2028~2030년 누적 1만 대 생산을 목표로 한다. 별도 보도자료의 2031년까지 1만 대 초과 배치와 기간이 달라 확정 주문으로 해석하지 않는다. [R16][R19]\n- **Investor Day·SPAC [신규]**: 11월 16일 SEC Form 425가 11월 12일 발표자료를 공개했고 거래 종결 목표는 기존 2026년 말에서 2027년 1분기로 이동했다. [R16]\n- **미완료 상태**: Form S-4·주주투표 일정·거래 종결은 확인되지 않았다. 거래 완료는 주주 승인 등 조건에 남아 있다. [R16]\n\n---\n\n# 규제·안전\n\n- **[신규·사고/조사 중] Waymo·사건일 2026-11-16 11:15 MST**: Phoenix에서 Waymo 차량 2대를 포함한 4중 충돌로 3명이 병원에 이송됐고 1명은 생명위협 부상으로 분류됐다. [R9][R10]\n- 영상에는 SUV가 고속으로 교차로에 진입해 Waymo 차량들과 충돌하는 장면이 보이지만 경찰은 원인·과실을 확정하지 않았다. [R9]\n- 두 Waymo 차량의 ADS 작동 여부·안전요원 유무·승객 수·부상자 탑승 차량은 공개되지 않아 완전무인 운행 중 Waymo 과실 사고로 단정하지 않는다. [R9][R10]\n- 2026-11-17 확인 기준 NHTSA 신규 AV 조사·리콜 또는 California DMV 허가 상태 변화는 확인되지 않았다. [R9]\n\n---\n\n# 기술·공급망\n\n- **[신규·실제 통합] MicroVision·Kodiak·발표일 2026-11-16**: IRIS 장거리 LiDAR가 Kodiak 6세대 자율주행 플랫폼에 통합됐고 상용 환경에서 진동·먼지·기상·조명 조건의 필드 검증을 거쳤다고 양사가 발표했다. [R8]\n- IRIS의 신뢰 검지거리는 250m 초과이며 Kodiak SensorPod는 LiDAR·카메라·레이더를 결합한다. [R8]\n- IRIS 탑재 트럭 수·계약액·납품 수량과 기간은 공개되지 않았다. [R8]\n- Kodiak의 unsupervised 장거리 고속도로 상용서비스는 2026년 말 목표이며 실제 개시는 확인되지 않았다. 37대 수치는 기존 11월 3일 기준이므로 신규 운영 증가로 분류하지 않는다. [R8]\n\n---\n\n# Reference\n## R1–R4\n\n- [R1] Pony.ai, PONY AI Inc. and Toyota Launch Fully Driverless Commercial Services with Gen-7 bZ4X Robotaxi, 2026-11-16: https://ir.pony.ai/news-releases/news-release-details/pony-ai-inc-and-toyota-launch-fully-driverless-commercial\n- [R2] Pony.ai, 车队上新！小马智行第七代铂智4X Robotaxi广州开启接单, 2026-11-16: https://pony.ai/news/V501qW0v?lang=zh\n- [R3] Uber, Zoox Is Now Available on Uber in Las Vegas, 2026-11-16: https://investor.uber.com/news-events/news/press-release-details/2026/Zoox-Is-Now-Available-on-Uber-in-Las-Vegas/default.aspx\n- [R4] Zoox, Zoox is live in Las Vegas!, 2026-11-17 확인: https://zoox.com/journal/las-vegas\n\n---\n\n# Reference\n## R5–R8\n\n- [R5] Baidu, Baidu Announces Third Quarter 2026 Results, 2026-11-16: https://ir.baidu.com/news-releases/news-release-details/baidu-announces-third-quarter-2026-results/\n- [R6] Reuters [원문 미확인], Tesla plans $3.3 billion Cybercab boost for Germany's troubled auto sector, 2026-11-16: https://www.reuters.com/business/tesla-announces-33-billion-expansion-germany-plant-2026-11-16/\n- [R7] Tagesschau, Tesla kündigt Milliarden-Investition in Werk in Brandenburg an, 2026-11-16: https://www.tagesschau.de/inland/regional/brandenburg/tesla-investitionen-brandenburg-100.html\n- [R8] Kodiak AI, MicroVision Lidar Powers Commercial Driverless Trucking at Scale with Kodiak AI, 2026-11-16: https://investors.kodiak.ai/news-releases/news-release-details/microvision-lidar-powers-commercial-driverless-trucking-scale\n\n---\n\n# Reference\n## R9–R12\n\n- [R9] ABC15, Three hospitalized following crash involving Waymo vehicles, Phoenix police say, 2026-11-16: https://www.abc15.com/news/local-news/region-phoenix-metro/three-hospitalized-following-crash-involving-waymo\n- [R10] Arizona's Family, 3 hurt after Waymo-involved crash in central Phoenix, 2026-11-16: https://www.azfamily.com/video/2026/11/16/3-hurt-after-waymo-involved-crash-central-phoenix/\n- [R11] Uber, Self-driving taxis in Dallas, TX, 2026-11-17 확인: https://www.uber.com/us/en/r/autonomous/dallas-tx-us/\n- [R12] Bolt, Newsroom, 2026-11-17 확인: https://bolt.eu/en/company/newsroom/\n\n---\n\n# Reference\n## R13–R16\n\n- [R13] Mobileye, News Releases, 2026-11-17 확인: https://ir.mobileye.com/news-events/news-releases\n- [R14] 카카오모빌리티, 뉴스룸, 2026-11-17 확인: https://www.kakaomobility.com/newsroom/news\n- [R15] 쏘카, 공식 블로그, 2026-11-17 확인: https://www.socarcorp.kr/blog\n- [R16] U.S. SEC, Form 425 — May Mobility Investor Day 2026 Presentation, 2026-11-16: https://www.sec.gov/Archives/edgar/data/2111542/000121390026120242/ea0312314-425_acpholdings.htm\n\n---\n\n# Reference\n## R17–R20\n\n- [R17] Uber, Self-driving robotaxis in Arlington, TX, 2026-11-17 확인: https://www.uber.com/us/en/r/autonomous/arlington-tx-us/\n- [R18] Texas Department of Public Safety, Law Enforcement Interaction Protocol for May Mobility Autonomous Vehicles, 2026-11-17 확인: https://www.dps.texas.gov/sites/default/files/documents/highwaypatrol/cav/plans/may_mobility.pdf\n- [R19] May Mobility, May Mobility Plans to Bring Autonomous Volkswagen ID. Buzz Vehicles to Global Robotaxi Platforms, 2026-11-12: https://maymobility.com/en/news/may-mobility-plans-to-bring-autonomous-volkswagen-id-buzz-vehicles-to-global-robotaxi-platforms\n- [R20] May Mobility, Atlanta Service, 2026-11-17 확인: https://maymobility.com/en/get-a-may/atlanta\n\n[R1]: https://ir.pony.ai/news-releases/news-release-details/pony-ai-inc-and-toyota-launch-fully-driverless-commercial\n[R2]: https://pony.ai/news/V501qW0v?lang=zh\n[R3]: https://investor.uber.com/news-events/news/press-release-details/2026/Zoox-Is-Now-Available-on-Uber-in-Las-Vegas/default.aspx\n[R4]: https://zoox.com/journal/las-vegas\n[R5]: https://ir.baidu.com/news-releases/news-release-details/baidu-announces-third-quarter-2026-results/\n[R6]: https://www.reuters.com/business/tesla-announces-33-billion-expansion-germany-plant-2026-11-16/\n[R7]: https://www.tagesschau.de/inland/regional/brandenburg/tesla-investitionen-brandenburg-100.html\n[R8]: https://investors.kodiak.ai/news-releases/news-release-details/microvision-lidar-powers-commercial-driverless-trucking-scale\n[R9]: https://www.abc15.com/news/local-news/region-phoenix-metro/three-hospitalized-following-crash-involving-waymo\n[R10]: https://www.azfamily.com/video/2026/11/16/3-hurt-after-waymo-involved-crash-central-phoenix/\n[R11]: https://www.uber.com/us/en/r/autonomous/dallas-tx-us/\n[R12]: https://bolt.eu/en/company/newsroom/\n[R13]: https://ir.mobileye.com/news-events/news-releases\n[R14]: https://www.kakaomobility.com/newsroom/news\n[R15]: https://www.socarcorp.kr/blog\n[R16]: https://www.sec.gov/Archives/edgar/data/2111542/000121390026120242/ea0312314-425_acpholdings.htm\n[R17]: https://www.uber.com/us/en/r/autonomous/arlington-tx-us/\n[R18]: https://www.dps.texas.gov/sites/default/files/documents/highwaypatrol/cav/plans/may_mobility.pdf\n[R19]: https://maymobility.com/en/news/may-mobility-plans-to-bring-autonomous-volkswagen-id-buzz-vehicles-to-global-robotaxi-platforms\n[R20]: https://maymobility.com/en/get-a-may/atlanta\n",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-17.md",
+          "path": "data/reports/2026-11-17/autonomous_driving_daily_2026-11-17.md",
+          "sha256": "07737cd687046dd92ec49f10336bfa1d58cb70fdbf45a55b402a1e60ca0c3f05"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-17.pptx",
+          "path": "data/reports/2026-11-17/autonomous_driving_daily_2026-11-17.pptx",
+          "sha256": "c04e96f772f59aa5e26fb7f709284ed53b7adf663bb9dc8aaccbb7595ce106db"
+        }
+      ]
+    },
     {
       "id": "2026-11-16",
       "date": "2026-11-16",
@@ -3630,6 +3743,159 @@
   ],
   "events": [
     {
+      "id": "pony-toyota-bz4x-guangzhou-driverless-service-20261116",
+      "date": "2026-11-16",
+      "title": "Pony.ai·Toyota bZ4X 광저우 완전무인 상용 투입",
+      "status": "완전무인 상용 운행 개시",
+      "report_id": "2026-11-17",
+      "detail": "Pony.ai와 Toyota가 공동 개발한 Gen-7 bZ4X Robotaxi가 광저우 완전무인 상용 차량군에 합류해 PonyPilot, WeChat과 Alipay에서 24시간 호출을 시작했다. 현재 투입 대수, 정확한 ODD와 원격지원 방식은 공개되지 않았고 중국 주요 도시 약 1,000대 배치는 향후 목표다.",
+      "companies": [
+        "Pony.ai"
+      ],
+      "sources": [
+        {
+          "title": "Pony.ai: PONY AI Inc. and Toyota Launch Fully Driverless Commercial Services with Gen-7 bZ4X Robotaxi",
+          "url": "https://ir.pony.ai/news-releases/news-release-details/pony-ai-inc-and-toyota-launch-fully-driverless-commercial"
+        },
+        {
+          "title": "Pony.ai: 车队上新！小马智行第七代铂智4X Robotaxi广州开启接单",
+          "url": "https://pony.ai/news/V501qW0v?lang=zh"
+        }
+      ]
+    },
+    {
+      "id": "uber-zoox-las-vegas-platform-launch-20261116",
+      "date": "2026-11-16",
+      "title": "Uber·Zoox Las Vegas 완전무인 앱 통합 개시",
+      "status": "완전무인 상용·플랫폼 통합 개시",
+      "report_id": "2026-11-17",
+      "detail": "Las Vegas에서 UberX, Comfort, Electric 계열과 Wait & Save 이용자가 추가요금 없이 Zoox 완전무인 전용 로보택시와 실제 매칭되기 시작했다. Zoox의 첫 제3자 플랫폼 통합이며 차량 수는 공개되지 않았고 Los Angeles Uber 통합은 2027년 계획이다.",
+      "companies": [
+        "Uber",
+        "Zoox"
+      ],
+      "sources": [
+        {
+          "title": "Uber: Zoox Is Now Available on Uber in Las Vegas",
+          "url": "https://investor.uber.com/news-events/news/press-release-details/2026/Zoox-Is-Now-Available-on-Uber-in-Las-Vegas/default.aspx"
+        }
+      ]
+    },
+    {
+      "id": "baidu-apollo-go-q3-operations-update-20261116",
+      "date": "2026-11-16",
+      "title": "Baidu Apollo Go 선전·두바이 완전무인 운영 확대 공개",
+      "status": "운영 확대·실적 공개",
+      "report_id": "2026-11-17",
+      "detail": "Baidu가 2026년 3분기 선전 완전무인 운행 건수의 전분기 대비 약 170% 증가와 두바이 완전무인 상용 구역 확대 및 차량군 2배를 공개했다. 이는 11월 16일 발표된 과거 기준기간 실적이며 두바이 절대 차량 수와 신규 도시 명칭은 공개되지 않았다.",
+      "companies": [
+        "Baidu Apollo Go"
+      ],
+      "sources": [
+        {
+          "title": "Baidu: Baidu Announces Third Quarter 2026 Results",
+          "url": "https://ir.baidu.com/news-releases/news-release-details/baidu-announces-third-quarter-2026-results/"
+        }
+      ]
+    },
+    {
+      "id": "tesla-gruenheide-cybercab-expansion-plan-20261116",
+      "date": "2026-11-16",
+      "title": "Tesla Grünheide Cybercab 생산시설 투자 계획",
+      "status": "투자·허가신청·생산 계획",
+      "report_id": "2026-11-17",
+      "detail": "Tesla가 독일 Grünheide에 30억 유로 규모의 Cybercab 생산시설을 추가하고 연간 최대 100만 대 생산능력을 목표로 한다고 발표했다. 건축허가 신청은 2026년 말, 착공은 2027년 상반기, 생산은 2029년 계획이며 허가, 착공, 양산과 EU 무인운행 승인은 아직 확인되지 않았다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "Reuters [원문 미확인]: Tesla plans $3.3 billion Cybercab boost for Germany's troubled auto sector",
+          "url": "https://www.reuters.com/business/tesla-announces-33-billion-expansion-germany-plant-2026-11-16/"
+        },
+        {
+          "title": "Tagesschau: Tesla kündigt Milliarden-Investition in Werk in Brandenburg an",
+          "url": "https://www.tagesschau.de/inland/regional/brandenburg/tesla-investitionen-brandenburg-100.html"
+        }
+      ]
+    },
+    {
+      "id": "kodiak-microvision-iris-integration-20261116",
+      "date": "2026-11-16",
+      "title": "Kodiak·MicroVision IRIS LiDAR 통합·필드검증",
+      "status": "LiDAR 통합·필드검증",
+      "report_id": "2026-11-17",
+      "detail": "MicroVision IRIS 장거리 LiDAR가 Kodiak 6세대 자율주행 플랫폼에 통합됐고 상용 환경의 진동, 먼지, 기상과 조명 조건에서 필드검증을 거쳤다고 양사가 발표했다. IRIS 탑재 트럭 수, 계약액과 납품 수량은 공개되지 않았으며 장거리 고속도로 무인 상용서비스는 2026년 말 목표다.",
+      "companies": [
+        "Kodiak"
+      ],
+      "sources": [
+        {
+          "title": "Kodiak AI: MicroVision Lidar Powers Commercial Driverless Trucking at Scale with Kodiak AI",
+          "url": "https://investors.kodiak.ai/news-releases/news-release-details/microvision-lidar-powers-commercial-driverless-trucking-scale"
+        }
+      ]
+    },
+    {
+      "id": "waymo-phoenix-four-vehicle-crash-20261116",
+      "date": "2026-11-16",
+      "title": "Phoenix Waymo 차량 포함 4중 충돌 조사",
+      "status": "사고 발생·경찰 조사 중",
+      "report_id": "2026-11-17",
+      "detail": "Phoenix에서 Waymo 차량 2대를 포함한 4중 충돌로 3명이 병원에 이송됐고 1명은 생명위협 부상으로 분류됐다. 경찰은 원인과 과실을 확정하지 않았으며 두 Waymo 차량의 ADS 작동 여부, 안전요원 유무, 승객 수와 부상자 탑승 차량은 공개되지 않았다.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "ABC15: Three hospitalized following crash involving Waymo vehicles, Phoenix police say",
+          "url": "https://www.abc15.com/news/local-news/region-phoenix-metro/three-hospitalized-following-crash-involving-waymo"
+        },
+        {
+          "title": "Arizona's Family: 3 hurt after Waymo-involved crash in central Phoenix",
+          "url": "https://www.azfamily.com/video/2026/11/16/3-hurt-after-waymo-involved-crash-central-phoenix/"
+        }
+      ]
+    },
+    {
+      "id": "may-arlington-driver-out-testing-disclosed-20261116",
+      "date": "2026-11-16",
+      "title": "May Mobility Arlington 무인시험 9월 개시 사실 공개",
+      "status": "무인시험 진행·범위 미공개",
+      "report_id": "2026-11-17",
+      "detail": "May Mobility의 Investor Day 자료가 Arlington 무인시험이 2026년 9월 시작됐다고 처음 공개했다. 정확한 개시일, 공도 여부, 승객 탑승, 차량 수와 ODD는 공개되지 않았고 Texas DPS 공개 대응계획은 차량마다 운전석 AVO 탑승을 명시해 상용 무인 전환으로 분류하지 않는다.",
+      "companies": [
+        "May Mobility"
+      ],
+      "sources": [
+        {
+          "title": "U.S. SEC: Form 425 — May Mobility Investor Day 2026 Presentation",
+          "url": "https://www.sec.gov/Archives/edgar/data/2111542/000121390026120242/ea0312314-425_acpholdings.htm"
+        },
+        {
+          "title": "Texas Department of Public Safety: Law Enforcement Interaction Protocol for May Mobility Autonomous Vehicles",
+          "url": "https://www.dps.texas.gov/sites/default/files/documents/highwaypatrol/cav/plans/may_mobility.pdf"
+        }
+      ]
+    },
+    {
+      "id": "may-spac-q1-2027-closing-target-20261116",
+      "date": "2026-11-16",
+      "title": "May Mobility SPAC 종결 목표 2027년 1분기로 갱신",
+      "status": "거래 종결 계획·조건부",
+      "report_id": "2026-11-17",
+      "detail": "11월 16일 공개된 May Mobility Investor Day 자료가 ACP Holdings와의 SPAC 거래 종결 목표를 기존 2026년 말에서 2027년 1분기로 제시했다. Form S-4, 주주투표 일정과 거래 종결은 확인되지 않았고 거래 완료는 주주 승인 등 조건에 남아 있다.",
+      "companies": [
+        "May Mobility"
+      ],
+      "sources": [
+        {
+          "title": "U.S. SEC: Form 425 — May Mobility Investor Day 2026 Presentation",
+          "url": "https://www.sec.gov/Archives/edgar/data/2111542/000121390026120242/ea0312314-425_acpholdings.htm"
+        }
+      ]
+    },
+    {
       "id": "tesla-cybercab-invitation-orders-20261113",
       "date": "2026-11-13",
       "title": "Tesla Cybercab 초청 고객 주문 개시",
@@ -5492,9 +5758,172 @@
       "id": "komatsu",
       "label": "Komatsu",
       "kind": "기업"
+    },
+    {
+      "id": "dubai",
+      "label": "Dubai",
+      "kind": "지역"
+    },
+    {
+      "id": "gruenheide",
+      "label": "Grünheide",
+      "kind": "지역"
+    },
+    {
+      "id": "kodiak",
+      "label": "Kodiak",
+      "kind": "기업"
+    },
+    {
+      "id": "microvision",
+      "label": "MicroVision",
+      "kind": "기업"
+    },
+    {
+      "id": "phoenix",
+      "label": "Phoenix",
+      "kind": "지역"
+    },
+    {
+      "id": "arlington",
+      "label": "Arlington",
+      "kind": "지역"
+    },
+    {
+      "id": "acp-holdings",
+      "label": "ACP Holdings",
+      "kind": "기업"
     }
   ],
   "relations": [
+    {
+      "id": "pony-toyota-bz4x-commercial-service-20261116",
+      "from": "pony-ai",
+      "to": "toyota",
+      "label": "bZ4X Robotaxi 공동개발·상용운영",
+      "status": "광저우 완전무인 상용 투입",
+      "report_id": "2026-11-17",
+      "evidence": "Pony.ai 공식 발표는 Toyota와 공동 개발한 Gen-7 bZ4X Robotaxi가 광저우 완전무인 상용 차량군에 합류해 24시간 호출을 시작했다고 명시한다.",
+      "sources": [
+        {
+          "title": "Pony.ai: PONY AI Inc. and Toyota Launch Fully Driverless Commercial Services with Gen-7 bZ4X Robotaxi",
+          "url": "https://ir.pony.ai/news-releases/news-release-details/pony-ai-inc-and-toyota-launch-fully-driverless-commercial"
+        }
+      ]
+    },
+    {
+      "id": "uber-zoox-las-vegas-platform-launch-20261116",
+      "from": "uber",
+      "to": "zoox",
+      "label": "Las Vegas 완전무인 로보택시 플랫폼 통합",
+      "status": "서비스 개시",
+      "report_id": "2026-11-17",
+      "evidence": "Uber 공식 발표는 Las Vegas에서 Zoox 완전무인 전용 로보택시가 Uber 앱 이용자와 실제 매칭되기 시작했다고 명시한다.",
+      "sources": [
+        {
+          "title": "Uber: Zoox Is Now Available on Uber in Las Vegas",
+          "url": "https://investor.uber.com/news-events/news/press-release-details/2026/Zoox-Is-Now-Available-on-Uber-in-Las-Vegas/default.aspx"
+        }
+      ]
+    },
+    {
+      "id": "baidu-dubai-driverless-expansion-20261116",
+      "from": "baidu-apollo-go",
+      "to": "dubai",
+      "label": "완전무인 상용구역·차량군 확대",
+      "status": "운영 확대 실적 공개",
+      "report_id": "2026-11-17",
+      "evidence": "Baidu 2026년 3분기 실적 발표는 Apollo Go가 Dubai의 완전무인 상용 운행구역을 넓히고 차량군을 2배로 확대했다고 명시한다.",
+      "sources": [
+        {
+          "title": "Baidu: Baidu Announces Third Quarter 2026 Results",
+          "url": "https://ir.baidu.com/news-releases/news-release-details/baidu-announces-third-quarter-2026-results/"
+        }
+      ]
+    },
+    {
+      "id": "tesla-gruenheide-cybercab-facility-plan-20261116",
+      "from": "tesla",
+      "to": "gruenheide",
+      "label": "Cybercab 생산시설 투자",
+      "status": "허가신청·착공·생산 계획",
+      "report_id": "2026-11-17",
+      "evidence": "Tesla 발표를 인용한 Tagesschau와 Reuters 보도는 Grünheide에 30억 유로 규모의 Cybercab 생산시설을 추가하고 2029년 생산을 시작한다는 계획을 명시한다.",
+      "sources": [
+        {
+          "title": "Tagesschau: Tesla kündigt Milliarden-Investition in Werk in Brandenburg an",
+          "url": "https://www.tagesschau.de/inland/regional/brandenburg/tesla-investitionen-brandenburg-100.html"
+        },
+        {
+          "title": "Reuters [원문 미확인]: Tesla plans $3.3 billion Cybercab boost for Germany's troubled auto sector",
+          "url": "https://www.reuters.com/business/tesla-announces-33-billion-expansion-germany-plant-2026-11-16/"
+        }
+      ]
+    },
+    {
+      "id": "kodiak-microvision-iris-integration-20261116",
+      "from": "kodiak",
+      "to": "microvision",
+      "label": "IRIS LiDAR 플랫폼 통합",
+      "status": "통합·필드검증 완료",
+      "report_id": "2026-11-17",
+      "evidence": "Kodiak와 MicroVision 공동 발표는 IRIS 장거리 LiDAR가 Kodiak 6세대 자율주행 플랫폼에 통합됐고 상용 환경에서 필드검증을 거쳤다고 명시한다.",
+      "sources": [
+        {
+          "title": "Kodiak AI: MicroVision Lidar Powers Commercial Driverless Trucking at Scale with Kodiak AI",
+          "url": "https://investors.kodiak.ai/news-releases/news-release-details/microvision-lidar-powers-commercial-driverless-trucking-scale"
+        }
+      ]
+    },
+    {
+      "id": "waymo-phoenix-crash-investigation-20261116",
+      "from": "waymo",
+      "to": "phoenix",
+      "label": "차량 2대 포함 4중 충돌",
+      "status": "경찰 조사 중·원인 미확정",
+      "report_id": "2026-11-17",
+      "evidence": "Phoenix 경찰 발표를 인용한 현지 보도는 Waymo 차량 2대가 포함된 4중 충돌과 3명의 병원 이송을 확인했지만 원인, 과실과 ADS 작동 여부는 확정하지 않았다.",
+      "sources": [
+        {
+          "title": "ABC15: Three hospitalized following crash involving Waymo vehicles, Phoenix police say",
+          "url": "https://www.abc15.com/news/local-news/region-phoenix-metro/three-hospitalized-following-crash-involving-waymo"
+        },
+        {
+          "title": "Arizona's Family: 3 hurt after Waymo-involved crash in central Phoenix",
+          "url": "https://www.azfamily.com/video/2026/11/16/3-hurt-after-waymo-involved-crash-central-phoenix/"
+        }
+      ]
+    },
+    {
+      "id": "may-arlington-driver-out-testing-20261116",
+      "from": "may",
+      "to": "arlington",
+      "label": "Driver-Out 시험",
+      "status": "2026년 9월 개시·범위 미공개",
+      "report_id": "2026-11-17",
+      "evidence": "May Mobility Investor Day 자료는 Arlington Driver-Out 시험이 2026년 9월 시작됐다고 명시하지만 정확한 도로, 승객, 차량 수와 ODD는 공개하지 않았다.",
+      "sources": [
+        {
+          "title": "U.S. SEC: Form 425 — May Mobility Investor Day 2026 Presentation",
+          "url": "https://www.sec.gov/Archives/edgar/data/2111542/000121390026120242/ea0312314-425_acpholdings.htm"
+        }
+      ]
+    },
+    {
+      "id": "may-acp-spac-q1-2027-target-20261116",
+      "from": "may",
+      "to": "acp-holdings",
+      "label": "SPAC 거래 종결",
+      "status": "2027년 1분기 목표·조건부",
+      "report_id": "2026-11-17",
+      "evidence": "May Mobility Investor Day 자료는 ACP Holdings와의 거래 종결 목표를 2027년 1분기로 제시하며 거래 완료가 주주 승인 등 조건에 남아 있음을 명시한다.",
+      "sources": [
+        {
+          "title": "U.S. SEC: Form 425 — May Mobility Investor Day 2026 Presentation",
+          "url": "https://www.sec.gov/Archives/edgar/data/2111542/000121390026120242/ea0312314-425_acpholdings.htm"
+        }
+      ]
+    },
     {
       "id": "tesla-cybercab-invitation-orders-20261113",
       "from": "tesla",
@@ -6207,6 +6636,6 @@
   "database": {
     "name": "reports.sqlite",
     "path": "data/reports.sqlite",
-    "sha256": "6e3548f135b89694b99e8aa2ec8632b62bcb0bad31eecfb6a6a04329e1ba1b86"
+    "sha256": "fca25f1579a66c3cc312f49cfacaf9af8dbe6e8ec2d6c37da30d2428062837ce"
   }
 }
