@@ -1,7 +1,7 @@
 {
-  "count": 40,
+  "count": 41,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-17",
+  "through_date": "2026-11-18",
   "records": [
     {
       "date": "2026-09-20",
@@ -680,6 +680,23 @@
           "name": "autonomous_driving_daily_2026-11-17.pptx",
           "path": "data/reports/2026-11-17/autonomous_driving_daily_2026-11-17.pptx",
           "sha256": "c04e96f772f59aa5e26fb7f709284ed53b7adf663bb9dc8aaccbb7595ce106db"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-18",
+      "title": "Waymo 고속도로 무인 운행 제한·Munich 승객 시험",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-18.md",
+          "path": "data/reports/2026-11-18/autonomous_driving_daily_2026-11-18.md",
+          "sha256": "a0b2c887200e6dc0b2f6b4fa46fa683c5540167e8c2c142bbc560d2148aeca1a"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-18.pptx",
+          "path": "data/reports/2026-11-18/autonomous_driving_daily_2026-11-18.pptx",
+          "sha256": "16d970d77312f778a5c5eaeae5662bec93c93ceac1bd1db8b0641e2b5ec4df45"
         }
       ]
     }
