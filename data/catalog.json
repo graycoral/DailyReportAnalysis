@@ -3851,6 +3851,95 @@
   ],
   "events": [
     {
+      "id": "tesla-cybercab-dallas-commercial-20261119",
+      "date": "2026-11-19",
+      "title": "Tesla Cybercab Dallas 유료 완전무인 승객 운송 개시",
+      "status": "상용·완전무인 운행 개시",
+      "report_id": "2026-11-23",
+      "detail": "Tesla Cybercab이 Dallas 제한 운영구역에서 2026년 11월 19일 유료 승객 운송을 시작했다. 차량에는 조향장치와 페달이 없고 차내 운전자가 없으며, 운영 차량 수·운임·세부 지오펜스와 원격지원 방식은 공개되지 않았다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "Tesla: Cybercab FAQ",
+          "url": "https://www.tesla.com/support/robotaxi/cybercab"
+        },
+        {
+          "title": "KRLD: Tesla's Cybercab begins picking up passengers in Dallas",
+          "url": "https://www.audacy.com/krld/news/local/teslas-cybercab-begins-picking-up-passengers-in-dallas"
+        }
+      ]
+    },
+    {
+      "id": "zoox-los-angeles-employee-rides-20261119",
+      "date": "2026-11-19",
+      "title": "Zoox Los Angeles 목적형 로보택시 폐쇄형 승객 시험 개시",
+      "status": "폐쇄형 무인 승객 시험 개시",
+      "report_id": "2026-11-23",
+      "detail": "Zoox는 Santa Monica를 시작으로 목적형 로보택시에 임직원·가족·친구를 태우는 시험을 개시했다. 운전석과 조향장치가 없어 차내 안전운전원은 없지만 일반 대중 대상 상용 서비스는 아니며, 공개 대기명단은 2027년 계획이다.",
+      "companies": [
+        "Zoox"
+      ],
+      "sources": [
+        {
+          "title": "Zoox: Robotaxis in Los Angeles",
+          "url": "https://zoox.com/journal/zoox-robotaxi-in-los-angeles"
+        }
+      ]
+    },
+    {
+      "id": "waymo-nhtsa-two-voluntary-recalls-20261119",
+      "date": "2026-11-19",
+      "title": "Waymo NHTSA 자발적 ADS 안전 리콜 2건 제출",
+      "status": "자발적 안전 리콜 제출",
+      "report_id": "2026-11-23",
+      "detail": "Waymo는 폐쇄된 freeway 차로 진입·계속 주행과 교차로 수신호 교통통제 대응을 대상으로 NHTSA에 자발적 안전 리콜 2건을 제출했다. 폐쇄 차로 건의 시정방안은 개발 중이며 신규 캠페인 번호와 대상 대수는 공개 자료에서 확인되지 않았다.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "Reuters: Waymo recalls self-driving cars over closed freeway lanes, manual traffic control",
+          "url": "https://www.reuters.com/legal/litigation/waymo-recalls-self-driving-cars-over-closed-freeway-lanes-manual-traffic-control-2026-11-20/"
+        }
+      ]
+    },
+    {
+      "id": "qatar-doha-l4-robotaxi-phase2-20261122",
+      "date": "2026-11-22",
+      "title": "Qatar Doha L4 전기 로보택시 2단계 시험 개시",
+      "status": "L4 안전감독자 동승 시험 개시",
+      "report_id": "2026-11-23",
+      "detail": "Qatar 교통부와 Mowasalat(Karwa)는 Doha 사전 승인 도심 노선에서 L4 전기 로보택시 2대를 최대 12개월간 시험한다고 발표했다. 운전석은 비지만 조수석 안전감독자와 원격운영자가 있어 완전무인 상용 서비스는 아니다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "Qatar Ministry of Transport: MOT Kicks Off Phase Two of Electric Robotaxis Test Runs",
+          "url": "https://www.mot.gov.qa/en/news/mot-kicks-phase-two-electric-robotaxis-test-runs"
+        },
+        {
+          "title": "Gulf Times: MoT kicks off phase two of electric Robotaxis test run",
+          "url": "https://www.gulf-times.com/article/738799/qatar/mot-kicks-off-phase-two-of-electric-robotaxis-test-run"
+        }
+      ]
+    },
+    {
+      "id": "texas-tdlr-tnc-av-rule-proposal-20261120",
+      "date": "2026-11-20",
+      "title": "Texas TDLR TNC 자동운전차 규칙 개정안 제안",
+      "status": "규칙 개정안 제안·의견수렴 예정",
+      "report_id": "2026-11-23",
+      "detail": "Texas Department of Licensing and Regulation은 TNC의 automated motor vehicle 사용과 Accessibility Pilot Program 예외를 다루는 16 TAC Chapter 95 개정안을 제안했다. Texas Register 게재 예정일은 2026년 12월 4일, 의견 마감은 2027년 1월 4일이며 아직 최종 채택·시행되지 않았다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "Texas TDLR: Summary of Proposed Rule Changes and Request for Comments and Information",
+          "url": "https://www.tdlr.texas.gov/news/rulemaking/2026/11/20/summary-of-proposed-rule-changes-and-request-for-comments-and-information-4/"
+        }
+      ]
+    },
+    {
       "id": "waymo-california-freeway-driverless-restriction-20261111",
       "date": "2026-11-11",
       "title": "California DMV Waymo freeway 무인 운행·시험 제한",
@@ -5603,6 +5692,16 @@
   ],
   "entities": [
     {
+      "id": "dallas",
+      "label": "Dallas",
+      "kind": "지역"
+    },
+    {
+      "id": "los-angeles",
+      "label": "Los Angeles",
+      "kind": "지역"
+    },
+    {
       "id": "california-dmv",
       "label": "California DMV",
       "kind": "규제기관"
@@ -5964,6 +6063,55 @@
     }
   ],
   "relations": [
+    {
+      "id": "tesla-dallas-cybercab-commercial-20261119",
+      "from": "tesla",
+      "to": "dallas",
+      "label": "Cybercab 유료 완전무인 승객 운송",
+      "status": "상용 운행 개시",
+      "report_id": "2026-11-23",
+      "evidence": "Tesla 공식 FAQ는 Cybercab이 Austin·Dallas 제한 운영구역에서 제공되는 완전자율 차량이며 조향장치가 없다고 명시하고, Dallas 현지 KRLD는 2026년 11월 19일부터 유료 승객 운송과 차내 무운전 상태를 확인했다.",
+      "sources": [
+        {
+          "title": "Tesla: Cybercab FAQ",
+          "url": "https://www.tesla.com/support/robotaxi/cybercab"
+        },
+        {
+          "title": "KRLD: Tesla's Cybercab begins picking up passengers in Dallas",
+          "url": "https://www.audacy.com/krld/news/local/teslas-cybercab-begins-picking-up-passengers-in-dallas"
+        }
+      ]
+    },
+    {
+      "id": "zoox-los-angeles-employee-rides-20261119",
+      "from": "zoox",
+      "to": "los-angeles",
+      "label": "목적형 로보택시 폐쇄형 승객 시험",
+      "status": "임직원·가족·친구 승객 시험 개시",
+      "report_id": "2026-11-23",
+      "evidence": "Zoox 공식 발표는 2026년 11월 19일 Santa Monica에서 목적형 로보택시에 임직원·가족·친구를 태우는 시험을 시작했다고 명시하며, 공개 대기명단은 2027년 계획으로 구분한다.",
+      "sources": [
+        {
+          "title": "Zoox: Robotaxis in Los Angeles",
+          "url": "https://zoox.com/journal/zoox-robotaxi-in-los-angeles"
+        }
+      ]
+    },
+    {
+      "id": "waymo-nhtsa-two-voluntary-recalls-20261119",
+      "from": "waymo",
+      "to": "nhtsa",
+      "label": "ADS 안전 리콜 2건 자발적 제출",
+      "status": "리콜 제출",
+      "report_id": "2026-11-23",
+      "evidence": "Reuters는 Waymo가 2026년 11월 19일 폐쇄 freeway 차로와 수신호 교통통제 대응 문제를 대상으로 NHTSA에 자발적 안전 리콜 2건을 제출했다고 보도했다.",
+      "sources": [
+        {
+          "title": "Reuters: Waymo recalls self-driving cars over closed freeway lanes, manual traffic control",
+          "url": "https://www.reuters.com/legal/litigation/waymo-recalls-self-driving-cars-over-closed-freeway-lanes-manual-traffic-control-2026-11-20/"
+        }
+      ]
+    },
     {
       "id": "california-dmv-waymo-freeway-restriction-20261111",
       "from": "california-dmv",
