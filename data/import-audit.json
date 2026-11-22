@@ -1,7 +1,7 @@
 {
-  "count": 41,
+  "count": 42,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-18",
+  "through_date": "2026-11-23",
   "records": [
     {
       "date": "2026-09-20",
@@ -697,6 +697,23 @@
           "name": "autonomous_driving_daily_2026-11-18.pptx",
           "path": "data/reports/2026-11-18/autonomous_driving_daily_2026-11-18.pptx",
           "sha256": "16d970d77312f778a5c5eaeae5662bec93c93ceac1bd1db8b0641e2b5ec4df45"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-23",
+      "title": "Tesla Dallas Cybercab 상용·Waymo ADS 리콜 2건",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-23.md",
+          "path": "data/reports/2026-11-23/autonomous_driving_daily_2026-11-23.md",
+          "sha256": "1532a75237affde8f09b27e2163b060c5ca007eed57e64e4cfae9140c473654a"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-23.pptx",
+          "path": "data/reports/2026-11-23/autonomous_driving_daily_2026-11-23.pptx",
+          "sha256": "bec8068d0d1abd9ac91657f8a66671538c53efac68635af6b83234233d991301"
         }
       ]
     }
