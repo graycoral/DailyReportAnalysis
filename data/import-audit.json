@@ -1,7 +1,7 @@
 {
-  "count": 42,
+  "count": 43,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-23",
+  "through_date": "2026-11-24",
   "records": [
     {
       "date": "2026-09-20",
@@ -714,6 +714,23 @@
           "name": "autonomous_driving_daily_2026-11-23.pptx",
           "path": "data/reports/2026-11-23/autonomous_driving_daily_2026-11-23.pptx",
           "sha256": "bec8068d0d1abd9ac91657f8a66671538c53efac68635af6b83234233d991301"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-24",
+      "title": "Waymo Bay Area 기상 중단·Zoox 누적 승객 100만명",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-24.md",
+          "path": "data/reports/2026-11-24/autonomous_driving_daily_2026-11-24.md",
+          "sha256": "a80e665e2f12ef6abae979e4129962943c7723dc2b91b4e508f33c3aac95155b"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-24.pptx",
+          "path": "data/reports/2026-11-24/autonomous_driving_daily_2026-11-24.pptx",
+          "sha256": "6845c1afcc2e92a2e7c01fecbb67e4ea998263cd79b6347b22f1d968b5b92e8c"
         }
       ]
     }
