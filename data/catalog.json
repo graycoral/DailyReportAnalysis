@@ -4049,6 +4049,42 @@
   ],
   "events": [
     {
+      "id": "waymo-bay-area-weather-pause-20261123",
+      "date": "2026-11-23",
+      "title": "Waymo San Francisco Bay Area 기상 대응 상용 무인 호출 일시중단",
+      "status": "상용 무인 호출 일시중단",
+      "report_id": "2026-11-24",
+      "detail": "Waymo는 atmospheric river와 기록적 King Tides 예보, 공공안전 권고에 대응해 2026년 11월 23일 04:00 PT부터 San Francisco Bay Area 상용 완전무인 호출 서비스를 일시 중단했다. 허가 정지나 규제 처분은 아니며 실제 재개 시각과 대상 차량 수는 확인되지 않았다.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "Waymo: From the road — November 22, 2026",
+          "url": "https://waymo.com/blog/shorts/sfbasevereweather/"
+        },
+        {
+          "title": "ABC News: Waymo pausing service in San Francisco Bay Area ahead of major storm",
+          "url": "https://abcnews.com/US/waymo-pausing-service-san-francisco-bay-area-ahead/story?id=138373794"
+        }
+      ]
+    },
+    {
+      "id": "abu-dhabi-kezad-autonomous-testing-hub-mou-20261123",
+      "date": "2026-11-23",
+      "title": "Abu Dhabi Mobility·KEZAD 자율주행 시험 허브 MOU 체결",
+      "status": "시험 인프라 계획·MOU",
+      "report_id": "2026-11-24",
+      "detail": "Abu Dhabi Mobility와 KEZAD Group은 드론·자율주행차 전문 시험 허브의 요구사항, 입지와 인프라를 공동 검토하는 MOU를 체결했다. 실제 시설 운영, L4 차량 배치, 착공·개장 일정은 발표되지 않았다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "Abu Dhabi Media Office: New autonomous mobility testing hub to support smart mobility sector in Abu Dhabi",
+          "url": "https://www.mediaoffice.abudhabi/en/transport/under-supervision-of-smart-and-autonomous-systems-council-new-autonomous-mobility-testing-hub-to-support-smart-mobility-sector-in-abu-dhabi/"
+        }
+      ]
+    },
+    {
       "id": "tesla-cybercab-dallas-commercial-20261119",
       "date": "2026-11-19",
       "title": "Tesla Cybercab Dallas 유료 완전무인 승객 운송 개시",
@@ -5890,6 +5926,11 @@
   ],
   "entities": [
     {
+      "id": "san-francisco-bay-area",
+      "label": "San Francisco Bay Area",
+      "kind": "지역"
+    },
+    {
       "id": "dallas",
       "label": "Dallas",
       "kind": "지역"
@@ -6261,6 +6302,25 @@
     }
   ],
   "relations": [
+    {
+      "id": "waymo-san-francisco-bay-area-weather-pause-20261123",
+      "from": "waymo",
+      "to": "san-francisco-bay-area",
+      "label": "기상 대응 상용 무인 호출 일시중단",
+      "status": "운영 일시중단",
+      "report_id": "2026-11-24",
+      "evidence": "Waymo 공식 발표와 ABC News 보도는 atmospheric river와 기록적 King Tides 예보에 대응해 2026년 11월 23일 04:00 PT부터 San Francisco Bay Area 상용 무인 호출 서비스를 일시 중단했다고 명시한다. 허가 정지나 규제 처분은 아니다.",
+      "sources": [
+        {
+          "title": "Waymo: From the road — November 22, 2026",
+          "url": "https://waymo.com/blog/shorts/sfbasevereweather/"
+        },
+        {
+          "title": "ABC News: Waymo pausing service in San Francisco Bay Area ahead of major storm",
+          "url": "https://abcnews.com/US/waymo-pausing-service-san-francisco-bay-area-ahead/story?id=138373794"
+        }
+      ]
+    },
     {
       "id": "tesla-dallas-cybercab-commercial-20261119",
       "from": "tesla",
