@@ -4191,6 +4191,81 @@
   ],
   "events": [
     {
+      "id": "nuro-lucid-uber-bay-area-driverless-test-20261124",
+      "date": "2026-11-24",
+      "title": "Nuro·Lucid·Uber Bay Area 공공도로 완전무인 시험 정식 개시",
+      "status": "차내 안전운전원 없는 공개도로 시험",
+      "report_id": "2026-11-25",
+      "detail": "Nuro, Lucid, Uber는 Palo Alto, Mountain View, Los Altos, Sunnyvale에서 Lucid Gravity 로보택시의 차내 안전운전원 없는 공공도로 시험을 정식 개시했다. 직원 driverless 탑승과 2027년 1분기 일반 공개는 계획 단계이며 현재 유상 승객 상용서비스는 아니다.",
+      "companies": [
+        "Uber",
+        "Lucid"
+      ],
+      "sources": [
+        {
+          "title": "Nuro: Nuro, Lucid, and Uber Begin Driverless Testing on Public Roads in the San Francisco Bay Area",
+          "url": "https://www.nuro.ai/blog/nuro-lucid-uber-begin-driverless-testing-on-public-roads"
+        }
+      ]
+    },
+    {
+      "id": "waymo-nhtsa-recall-details-released-20261124",
+      "date": "2026-11-24",
+      "title": "Waymo NHTSA 리콜 26E086·26E087 대상과 사건 연표 공개",
+      "status": "기존 리콜 원문 추가 공개",
+      "report_id": "2026-11-25",
+      "detail": "NHTSA 공개 문서로 폐쇄 freeway 차로 리콜 26E086과 manual traffic control 리콜 26E087의 대상이 각각 5·6세대 ADS 4,488개로 확인됐다. 26E086은 폐쇄차로 진입 11건과 최종 remedy 개발 중 상태를, 26E087은 충돌 1건과 2026년 11월 6일까지의 소프트웨어 배포 완료를 기록한다.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "NHTSA: Part 573 Safety Recall Report 26E086",
+          "url": "https://static.nhtsa.gov/odi/rcl/2026/RCLRPT-26E086-1357.pdf"
+        },
+        {
+          "title": "NHTSA: Part 573 Safety Recall Report 26E087",
+          "url": "https://static.nhtsa.gov/odi/rcl/2026/RCLRPT-26E087-0776.pdf"
+        }
+      ]
+    },
+    {
+      "id": "may-mobility-acp-form-s4-filed-20261124",
+      "date": "2026-11-24",
+      "title": "May Mobility·ACP Holdings 예비 Form S-4 제출",
+      "status": "SEC 심사·주주승인 전",
+      "report_id": "2026-11-25",
+      "detail": "ACP Holdings Acquisition Corp.와 May Mobility는 예비 Form S-4를 제출했다. filing date는 2026년 11월 24일이다. registration statement 효력, 양사 주주 승인, Nasdaq 조건부 승인과 거래 종결은 확인되지 않았다.",
+      "companies": [
+        "May Mobility"
+      ],
+      "sources": [
+        {
+          "title": "U.S. SEC: Form S-4 Filing Detail, Accession No. 0001213900-26-123321",
+          "url": "https://www.sec.gov/Archives/edgar/data/2111542/000121390026123321/0001213900-26-123321-index.htm"
+        },
+        {
+          "title": "U.S. SEC: ACP Holdings Acquisition Corp. and May Mobility Form S-4",
+          "url": "https://www.sec.gov/Archives/edgar/data/2111542/000121390026123321/ea0307637-02.htm"
+        }
+      ]
+    },
+    {
+      "id": "xcmg-eacon-l4-cabless-truck-agreement-20261124",
+      "date": "2026-11-24",
+      "title": "XCMG Group·EACON Group 목적설계 L4 광산트럭 공동개발 협약",
+      "status": "전략협력협약·개발 계획",
+      "report_id": "2026-11-25",
+      "detail": "XCMG Group과 EACON Group은 그룹 차원의 전략협력협약을 체결하고 운전실 없는 목적설계 L4 광산트럭 공동개발과 공동 플릿 확대를 추진하기로 했다. 시제품, 시험, 양산, 배치 일정과 투자금은 공개되지 않았다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "EACON Mining Technology: XCMG Group and EACON Group Sign Strategic Agreement to Advance Large-Scale Autonomous Mining",
+          "url": "https://www.eaconmining.com.au/content/details125_915.html"
+        }
+      ]
+    },
+    {
       "id": "waymo-bay-area-weather-pause-20261123",
       "date": "2026-11-23",
       "title": "Waymo San Francisco Bay Area 기상 대응 상용 무인 호출 일시중단",
@@ -6068,6 +6143,21 @@
   ],
   "entities": [
     {
+      "id": "eacon-group",
+      "label": "EACON Group",
+      "kind": "기업"
+    },
+    {
+      "id": "xcmg-group",
+      "label": "XCMG Group",
+      "kind": "기업"
+    },
+    {
+      "id": "nuro",
+      "label": "Nuro",
+      "kind": "기업"
+    },
+    {
       "id": "san-francisco-bay-area",
       "label": "San Francisco Bay Area",
       "kind": "지역"
@@ -6444,6 +6534,85 @@
     }
   ],
   "relations": [
+    {
+      "id": "nuro-uber-bay-area-driverless-test-20261124",
+      "from": "nuro",
+      "to": "uber",
+      "label": "Lucid Gravity 완전무인 시험 공동 진행",
+      "status": "공공도로 시험 개시·상용 전",
+      "report_id": "2026-11-25",
+      "evidence": "Nuro의 3사 공동 발표는 Nuro, Lucid, Uber가 Bay Area 4개 도시에서 차내 안전운전원 없는 Lucid Gravity 공공도로 시험을 2026년 11월 24일 시작했다고 명시한다.",
+      "sources": [
+        {
+          "title": "Nuro: Nuro, Lucid, and Uber Begin Driverless Testing on Public Roads in the San Francisco Bay Area",
+          "url": "https://www.nuro.ai/blog/nuro-lucid-uber-begin-driverless-testing-on-public-roads"
+        }
+      ]
+    },
+    {
+      "id": "nuro-lucid-bay-area-driverless-test-20261124",
+      "from": "nuro",
+      "to": "lucid",
+      "label": "Lucid Gravity 완전무인 시험 공동 진행",
+      "status": "공공도로 시험 개시·상용 전",
+      "report_id": "2026-11-25",
+      "evidence": "Nuro의 3사 공동 발표는 Lucid가 프로그램용 차량 100대 초과를 인도했고, Nuro Driver를 탑재한 Lucid Gravity의 차내 안전운전원 없는 공공도로 시험을 4개 도시에서 시작했다고 명시한다.",
+      "sources": [
+        {
+          "title": "Nuro: Nuro, Lucid, and Uber Begin Driverless Testing on Public Roads in the San Francisco Bay Area",
+          "url": "https://www.nuro.ai/blog/nuro-lucid-uber-begin-driverless-testing-on-public-roads"
+        }
+      ]
+    },
+    {
+      "id": "waymo-nhtsa-recall-details-20261124",
+      "from": "waymo",
+      "to": "nhtsa",
+      "label": "리콜 26E086·26E087 Part 573 공개",
+      "status": "대상·사건 연표 추가 확인",
+      "report_id": "2026-11-25",
+      "evidence": "NHTSA Part 573 공개 문서는 Waymo 5·6세대 ADS 4,488개를 각각 대상으로 하는 리콜 26E086과 26E087의 사건 연표와 remedy 상태를 확인한다.",
+      "sources": [
+        {
+          "title": "NHTSA: Part 573 Safety Recall Report 26E086",
+          "url": "https://static.nhtsa.gov/odi/rcl/2026/RCLRPT-26E086-1357.pdf"
+        },
+        {
+          "title": "NHTSA: Part 573 Safety Recall Report 26E087",
+          "url": "https://static.nhtsa.gov/odi/rcl/2026/RCLRPT-26E087-0776.pdf"
+        }
+      ]
+    },
+    {
+      "id": "may-acp-form-s4-filed-20261124",
+      "from": "may",
+      "to": "acp-holdings",
+      "label": "예비 Form S-4 제출",
+      "status": "SEC 심사·주주승인 전",
+      "report_id": "2026-11-25",
+      "evidence": "SEC filing detail은 ACP Holdings Acquisition Corp.와 May Mobility가 Form S-4를 2026년 11월 24일 제출했음을 확인한다. registration statement 효력과 거래 종결은 완료되지 않았다.",
+      "sources": [
+        {
+          "title": "U.S. SEC: Form S-4 Filing Detail, Accession No. 0001213900-26-123321",
+          "url": "https://www.sec.gov/Archives/edgar/data/2111542/000121390026123321/0001213900-26-123321-index.htm"
+        }
+      ]
+    },
+    {
+      "id": "xcmg-eacon-l4-cabless-truck-development-20261124",
+      "from": "xcmg-group",
+      "to": "eacon-group",
+      "label": "목적설계 L4 광산트럭 공동개발",
+      "status": "전략협력협약·개발 계획",
+      "report_id": "2026-11-25",
+      "evidence": "EACON 공식 발표는 XCMG Group과 EACON Group이 그룹 차원의 전략협력협약을 체결하고 운전실 없는 목적설계 L4 광산트럭을 공동개발하기로 했다고 명시한다.",
+      "sources": [
+        {
+          "title": "EACON Mining Technology: XCMG Group and EACON Group Sign Strategic Agreement to Advance Large-Scale Autonomous Mining",
+          "url": "https://www.eaconmining.com.au/content/details125_915.html"
+        }
+      ]
+    },
     {
       "id": "waymo-san-francisco-bay-area-weather-pause-20261123",
       "from": "waymo",
