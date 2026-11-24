@@ -1,7 +1,7 @@
 {
-  "count": 43,
+  "count": 44,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-24",
+  "through_date": "2026-11-25",
   "records": [
     {
       "date": "2026-09-20",
@@ -731,6 +731,23 @@
           "name": "autonomous_driving_daily_2026-11-24.pptx",
           "path": "data/reports/2026-11-24/autonomous_driving_daily_2026-11-24.pptx",
           "sha256": "6845c1afcc2e92a2e7c01fecbb67e4ea998263cd79b6347b22f1d968b5b92e8c"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "title": "Nuro·Lucid·Uber Bay Area 완전무인 시험 공식화",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-25.md",
+          "path": "data/reports/2026-11-25/autonomous_driving_daily_2026-11-25.md",
+          "sha256": "52e1c367b5de4f95bca32026d626ad6d651cc57b46691cdc123aaa5e4821f72e"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-25.pptx",
+          "path": "data/reports/2026-11-25/autonomous_driving_daily_2026-11-25.pptx",
+          "sha256": "2d1139c12ac0d118c0c7952231091162656d41ac11098d16a6629f39937a784c"
         }
       ]
     }
