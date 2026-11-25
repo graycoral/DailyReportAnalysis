@@ -4337,6 +4337,82 @@
   ],
   "events": [
     {
+      "id": "xpeng-guangzhou-driverless-passenger-test-20261125",
+      "date": "2026-11-25",
+      "title": "XPENG Guangzhou L4 무인 승객 시험 개시",
+      "status": "L4 무인 승객 시험 개시·일반 상용 전",
+      "report_id": "2026-11-26",
+      "detail": "XPENG은 Guangzhou L4 demonstration-operation qualification 취득 뒤 안전요원 없는 driverless passenger test를 시작했다고 발표했다. 일부 지역 demonstration operation은 2026년 말 계획이며, 세부 ODD·차량 수·승객 자격·유상 여부와 일반 공개 시점은 공개되지 않았다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "XPENG: XPENG Unveils Turing Physical AI Architecture and Debuts Advanced General-Purpose Humanoid Robot IRON",
+          "url": "https://www.xpeng.com/news/01a212b0d830a1e838d68a02a2110174"
+        }
+      ]
+    },
+    {
+      "id": "motional-las-vegas-driverless-uber-plan-20261125",
+      "date": "2026-11-25",
+      "title": "Motional Las Vegas 완전무인 Uber 승차 12월 초 개시 계획 공개",
+      "status": "2026년 12월 초 개시 계획·실제 전환 전",
+      "report_id": "2026-11-26",
+      "detail": "Motional CEO는 Las Vegas에서 차량 운전원 없는 Uber 승차를 2026년 12월 초 시작할 계획이라고 밝혔다. 현재 Uber 서비스는 차량 운전원이 탑승하는 감독형이며 정확한 개시일·차량 수·서비스 구역 확대와 실제 driver-out 전환은 확인되지 않았다.",
+      "companies": [
+        "Uber"
+      ],
+      "sources": [
+        {
+          "title": "Axios: Motional retools for the robotaxi race",
+          "url": "https://www.axios.com/2026/11/25/motional-robotaxi-uber-hyundai"
+        },
+        {
+          "title": "Motional: Motional Robotaxis Now Available on Uber in Las Vegas",
+          "url": "https://motional.com/news/motional-robotaxis-now-available-uber-las-vegas"
+        }
+      ]
+    },
+    {
+      "id": "neolix-singapore-m1-approval-20261125",
+      "date": "2026-11-25",
+      "title": "Neolix Xolra 6 Singapore LTA Milestone 1 통과",
+      "status": "폐쇄코스 M1 통과·공공도로 시험 준비",
+      "report_id": "2026-11-26",
+      "detail": "Neolix Xolra 6는 CETRAN 평가 뒤 Singapore LTA Milestone 1을 통과했다. M1은 폐쇄코스 기본 기동 검증 단계이며 공공도로 시험과 driverless deployment에는 후속 문서검토·원격운영 평가·배치 준비평가가 필요해 무인 상용 배치 승인으로 해석하지 않는다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "TechNode Global: Neolix gets Singapore autonomous vehicle test permit",
+          "url": "https://technode.global/2026/11/25/neolix-singapore-m1-autonomous-vehicle-permit/"
+        },
+        {
+          "title": "Singapore Land Transport Authority: Autonomous Vehicles Assessment Framework",
+          "url": "https://www.lta.gov.sg/content/ltagov/en/industry_innovations/technologies/autonomous_vehicles.html"
+        }
+      ]
+    },
+    {
+      "id": "guangzhou-port-l4-truck-project-launch-20261124",
+      "date": "2026-11-24",
+      "title": "Guangzhou Port·GAC Lingcheng·Pony.ai 항만 밖 L4 중량트럭 프로젝트 착수",
+      "status": "시범운영 프로젝트 착수·실운행 전",
+      "report_id": "2026-11-26",
+      "detail": "Guangzhou Port, GAC Lingcheng, Pony.ai는 grain terminal과 Nansha railway port station 구간에서 T9 Robotruck과 항만·물류 시스템을 연동하는 항만 밖 L4 중량트럭 시범운영 프로젝트를 착수했다. 시스템 연동·자율주행 번호판 신청·후속 운행이 남아 있으며 차량 수·안전요원·실제 무인 화물운송 개시는 확인되지 않았다.",
+      "companies": [
+        "Pony.ai"
+      ],
+      "sources": [
+        {
+          "title": "Guangzhou Port Authority: 广州港启动首批港外L4自动驾驶重卡示范运营",
+          "url": "https://gwj.gz.gov.cn/xwzx/gzgxw/content/post_11122171.html"
+        },
+        {
+          "title": "Eastmoney: 携手广州港，广汽领程启动港外L4自动驾驶重卡示范应用",
+          "url": "https://finance.eastmoney.com/a/202611243938466454.html"
+        }
+      ]
+    },
+    {
       "id": "nuro-lucid-uber-bay-area-driverless-test-20261124",
       "date": "2026-11-24",
       "title": "Nuro·Lucid·Uber Bay Area 공공도로 완전무인 시험 정식 개시",
@@ -6289,6 +6365,51 @@
   ],
   "entities": [
     {
+      "id": "xpeng",
+      "label": "XPENG",
+      "kind": "기업"
+    },
+    {
+      "id": "guangzhou",
+      "label": "Guangzhou",
+      "kind": "지역"
+    },
+    {
+      "id": "motional",
+      "label": "Motional",
+      "kind": "기업"
+    },
+    {
+      "id": "las-vegas",
+      "label": "Las Vegas",
+      "kind": "지역"
+    },
+    {
+      "id": "neolix",
+      "label": "Neolix",
+      "kind": "기업"
+    },
+    {
+      "id": "singapore",
+      "label": "Singapore",
+      "kind": "지역"
+    },
+    {
+      "id": "singapore-lta",
+      "label": "Singapore Land Transport Authority",
+      "kind": "규제기관"
+    },
+    {
+      "id": "guangzhou-port",
+      "label": "Guangzhou Port",
+      "kind": "기관"
+    },
+    {
+      "id": "gac-lingcheng",
+      "label": "GAC Lingcheng",
+      "kind": "기업"
+    },
+    {
       "id": "eacon-group",
       "label": "EACON Group",
       "kind": "기업"
@@ -6680,6 +6801,93 @@
     }
   ],
   "relations": [
+    {
+      "id": "xpeng-guangzhou-driverless-passenger-test-20261125",
+      "from": "xpeng",
+      "to": "guangzhou",
+      "label": "L4 무인 승객 시험",
+      "status": "시험 개시·일반 상용 전",
+      "report_id": "2026-11-26",
+      "evidence": "XPENG 공식 2026년 11월 25일 발표는 Guangzhou에서 L4 driverless passenger test를 시작했다고 명시하며, 일부 지역의 demonstration operation은 2026년 말 계획으로 구분한다.",
+      "sources": [
+        {
+          "title": "XPENG: XPENG Unveils Turing Physical AI Architecture and Debuts Advanced General-Purpose Humanoid Robot IRON",
+          "url": "https://www.xpeng.com/news/01a212b0d830a1e838d68a02a2110174"
+        }
+      ]
+    },
+    {
+      "id": "motional-uber-driverless-las-vegas-plan-20261125",
+      "from": "motional",
+      "to": "uber",
+      "label": "Las Vegas 완전무인 Uber 승차 전환",
+      "status": "2026년 12월 초 계획·실제 전환 전",
+      "report_id": "2026-11-26",
+      "evidence": "Motional CEO는 Axios 인터뷰에서 Las Vegas의 Uber 승차를 2026년 12월 초 차량 운전원 없는 형태로 전환할 계획이라고 밝혔다. 현재 Motional 공식 서비스 설명은 차량 운전원이 탑승하는 감독형이다.",
+      "sources": [
+        {
+          "title": "Axios: Motional retools for the robotaxi race",
+          "url": "https://www.axios.com/2026/11/25/motional-robotaxi-uber-hyundai"
+        },
+        {
+          "title": "Motional: Motional Robotaxis Now Available on Uber in Las Vegas",
+          "url": "https://motional.com/news/motional-robotaxis-now-available-uber-las-vegas"
+        }
+      ]
+    },
+    {
+      "id": "neolix-singapore-lta-m1-approval-20261125",
+      "from": "neolix",
+      "to": "singapore-lta",
+      "label": "Xolra 6 Milestone 1 평가 통과",
+      "status": "폐쇄코스 통과·공공도로 시험 준비",
+      "report_id": "2026-11-26",
+      "evidence": "2026년 11월 25일 보도는 Neolix Xolra 6가 CETRAN 평가 뒤 Singapore LTA Milestone 1을 통과했다고 확인한다. LTA 공식 프레임워크상 M1은 기본 기동의 폐쇄코스 단계이며 후속 평가가 남아 있다.",
+      "sources": [
+        {
+          "title": "TechNode Global: Neolix gets Singapore autonomous vehicle test permit",
+          "url": "https://technode.global/2026/11/25/neolix-singapore-m1-autonomous-vehicle-permit/"
+        },
+        {
+          "title": "Singapore Land Transport Authority: Autonomous Vehicles Assessment Framework",
+          "url": "https://www.lta.gov.sg/content/ltagov/en/industry_innovations/technologies/autonomous_vehicles.html"
+        }
+      ]
+    },
+    {
+      "id": "guangzhou-port-gac-lingcheng-l4-truck-project-20261124",
+      "from": "guangzhou-port",
+      "to": "gac-lingcheng",
+      "label": "항만 밖 L4 중량트럭 시범운영 프로젝트",
+      "status": "프로젝트 착수·실운행 전",
+      "report_id": "2026-11-26",
+      "evidence": "Guangzhou Port Authority 발표는 Guangzhou Port와 GAC Lingcheng가 2026년 11월 24일 항만 밖 L4 중량트럭 시범운영 프로젝트를 착수했고 시스템 연동·번호판 신청·후속 운행을 추진한다고 명시한다.",
+      "sources": [
+        {
+          "title": "Guangzhou Port Authority: 广州港启动首批港外L4自动驾驶重卡示范运营",
+          "url": "https://gwj.gz.gov.cn/xwzx/gzgxw/content/post_11122171.html"
+        }
+      ]
+    },
+    {
+      "id": "guangzhou-port-pony-ai-l4-truck-project-20261124",
+      "from": "guangzhou-port",
+      "to": "pony-ai",
+      "label": "항만 밖 L4 중량트럭 시범운영 프로젝트",
+      "status": "프로젝트 착수·실운행 전",
+      "report_id": "2026-11-26",
+      "evidence": "Guangzhou Port Authority와 보완 보도는 Pony.ai ADS를 탑재한 T9 Robotruck을 활용하는 항만 밖 L4 중량트럭 시범운영 프로젝트 착수를 확인한다. 실제 무인 화물운송 개시는 확인되지 않았다.",
+      "sources": [
+        {
+          "title": "Guangzhou Port Authority: 广州港启动首批港外L4自动驾驶重卡示范运营",
+          "url": "https://gwj.gz.gov.cn/xwzx/gzgxw/content/post_11122171.html"
+        },
+        {
+          "title": "Eastmoney: 携手广州港，广汽领程启动港外L4自动驾驶重卡示范应用",
+          "url": "https://finance.eastmoney.com/a/202611243938466454.html"
+        }
+      ]
+    },
     {
       "id": "nuro-uber-bay-area-driverless-test-20261124",
       "from": "nuro",
