@@ -1,7 +1,7 @@
 {
-  "count": 44,
+  "count": 45,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-25",
+  "through_date": "2026-11-26",
   "records": [
     {
       "date": "2026-09-20",
@@ -748,6 +748,23 @@
           "name": "autonomous_driving_daily_2026-11-25.pptx",
           "path": "data/reports/2026-11-25/autonomous_driving_daily_2026-11-25.pptx",
           "sha256": "2d1139c12ac0d118c0c7952231091162656d41ac11098d16a6629f39937a784c"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-26",
+      "title": "XPENG Guangzhou L4 무인 승객 시험 개시",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-26.md",
+          "path": "data/reports/2026-11-26/autonomous_driving_daily_2026-11-26.md",
+          "sha256": "b15100f2ced7a7e12f3452b19f272d62e00f272434ae3ca17c7ec31799dc115b"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-26.pptx",
+          "path": "data/reports/2026-11-26/autonomous_driving_daily_2026-11-26.pptx",
+          "sha256": "8f528149162f03a78f5a4350209d299dd6cfc7a010f211bbd5506940d336d2c1"
         }
       ]
     }
