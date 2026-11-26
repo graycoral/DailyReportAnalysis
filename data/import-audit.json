@@ -1,7 +1,7 @@
 {
-  "count": 45,
+  "count": 46,
   "from_date": "2026-09-20",
-  "through_date": "2026-11-26",
+  "through_date": "2026-11-27",
   "records": [
     {
       "date": "2026-09-20",
@@ -765,6 +765,23 @@
           "name": "autonomous_driving_daily_2026-11-26.pptx",
           "path": "data/reports/2026-11-26/autonomous_driving_daily_2026-11-26.pptx",
           "sha256": "8f528149162f03a78f5a4350209d299dd6cfc7a010f211bbd5506940d336d2c1"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-27",
+      "title": "Bolt Luxembourg L4 시험·Waymo Bay Area 재개",
+      "verification": "data/reports 폴더 스캔; SHA-256 기록",
+      "attachments": [
+        {
+          "name": "autonomous_driving_daily_2026-11-27.md",
+          "path": "data/reports/2026-11-27/autonomous_driving_daily_2026-11-27.md",
+          "sha256": "1e847740facdf6900e36eded90bd01d320eaa93e4319d882c67afc0d51483680"
+        },
+        {
+          "name": "autonomous_driving_daily_2026-11-27.pptx",
+          "path": "data/reports/2026-11-27/autonomous_driving_daily_2026-11-27.pptx",
+          "sha256": "50da0f248f913a2071fb462bd552c1d70e0641ac1d4cfa9f8c9efdfaefb9ff19"
         }
       ]
     }
