@@ -4482,6 +4482,81 @@
   ],
   "events": [
     {
+      "id": "bolt-pony-ai-luxembourg-l4-road-test-20261126",
+      "date": "2026-11-26",
+      "title": "Bolt·Pony.ai Luxembourg L4 공공도로 시험 개시",
+      "status": "L4 안전요원 동승 공도 시험·일반 상용 전",
+      "report_id": "2026-11-27",
+      "detail": "Bolt와 Pony.ai는 Luxembourg Bissen·Niederanven의 실교통 공공도로에서 Gen-7 기반 L4 차량 5대 시험을 시작했다. scientific testing permit은 2026년 11월 1일 발효됐지만 각 차량에 훈련된 안전요원이 탑승하고 필요 시 개입하며, 일반 승객 탑승과 유료 상용서비스는 아직 시작되지 않았다.",
+      "companies": [
+        "Bolt",
+        "Pony.ai"
+      ],
+      "sources": [
+        {
+          "title": "Bolt: Bolt is now live in autonomous mode in Luxembourg",
+          "url": "https://bolt.eu/en/blog/self-driving-luxembourg/"
+        },
+        {
+          "title": "RTL Today: Self-driving cars introduced on Luxembourg's roads",
+          "url": "https://today.rtl.lu/news/luxembourg/self-driving-cars-introduced-on-luxembourgs-roads-1757067055"
+        }
+      ]
+    },
+    {
+      "id": "waymo-bay-area-commercial-service-resumption-20261125",
+      "date": "2026-11-25",
+      "title": "Waymo San Francisco Bay Area 상용 무인 호출 점진 재개",
+      "status": "상용 무인 호출 점진 재개·전체 정상화 미확인",
+      "report_id": "2026-11-27",
+      "detail": "Waymo는 기상예보와 King Tides 전망이 개선된 뒤 2026년 11월 25일 17:00 PT부터 San Francisco Bay Area 상용 무인 호출 fleet를 단계적으로 복귀시켰다. 이는 11월 23일 악천후 대응 중단의 운영 복원이며 신규 지역 확대가 아니고, 전체 복귀 완료 시각·재투입 차량 수·지역별 순서는 공개되지 않았다.",
+      "companies": [
+        "Waymo"
+      ],
+      "sources": [
+        {
+          "title": "Waymo: From the road — November 22, 2026 (updated November 25, 2026)",
+          "url": "https://waymo.com/blog/shorts/sfbasevereweather/"
+        }
+      ]
+    },
+    {
+      "id": "tesla-dallas-robotaxi-expansion-20261125",
+      "date": "2026-11-25",
+      "title": "Tesla Dallas Robotaxi 운행구역·차량 확대와 운임 인하",
+      "status": "상용 무인 운영 확대·정확한 규모 미공개",
+      "report_id": "2026-11-27",
+      "detail": "Tesla Robotaxi 공식 X 계정은 Dallas 서비스 구역 확대, 차량 증가와 운임 인하를 공지했고 공개 보완 보도는 지도상 북쪽 확대를 확인했다. 공식 X 원문은 직접 확인하지 못했으며 정확한 신규 면적·추가 차량 수·새 운임·적용 기간은 공개되지 않았다.",
+      "companies": [
+        "Tesla"
+      ],
+      "sources": [
+        {
+          "title": "Tesla Robotaxi: Just grew wider in Dallas [원문 미확인]",
+          "url": "https://x.com/robotaxi/status/2125657961242726732"
+        },
+        {
+          "title": "TeslaNorth: Tesla Expands Robotaxi in Dallas and Cuts Fares",
+          "url": "https://teslanorth.com/2026/11/25/tesla-robotaxi-dallas-expansion-lower-fares/"
+        }
+      ]
+    },
+    {
+      "id": "robosense-phoenix-spad-soc-production-20261125",
+      "date": "2026-11-25",
+      "title": "RoboSense Phoenix SPAD-SoC 첫 차종 양산·납품과 자동화 라인 가동 확인",
+      "status": "양산·납품·생산라인 가동 확인",
+      "report_id": "2026-11-27",
+      "detail": "RoboSense의 2026년 11월 25일 HKEX 공시는 Phoenix SPAD-SoC 탑재 첫 차량 모델이 11월 양산·납품을 시작하고 Shenzhen Nanshan 디지털 LiDAR 자동화 라인이 가동됐다고 밝혔다. 라인은 자동화율 99%, 연간 생산능력 50만대, 최종조립 인원 6명이며, 공시는 별도로 한 OEM 고객의 LiDAR 교체 물량 20,100대와 9개월 누적 RMB 137.4 million 충당금을 공개했지만 OEM·원인·차량 수·리콜 여부·안전 영향은 밝히지 않았다.",
+      "companies": [],
+      "sources": [
+        {
+          "title": "RoboSense / HKEX: Third Quarter 2026 Unaudited Financial Results",
+          "url": "https://www1.hkexnews.hk/listedco/listconews/sehk/2026/1125/2026112501197.pdf"
+        }
+      ]
+    },
+    {
       "id": "xpeng-guangzhou-driverless-passenger-test-20261125",
       "date": "2026-11-25",
       "title": "XPENG Guangzhou L4 무인 승객 시험 개시",
@@ -6946,6 +7021,25 @@
     }
   ],
   "relations": [
+    {
+      "id": "bolt-pony-ai-luxembourg-l4-road-test-20261126",
+      "from": "bolt",
+      "to": "pony-ai",
+      "label": "Luxembourg L4 공공도로 시험 협력",
+      "status": "안전요원 동승 시험 개시·일반 상용 전",
+      "report_id": "2026-11-27",
+      "evidence": "Bolt 공식 발표와 RTL Today 보도는 Bolt와 Pony.ai가 Luxembourg Bissen·Niederanven 공공도로에서 Pony.ai Gen-7 기반 L4 차량 5대 시험을 시작했고 각 차량에 훈련된 안전요원이 탑승하며 일반 승객·유료 상용서비스는 아직 시작되지 않았다고 명시한다.",
+      "sources": [
+        {
+          "title": "Bolt: Bolt is now live in autonomous mode in Luxembourg",
+          "url": "https://bolt.eu/en/blog/self-driving-luxembourg/"
+        },
+        {
+          "title": "RTL Today: Self-driving cars introduced on Luxembourg's roads",
+          "url": "https://today.rtl.lu/news/luxembourg/self-driving-cars-introduced-on-luxembourgs-roads-1757067055"
+        }
+      ]
+    },
     {
       "id": "xpeng-guangzhou-driverless-passenger-test-20261125",
       "from": "xpeng",
